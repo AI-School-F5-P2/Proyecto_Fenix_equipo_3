@@ -1,0 +1,51 @@
+:host {
+  display: grid;
+  grid-template-rows: 60px 1fr; /* Navbar arriba */
+  grid-template-columns: 250px 1fr; /* Sidebar + contenido */
+  grid-template-areas:
+    "navbar navbar"
+    "sidebar content";
+  height: 100vh; /* Ocupa toda la ventana */
+}
+
+/* Navbar arriba */
+.nav-bar {
+  grid-area: navbar;
+  background-color: #fdfdfd; /* Azul oscuro (puedes cambiarlo) */
+  border-bottom: 1px solid rgb(206, 206, 206);
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  z-index: 10;
+}
+
+/* Sidebar a la izquierda */
+.sidebar {
+  grid-area: sidebar;
+  border-right: 1px solid rgb(224, 224, 224);
+  color: white;
+  overflow-y: auto;
+}
+
+/* Contenido principal (router-outlet) */
+.router-outlet-content {
+  grid-area: content;
+  background-color: #ffffff; /* Fondo claro */
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* ✅ Responsive (sidebar colapsa en pantallas pequeñas) */
+@media (max-width: 768px) {
+  :host {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "navbar"
+      "content";
+  }
+
+  .sidebar {
+    display: none;
+  }
+}

@@ -1,0 +1,271 @@
+.product-form {
+  width: 100%;
+  max-width: 800px;
+  margin: 40px auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 40px 50px;
+  font-family: 'Inter', sans-serif;
+}
+
+.product-form h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.product-form h3 {
+  margin-top: 25px;
+  color: #007bff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.product-form label {
+  display: block;
+  margin-top: 15px;
+  font-weight: 600;
+  color: #444;
+}
+
+.product-form input,
+.product-form textarea,
+.product-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-top: 5px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.product-form input:focus,
+.product-form textarea:focus,
+.product-form select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+  outline: none;
+}
+
+/* Dropdown personalizado */
+.custom-dropdown {
+  position: relative;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.dropdown-header {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.dropdown-options div {
+  padding: 8px 12px;
+  transition: background 0.2s;
+}
+
+.dropdown-options div:hover {
+  background: #f0f0f0;
+}
+
+/* Variantes */
+.product-form .variant {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-top: 15px;
+  position: relative;
+}
+
+.product-form .variant hr {
+  margin: 15px 0;
+  border: none;
+  border-top: 1px solid #e1e1e1;
+}
+
+/* Tallas */
+.product-form .size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.product-form .size label {
+  margin-top: 0;
+  font-weight: 500;
+}
+
+.product-form .size input {
+  width: 120px;
+  padding: 6px 8px;
+}
+
+.product-form button {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.product-form .variant button[type='button']:last-child {
+  background: #dc3545;
+  color: white;
+}
+
+.product-form .variant button[type='button']:last-child:hover {
+  background: #b52a38;
+}
+
+.product-form button[type='submit'] {
+  background: #007bff;
+  color: white;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.product-form button[type='submit']:hover {
+  background: #0056b3;
+}
+
+/* Sección de imágenes */
+.preview-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.preview-images img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+
+.color-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.color-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.color-item:hover {
+  background: #f5f5f5;
+}
+
+.color-item.active {
+  background: #eaf4ff;
+  box-shadow: 0 0 0 2px #2196f3 inset;
+}
+
+.color-circle {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+}
+
+.check {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0,0,0,0.6);
+}
+
+
+.color-item:hover {
+  background: #f0f0f0;
+}
+
+.color-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+}
+
+.color-label {
+  font-size: 14px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .product-form {
+    padding: 25px 20px;
+  }
+
+  .product-form .size {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .product-form input,
+  .product-form textarea,
+  .product-form select {
+    font-size: 0.9rem;
+  }
+
+  .product-form button[type='submit'] {
+    width: 100%;
+  }
+}

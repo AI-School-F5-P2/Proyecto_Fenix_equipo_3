@@ -1,0 +1,154 @@
+<div class="product-form">
+  <h2>Agregar producto</h2>
+
+  <form (ngSubmit)="onSubmit()">
+
+    <!-- DATOS BÁSICOS -->
+    <label>Nombre</label>
+    <input [(ngModel)]="nombre" name="nombre" required />
+
+    <label>Marca</label>
+    <select
+      [(ngModel)]="marcaSeleccionada"
+      name="marca"
+      required
+    >
+      <option [ngValue]="null" disabled selected>
+        Seleccionar marca
+      </option>
+
+      <option
+        *ngFor="let marca of marcas"
+        [ngValue]="marca.id">
+        {{ marca.nombre }}
+      </option>
+    </select>
+
+    <label>Descripción</label>
+    <textarea [(ngModel)]="descripcion" name="descripcion"></textarea>
+
+    <label>Precio</label>
+    <input type="number" [(ngModel)]="precio" name="precio" required />
+
+    <!-- CATEGORÍA -->
+    <h3>Categoría</h3>
+    <div class="custom-dropdown">
+
+      <div class="dropdown-header" (click)="dropdownAbierto = !dropdownAbierto">
+        {{ getNombreCategoriaSeleccionada() }}
+      </div>
+
+      <div class="dropdown-options" *ngIf="dropdownAbierto">
+
+        <!-- VOLVER -->
+        <div class="dropdown-back"
+             *ngIf="rutaCategorias.length > 0"
+             (click)="volverCategoria()">
+          ⬅ Volver
+        </div>
+
+        <!-- OPCIONES -->
+        <div class="dropdown-option"
+             *ngFor="let cat of categoriaActual"
+             (click)="seleccionarCategoria(cat)">
+          {{ cat.nombre }}
+          <span *ngIf="tieneSubcategorias(cat)">➤</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VARIANTES -->
+    <h3>Variantes</h3>
+
+    <div *ngFor="let variante of variantes; let i = index" class="variant">
+
+      <label>Color</label>
+
+      <div class="color-selector">
+
+        <!-- Selector manual -->
+        <!-- <input
+          type="color"
+          [(ngModel)]="variante.color"
+          name="color-{{i}}"
+          (change)="onColorManualChange(variante.color, i)"
+        /> -->
+
+        <!-- Paleta -->
+        <div class="color-palette">
+          <div
+            *ngFor="let color of coloresPredefinidos"
+            class="color-item"
+            [class.active]="variante.color === color.hex"
+            (click)="seleccionarColor(color, i)"
+          >
+            <span
+              class="color-circle"
+              [style.background]="color.hex"
+            >
+              <span
+                *ngIf="variante.color === color.hex"
+                class="check">
+                ✓
+              </span>
+            </span>
+
+            <span class="color-label">
+              {{ color.nombre }}
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+
+
+
+      <label>Precio específico</label>
+      <input type="number" [(ngModel)]="variante.precio" name="precio-{{i}}" />
+
+      <label>Descuento (%)</label>
+      <input type="number" [(ngModel)]="variante.descuento" name="descuento-{{i}}" />
+
+      <!-- TALLAS -->
+      <div *ngFor="let talla of variante.tallas; let j = index" class="size">
+        <label>Talla</label>
+        <input [(ngModel)]="talla.talla" name="talla-{{i}}-{{j}}" />
+
+        <label>Stock</label>
+        <input type="number" [(ngModel)]="talla.stock" name="stock-{{i}}-{{j}}" />
+
+        <button type="button" (click)="eliminarTalla(i, j)">❌</button>
+      </div>
+
+      <button type="button" (click)="agregarTalla(i)">+ Añadir talla</button>
+
+      <!-- IMÁGENES -->
+      <h4>Fotos</h4>
+      <input type="file" multiple (change)="onFilesSelected($event, i)" />
+
+      <div class="preview-images">
+        <div *ngFor="let img of variante.imagenes; let j = index">
+          <img [src]="img" />
+          <button type="button" (click)="eliminarImagen(i, j)">🗑️</button>
+        </div>
+      </div>
+
+      <button type="button" (click)="eliminarVariante(i)">
+        Eliminar variante
+      </button>
+
+      <hr />
+    </div>
+
+    <button type="button" (click)="agregarVariante()">
+      + Añadir variante
+    </button>
+
+    <br /><br />
+    <button type="submit">Guardar producto</button>
+
+  </form>
+</div>
+
