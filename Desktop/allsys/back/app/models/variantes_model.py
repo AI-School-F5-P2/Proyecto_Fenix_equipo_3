@@ -10,7 +10,7 @@ class Variante(Base):
     producto_id = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"))
 
     color = Column(String(20), nullable=False)
-    color_nombre = Column(String(50), nullable=False)
+    color_nombre = Column(String(50), nullable=False)  # ✅ NUEVO
     precio = Column(Float, nullable=True)
     descuento = Column(Float, nullable=True)
 

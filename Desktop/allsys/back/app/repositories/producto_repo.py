@@ -7,7 +7,7 @@ from app.models.producto_model import Producto
 from app.models.variantes_model import Variante
 from app.models.talla_model import Talla
 from app.schemas.producto_schema import ProductoCreate
-
+from sqlalchemy.orm import Session, joinedload
 import json
 from typing import List, Optional
 from fastapi import UploadFile
@@ -24,6 +24,7 @@ def crear_producto(
     categoria_id: int,
     marca_id: int,
     variantes: str,
+    tipo: str,
     imagenes: Optional[List[UploadFile]] = None
 ):
     try:
@@ -31,30 +32,31 @@ def crear_producto(
     except json.JSONDecodeError:
         raise ValueError("Variantes inválidas")
 
-    # Crear producto
+    # 1️⃣ Crear producto
     producto = Producto(
         nombre=nombre,
         descripcion=descripcion,
         precio=precio,
+        tipo=tipo,
         categoria_id=categoria_id,
-        marca_id=marca_id
+        marca_id=marca_id,
+        stock=0
     )
     db.add(producto)
     db.commit()
     db.refresh(producto)
 
-    # Crear variantes y tallas
+    # 2️⃣ Crear variantes + tallas
     for v in variantes_data:
         variante = Variante(
             color=v["color"],
-            colorNombre=v["colorNombre"],
+            color_nombre=v["colorNombre"],  # ⚠️ solo si existe en el modelo
             precio=v["precio"],
             descuento=v.get("descuento", 0),
             producto_id=producto.id
         )
         db.add(variante)
-        db.commit()
-        db.refresh(variante)
+        db.flush()  # 👈 NO commit aquí
 
         for t in v["tallas"]:
             talla = Talla(
@@ -64,12 +66,56 @@ def crear_producto(
             )
             db.add(talla)
 
-    db.commit()
+    db.commit()  # ✅ UN solo commit final
 
-    # Procesar imágenes si existen
+    # 3️⃣ Imágenes (opcional)
     if imagenes:
         for file in imagenes:
-            print(f"Archivo recibido: {file.filename}")
-            # Aquí podrías guardarlo en filesystem o cloud
+            print("Archivo recibido:", file.filename)
 
     return producto
+
+
+
+
+
+def obtener_producto_completo(db: Session, producto_id: int):
+    producto = (
+        db.query(Producto)
+        .options(
+            joinedload(Producto.variantes)
+            .joinedload(Variante.tallas)
+        )
+        .filter(Producto.id == producto_id)
+        .first()
+    )
+
+    if not producto:
+        return None
+
+    return producto
+
+
+
+
+
+def obtener_productos_paginados(
+    db: Session,
+    page: int = 1,
+    limit: int = 10
+) -> List[Producto]:
+    offset = (page - 1) * limit
+
+    productos = (
+        db.query(Producto)
+        .options(
+            joinedload(Producto.variantes)
+            .joinedload(Variante.tallas)
+        )
+        .order_by(Producto.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return productos

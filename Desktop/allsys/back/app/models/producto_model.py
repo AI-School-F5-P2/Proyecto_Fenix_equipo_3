@@ -22,3 +22,5 @@ class Producto(Base):
     variantes = relationship("Variante", back_populates="producto", cascade="all, delete-orphan")
 
     
+
+
