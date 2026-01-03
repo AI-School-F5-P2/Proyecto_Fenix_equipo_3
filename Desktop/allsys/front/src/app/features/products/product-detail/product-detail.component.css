@@ -1,0 +1,113 @@
+.product-detail-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+.product-header h1 {
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+}
+
+.product-header .descripcion {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.product-header .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.variantes-container {
+  margin-top: 2rem;
+}
+
+.variante-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  transition: box-shadow 0.2s;
+}
+
+.variante-card:hover {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.variante-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.color-box {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #aaa;
+}
+
+.color-nombre {
+  font-weight: bold;
+}
+
+.precio, .descuento {
+  margin-left: 1rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.imagenes-variante {
+  margin-bottom: 1rem;
+}
+
+.imagen-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.imagen-lista img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  transition: transform 0.2s;
+}
+
+.imagen-lista img:hover {
+  transform: scale(1.1);
+  border-color: #888;
+}
+
+.tallas-variante table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tallas-variante th, .tallas-variante td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.tallas-variante th {
+  background-color: #f5f5f5;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.2rem;
+  padding: 2rem;
+  color: #666;
+}

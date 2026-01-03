@@ -1,0 +1,199 @@
+/* ================= PRODUCT FORM ================= */
+.product-form {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.product-form h2, .product-form h3, .product-form h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.product-form label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.product-form input[type="text"],
+.product-form input[type="number"],
+.product-form textarea,
+.product-form select {
+  width: 100%;
+  padding: 6px 8px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.product-form textarea {
+  resize: vertical;
+}
+
+/* ================= DROPDOWN ================= */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.dropdown-header {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-top: none;
+  background: #fff;
+  z-index: 100;
+  border-radius: 0 0 4px 4px;
+}
+
+.dropdown-back {
+  padding: 6px 10px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-option {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-option:hover {
+  background-color: #e0e0e0;
+}
+
+.dropdown-option.selected {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* ================= VARIANTES ================= */
+.variant {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 15px;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.variant hr {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
+.size {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.size input[type="text"], .size input[type="number"] {
+  width: 80px;
+}
+
+.size button {
+  background-color: #ff4d4f;
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.size button:hover {
+  background-color: #e04344;
+}
+
+/* ================= IMÁGENES ================= */
+.preview-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.preview-images div {
+  position: relative;
+}
+
+.preview-images img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.preview-images button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #ff4d4f;
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.preview-images button:hover {
+  background-color: #e04344;
+}
+
+/* ================= BOTONES ================= */
+button[type="button"] {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+}
+
+button[type="button"]:hover {
+  background-color: #0062cc;
+}
+
+button[type="submit"] {
+  margin-top: 15px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #28a745;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+button[type="submit"]:hover {
+  background-color: #218838;
+}

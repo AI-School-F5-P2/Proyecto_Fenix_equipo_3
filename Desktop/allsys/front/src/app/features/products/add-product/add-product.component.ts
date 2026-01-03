@@ -40,6 +40,7 @@ export class AddProductComponent implements OnInit {
   categoriaSeleccionadaFinal: number | null = null;
 
   dropdownAbierto = false;
+  tipo: string = 'General'; // no editable por el usuario
 
   marcas: any[] = [];
   marcaSeleccionada: number | null = null;
@@ -79,6 +80,7 @@ export class AddProductComponent implements OnInit {
   ngOnInit() {
     this.productsService.cargarCategorias().subscribe(data => {
       this.todasLasCategorias = data;
+      console.log('categorias: ',data)
       this.categoriaActual = data.filter(c => c.parent_id === null);
     });
 
@@ -95,20 +97,39 @@ export class AddProductComponent implements OnInit {
     return this.todasLasCategorias.some(c => c.parent_id === cat.id);
   }
 
+  determinarTipo(cat: string): void {
+  const nombre = cat.toLowerCase();
+
+  const tiposValidos = ['ropa', 'accesorio', 'calzado', 'electronica', 'electrónica'];
+
+  const tipoEncontrado = tiposValidos.find(tipo =>
+    nombre.includes(tipo)
+  );
+
+  //cambia el tipo si encuentra uno válido
+  if (tipoEncontrado) {
+    this.tipo = tipoEncontrado
+    console.log('✅ Tipo detectado:', this.tipo);
+  } 
+}
+
+
   seleccionarCategoria(cat: any) {
-    const subcategorias = this.todasLasCategorias.filter(
-      c => c.parent_id === cat.id
-    );
+    this.determinarTipo(cat.nombre)
+  const subcategorias = this.todasLasCategorias.filter(
+    c => c.parent_id === cat.id
+  );
 
-    this.rutaCategorias.push(cat);
+  this.rutaCategorias.push(cat);
 
-    if (subcategorias.length > 0) {
-      this.categoriaActual = subcategorias;
-    } else {
-      this.categoriaSeleccionadaFinal = cat.id;
-      this.dropdownAbierto = false;
-    }
+  if (subcategorias.length > 0) {
+    this.categoriaActual = subcategorias;
+  } else {
+    this.categoriaSeleccionadaFinal = cat.id;
+    this.dropdownAbierto = false;
   }
+}
+
 
   seleccionarColor(color: any, index: number) {
   this.variantes[index].color = color.hex;
@@ -216,6 +237,7 @@ onSubmit(): void {
   const formData = new FormData();
   formData.append('nombre', this.nombre);
   formData.append('descripcion', this.descripcion);
+  formData.append('tipo', this.tipo); // ya tiene el valor automático
   formData.append('precio', this.precio!.toString());
   formData.append('marca_id', this.marcaSeleccionada.toString());
   formData.append('categoria_id', this.categoriaSeleccionadaFinal.toString());

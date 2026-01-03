@@ -1,0 +1,30 @@
+<div class="products-container">
+  <h2>Lista de Productos</h2>
+
+  <div *ngIf="productos.length === 0 && !cargando" class="empty-state">
+    No hay productos disponibles.
+  </div>
+
+  <div class="products-grid">
+    <div class="product-card" *ngFor="let producto of productos">
+      <div class="product-image">
+        <img [src]="producto.imagen_principal || 'assets/img/default-product.png'" alt="{{ producto.nombre }}">
+      </div>
+      <div class="product-info">
+        <h3>{{ producto.nombre }}</h3>
+        <p class="type">Tipo: {{ producto.tipo | titlecase }}</p>
+        <p class="price">\${{ producto.precio | number:'1.2-2' }}</p>
+      </div>
+      <div class="product-actions">
+        <button [routerLink]="['/detail-product', producto.id]">Ver</button>
+        <!-- <button (click)="editarProducto(producto.id)">Editar</button> -->
+      </div>
+    </div>
+  </div>
+
+  <div class="load-more" *ngIf="!sinMasProductos">
+    <button (click)="cargarProductos()" [disabled]="cargando">
+      {{ cargando ? 'Cargando...' : 'Cargar más productos' }}
+    </button>
+  </div>
+</div>

@@ -1,0 +1,83 @@
+<div class="product-form" *ngIf="producto && !cargando">
+  <h2>Editar Producto</h2>
+
+  <form (ngSubmit)="guardarProducto()">
+    <!-- DATOS BÁSICOS -->
+    <label>Nombre</label>
+    <input [(ngModel)]="producto.nombre" name="nombre" required />
+
+    <label>Marca</label>
+    <select [(ngModel)]="marcaSeleccionada" name="marca" required>
+      <option [ngValue]="null" disabled>Seleccionar marca</option>
+      <option *ngFor="let marca of marcas" [ngValue]="marca.id">{{ marca.nombre }}</option>
+    </select>
+
+    <label>Descripción</label>
+    <textarea [(ngModel)]="producto.descripcion" name="descripcion"></textarea>
+
+    <label>Precio</label>
+    <input type="number" [(ngModel)]="producto.precio" name="precio" required />
+
+    <label>Tipo</label>
+    <input type="text" [(ngModel)]="producto.tipo" name="tipo" />
+
+    <!-- CATEGORÍAS -->
+    <h3>Categoría</h3>
+    <div class="custom-dropdown">
+      <div class="dropdown-header" (click)="dropdownAbierto = !dropdownAbierto">
+        {{ getNombreCategoriaSeleccionada() }}
+      </div>
+
+      <div class="dropdown-options" *ngIf="dropdownAbierto">
+        <div class="dropdown-back" *ngIf="rutaCategorias.length > 0" (click)="volverCategoria()">⬅ Volver</div>
+        <div class="dropdown-option" 
+             *ngFor="let cat of categoriaActual"
+             [class.selected]="esCategoriaSeleccionada(cat)"
+             (click)="seleccionarCategoria(cat)">
+          {{ cat.nombre }}
+          <span *ngIf="tieneSubcategorias(cat)">➤</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANTES -->
+    <h3>Variantes</h3>
+    <div *ngFor="let v of producto.variantes; let i = index" class="variant">
+      <label>Color (hex)</label>
+      <input type="text" [(ngModel)]="v.color" name="color-{{i}}" />
+      <label>Nombre Color</label>
+      <input type="text" [(ngModel)]="v.color_nombre" name="colorNombre-{{i}}" />
+      <label>Precio</label>
+      <input type="number" [(ngModel)]="v.precio" name="precio-{{i}}" />
+      <label>Descuento (%)</label>
+      <input type="number" [(ngModel)]="v.descuento" name="descuento-{{i}}" />
+
+      <div *ngFor="let t of v.tallas; let j = index" class="size">
+        <label>Talla</label>
+        <input [(ngModel)]="t.talla" name="talla-{{i}}-{{j}}" />
+        <label>Stock</label>
+        <input type="number" [(ngModel)]="t.stock" name="stock-{{i}}-{{j}}" />
+        <button type="button" (click)="eliminarTalla(v, j)">❌</button>
+      </div>
+      <button type="button" (click)="agregarTalla(v)">+ Añadir talla</button>
+
+      <h4>Fotos</h4>
+      <input type="file" multiple (change)="onFilesSelected($event, v)" />
+      <div class="preview-images">
+        <div *ngFor="let img of v.imagenes; let j = index">
+          <img [src]="img.url || img" />
+          <button type="button" (click)="eliminarImagen(v, img)">🗑️</button>
+        </div>
+      </div>
+
+      <button type="button" (click)="eliminarVariante(i)">Eliminar variante</button>
+      <hr />
+    </div>
+
+    <button type="button" (click)="agregarVariante()">+ Añadir variante</button>
+    <br /><br />
+    <button type="submit">Guardar producto</button>
+  </form>
+</div>
+
+<div *ngIf="cargando">Cargando producto...</div>

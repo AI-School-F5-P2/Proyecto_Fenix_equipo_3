@@ -1,0 +1,59 @@
+<button [routerLink]="['/edit-product', producto.id]">Editar Producto</button>
+<div class="product-detail-container" *ngIf="!cargando && producto; else loading">
+  <!-- Información principal del producto -->
+  <div class="product-header">
+    <h1>{{ producto.nombre | titlecase }}</h1>
+    <p class="descripcion">{{ producto.descripcion }}</p>
+    <div class="meta">
+      <span>Precio: ${{ producto.precio }}</span>
+      <span>Tipo: {{ producto.tipo | titlecase }}</span>
+      <span>Categoría: {{ producto.categoria.nombre }}</span>
+      <span>Marca: {{ producto.marca.nombre }}</span>
+      <span>Stock total: {{ producto.stock }}</span>
+    </div>
+  </div>
+
+  <!-- Variantes -->
+  <div class="variantes-container">
+    <h2>Variantes</h2>
+    <div class="variante-card" *ngFor="let v of producto.variantes">
+      <div class="variante-header">
+        <div class="color-box" [style.background]="v.color"></div>
+        <span class="color-nombre">{{ v.color_nombre }}</span>
+        <span class="precio">Precio: ${{ v.precio }}</span>
+        <span class="descuento" *ngIf="v.descuento > 0">Descuento: {{ v.descuento }}%</span>
+      </div>
+
+      <!-- Imágenes de la variante -->
+      <div class="imagenes-variante">
+        <h3>Imágenes</h3>
+        <div class="imagen-lista">
+          <img *ngFor="let img of v.imagenes" [src]="img.url" (click)="verImagen(img.url)" alt="Imagen {{ v.color_nombre }}">
+        </div>
+      </div>
+
+      <!-- Tallas de la variante -->
+      <div class="tallas-variante">
+        <h3>Tallas</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Talla</th>
+              <th>Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of v.tallas">
+              <td>{{ t.talla | uppercase }}</td>
+              <td>{{ t.stock }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="loading">Cargando producto...</div>
+</ng-template>

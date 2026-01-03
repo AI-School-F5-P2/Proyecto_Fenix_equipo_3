@@ -1,0 +1,132 @@
+/* Contenedor general */
+.products-container {
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+/* Título */
+.products-container h2 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+/* Estado vacío */
+.empty-state {
+  text-align: center;
+  color: #888;
+  padding: 2rem;
+}
+
+/* Grid de productos */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Tarjeta de producto */
+.product-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* Imagen */
+.product-image img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+/* Información del producto */
+.product-info {
+  padding: 1rem;
+  flex-grow: 1;
+}
+
+.product-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #222;
+}
+
+.product-info p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.product-info .price {
+  font-weight: bold;
+  color: #1a73e8;
+}
+
+/* Acciones */
+.product-actions {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.8rem;
+  border-top: 1px solid #eee;
+}
+
+.product-actions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.product-actions button:first-child {
+  background: #f1f1f1;
+  color: #333;
+}
+
+.product-actions button:first-child:hover {
+  background: #e0e0e0;
+}
+
+.product-actions button:last-child {
+  background: #1a73e8;
+  color: white;
+}
+
+.product-actions button:last-child:hover {
+  background: #1669c1;
+}
+
+/* Botón cargar más */
+.load-more {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.load-more button {
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #1a73e8;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.load-more button:hover {
+  background: #1669c1;
+}
+
+.load-more button:disabled {
+  background: #a1c2f5;
+  cursor: not-allowed;
+}
