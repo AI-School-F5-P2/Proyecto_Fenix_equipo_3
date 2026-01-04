@@ -13,6 +13,12 @@ from app.services.s3_service import upload_image_to_s3, delete_image_from_s3
 # ===============================
 # Crear producto con variantes
 # ===============================
+from typing import Optional, List
+from fastapi import UploadFile
+from sqlalchemy.orm import Session
+from datetime import datetime
+import json
+
 def crear_producto(
     db: Session,
     nombre: str,
@@ -22,13 +28,28 @@ def crear_producto(
     marca_id: int,
     variantes: str,
     tipo: str,
+
+    # 🆕 datos de compra
+    lugar_compra: Optional[str] = None,
+    fecha_compra: Optional[str] = None,  # yyyy-mm-dd
+    precio_compra: Optional[float] = None,
+
     imagenes: Optional[List[UploadFile]] = None
 ):
+    # ---------------- VALIDAR VARIANTES ----------------
     try:
         variantes_data = json.loads(variantes)
     except json.JSONDecodeError:
         raise ValueError("Variantes inválidas")
 
+    # ---------------- CONVERTIR FECHA ----------------
+    fecha_compra_date = None
+    if fecha_compra:
+        fecha_compra_date = datetime.strptime(
+            fecha_compra, "%Y-%m-%d"
+        ).date()
+
+    # ---------------- CREAR PRODUCTO ----------------
     producto = Producto(
         nombre=nombre,
         descripcion=descripcion,
@@ -36,12 +57,19 @@ def crear_producto(
         tipo=tipo,
         categoria_id=categoria_id,
         marca_id=marca_id,
-        stock=0
+        stock=0,
+
+        # 🆕 guardar datos de compra
+        lugar_compra=lugar_compra,
+        fecha_compra=fecha_compra_date,
+        precio_compra=precio_compra
     )
+
     db.add(producto)
     db.commit()
     db.refresh(producto)
 
+    # ---------------- VARIANTES ----------------
     _guardar_variantes(db, producto.id, variantes_data, imagenes)
 
     db.commit()
@@ -158,7 +186,7 @@ def editar_producto_completo(
     db.commit()
     db.refresh(producto)
 
-    # ===== VARIANTES (FIX DEFINITIVO) =====
+    # ===== VARIANTES =====
     if not variantes:
         variantes_data = []
     elif isinstance(variantes, str):
@@ -169,9 +197,11 @@ def editar_producto_completo(
         raise ValueError("Formato inválido de variantes")
 
     variantes_map = {}
+    ids_recibidos = set()  # <-- IDs de variantes enviadas
 
-    for v in variantes_data:
+    for idx, v in enumerate(variantes_data):
         if v.get("id"):
+            # ===== VARIANTE EXISTENTE =====
             variante = editar_variante(
                 db=db,
                 variante_id=v["id"],
@@ -181,35 +211,80 @@ def editar_producto_completo(
                 descuento=v.get("descuento"),
                 tallas=v.get("tallas")
             )
-            
-            # 🔥 ELIMINAR IMÁGENES EN BLOQUE
+
+            # Eliminar imágenes marcadas
             imagenes_eliminadas = v.get("imagenes_eliminadas", [])
-            eliminar_imagenes_por_ids(db, imagenes_eliminadas)
+            if imagenes_eliminadas:
+                eliminar_imagenes_por_ids(db, imagenes_eliminadas)
 
             variantes_map[str(variante.id)] = variante
+            ids_recibidos.add(variante.id)
 
-    # ===== IMÁGENES =====
+        else:
+            # ===== NUEVA VARIANTE =====
+            nueva_variante = Variante(
+                color=v["color"],
+                color_nombre=v["color_nombre"],
+                precio=v.get("precio", 0),
+                descuento=v.get("descuento", 0),
+                producto_id=producto.id
+            )
+            db.add(nueva_variante)
+            db.flush()
+            db.refresh(nueva_variante)
+
+            # Crear tallas
+            for t in v.get("tallas", []):
+                talla = Talla(
+                    talla=t["talla"],
+                    stock=t["stock"],
+                    variante_id=nueva_variante.id
+                )
+                db.add(talla)
+
+            # Subir imágenes de la nueva variante enviadas desde FormData
+            if imagenes:
+                for file in imagenes:
+                    if file.filename.startswith(f"imagenes_nueva_variante_{idx}"):
+                        url = upload_image_to_s3(file, folder=f"productos/{producto.id}/{nueva_variante.id}")
+                        db.add(Imagen(url=url, variante_id=nueva_variante.id))
+
+            variantes_map[str(nueva_variante.id)] = nueva_variante
+            ids_recibidos.add(nueva_variante.id)
+
+    # ===== ELIMINAR VARIANTES REMOVIDAS =====
+    variantes_existentes = db.query(Variante).filter(Variante.producto_id == producto.id).all()
+    for variante in variantes_existentes:
+        if variante.id not in ids_recibidos:
+            # eliminar imágenes de S3
+            for img in variante.imagenes:
+                delete_image_from_s3(img.url)
+            db.delete(variante)
+
+    # ===== IMÁGENES ADICIONALES PARA VARIANTES EXISTENTES =====
     if imagenes:
         for file in imagenes:
-            # filename: variante-12-foto.jpg
             try:
+                # filename: variante-{id}-{nombreArchivo}
                 _, variante_id, _ = file.filename.split("-", 2)
+                variante_id = int(variante_id)
             except ValueError:
                 continue
 
-            variante = variantes_map.get(variante_id)
+            variante = variantes_map.get(str(variante_id))
             if not variante:
                 continue
 
-            url = upload_image_to_s3(
-                file,
-                folder=f"productos/{producto.id}/{variante.id}"
-            )
+            url = upload_image_to_s3(file, folder=f"productos/{producto.id}/{variante.id}")
             db.add(Imagen(url=url, variante_id=variante.id))
 
     db.commit()
     db.refresh(producto)
     return producto
+
+
+
+
 
 
 
@@ -339,26 +414,33 @@ def eliminar_producto(db: Session, producto_id: int):
     producto = (
         db.query(Producto)
         .options(
-            joinedload(Producto.variantes).joinedload(Variante.imagenes)
+            joinedload(Producto.variantes)
+            .joinedload(Variante.imagenes),
+            joinedload(Producto.variantes)
+            .joinedload(Variante.tallas)
         )
         .filter(Producto.id == producto_id)
         .first()
     )
+
     if not producto:
         return False
 
-    # Eliminar imágenes de S3
+    # ===== ELIMINAR IMÁGENES DE S3 =====
     for variante in producto.variantes:
         for imagen in variante.imagenes:
-            delete_image_from_s3(imagen.url)
+            try:
+                delete_image_from_s3(imagen.url)
+            except Exception as e:
+                print(f"Error eliminando imagen S3: {imagen.url} -> {e}")
 
-    # Eliminar producto (cascade borra variantes, tallas e imágenes)
+    # ===== ELIMINAR PRODUCTO (cascade borra variantes, tallas e imágenes en BD) =====
     db.delete(producto)
     db.commit()
+
     return True
 
 
 
 
 
-# solo se esta actualixando proiducto mas no sus variantes

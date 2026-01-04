@@ -10,8 +10,9 @@ from app.repositories.producto_repo import (
     obtener_producto_completo,
     obtener_productos_paginados,
     editar_variante,
-    agregar_imagenes_variante,
-    eliminar_imagen_variante,
+    # agregar_imagenes_variante,
+    # eliminar_imagen_variante,
+    
     eliminar_producto
 )
 
@@ -23,14 +24,23 @@ producto_routers = APIRouter(prefix="/productos", tags=["Productos"])
 def crear_producto_endpoint(
     db: Session = Depends(get_session),
     current_admin=Depends(get_current_admin),
+
+    # Datos básicos
     nombre: str = Form(...),
     descripcion: str = Form(...),
     tipo: str = Form(...),
     precio: float = Form(...),
     categoria_id: int = Form(...),
     marca_id: int = Form(...),
+
+    # 🆕 Datos de compra
+    lugar_compra: Optional[str] = Form(None),
+    fecha_compra: Optional[str] = Form(None),  # yyyy-mm-dd
+    precio_compra: Optional[float] = Form(None),
+
+    # Variantes e imágenes
     variantes: str = Form(...),  # JSON string
-    imagenes: Optional[List[UploadFile]] = File(None)  # opcional
+    imagenes: Optional[List[UploadFile]] = File(None)
 ):
     producto = crear_producto(
         db=db,
@@ -39,11 +49,21 @@ def crear_producto_endpoint(
         precio=precio,
         categoria_id=categoria_id,
         marca_id=marca_id,
+        tipo=tipo,
+
+        # 🆕 pasar datos de compra
+        lugar_compra=lugar_compra,
+        fecha_compra=fecha_compra,
+        precio_compra=precio_compra,
+
         variantes=variantes,
-        imagenes=imagenes,
-        tipo=tipo
+        imagenes=imagenes
     )
-    return {"mensaje": "Producto creado correctamente", "producto_id": producto.id}
+
+    return {
+        "mensaje": "Producto creado correctamente",
+        "producto_id": producto.id
+    }
 
 
 # ================= OBTENER PRODUCTO =================
@@ -130,40 +150,54 @@ def editar_variante_endpoint(
 
 
 # ================= AGREGAR IMÁGENES VARIANTE =================
-@producto_routers.post("/variantes/{variante_id}/imagenes")
-def agregar_imagenes_variante_endpoint(
-    variante_id: int,
-    imagenes: List[UploadFile] = File(...),
-    db: Session = Depends(get_session),
-    current_admin=Depends(get_current_admin)
-):
-    variante = agregar_imagenes_variante(db, variante_id, imagenes)
-    if not variante:
-        raise HTTPException(status_code=404, detail="Variante no encontrada")
-    return {"mensaje": "Imágenes agregadas correctamente", "imagenes": [i.url for i in variante.imagenes]}
+# @producto_routers.post("/variantes/{variante_id}/imagenes")
+# def agregar_imagenes_variante_endpoint(
+#     variante_id: int,
+#     imagenes: List[UploadFile] = File(...),
+#     db: Session = Depends(get_session),
+#     current_admin=Depends(get_current_admin)
+# ):
+#     variante = agregar_imagenes_variante(db, variante_id, imagenes)
+#     if not variante:
+#         raise HTTPException(status_code=404, detail="Variante no encontrada")
+#     return {"mensaje": "Imágenes agregadas correctamente", "imagenes": [i.url for i in variante.imagenes]}
 
 
 # ================= ELIMINAR IMAGEN VARIANTE =================
-@producto_routers.delete("/imagenes/{imagen_id}")
-def eliminar_imagen_variante_endpoint(
-    imagen_id: int,
-    db: Session = Depends(get_session),
-    current_admin=Depends(get_current_admin)
-):
-    success = eliminar_imagen_variante(db, imagen_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Imagen no encontrada")
-    return {"mensaje": "Imagen eliminada correctamente"}
+# @producto_routers.delete("/imagenes/{imagen_id}")
+# def eliminar_imagen_variante_endpoint(
+#     imagen_id: int,
+#     db: Session = Depends(get_session),
+#     current_admin=Depends(get_current_admin)
+# ):
+#     success = eliminar_imagen_variante(db, imagen_id)
+#     if not success:
+#         raise HTTPException(status_code=404, detail="Imagen no encontrada")
+#     return {"mensaje": "Imagen eliminada correctamente"}
 
 
 # ================= ELIMINAR PRODUCTO =================
+# @producto_routers.delete("/{producto_id}")
+# def eliminar_producto_endpoint(
+#     producto_id: int,
+#     db: Session = Depends(get_session),
+#     current_admin=Depends(get_current_admin)
+# ):
+#     success = eliminar_producto(db, producto_id)
+#     if not success:
+#         raise HTTPException(status_code=404, detail="Producto no encontrado")
+#     return {"mensaje": "Producto eliminado correctamente"}
+
+#
 @producto_routers.delete("/{producto_id}")
 def eliminar_producto_endpoint(
     producto_id: int,
     db: Session = Depends(get_session),
     current_admin=Depends(get_current_admin)
+    
 ):
-    success = eliminar_producto(db, producto_id)
-    if not success:
+    eliminado = eliminar_producto(db, producto_id)
+    if not eliminado:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return {"mensaje": "Producto eliminado correctamente"}
+
+    return {"message": "Producto eliminado correctamente"}
