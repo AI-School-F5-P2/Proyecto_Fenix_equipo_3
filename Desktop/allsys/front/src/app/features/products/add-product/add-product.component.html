@@ -3,7 +3,36 @@
 
   <form (ngSubmit)="onSubmit()">
 
+    <!-- DATOS DE COMPRA -->
+    <h3>Datos de compra</h3>
+
+    <label>Dónde se compró la prenda</label>
+    <input
+      type="text"
+      [(ngModel)]="lugarCompra"
+      name="lugarCompra"
+      placeholder="Ej: Zara, Nike Store, Mercado Libre"
+    />
+
+    <label>Fecha de compra</label>
+    <input
+      type="date"
+      [(ngModel)]="fechaCompra"
+      name="fechaCompra"
+    />
+
+    <label>Precio de compra</label>
+    <input
+      type="number"
+      [(ngModel)]="precioCompra"
+      name="precioCompra"
+      min="0"
+      step="0.01"
+    />
+
+
     <!-- DATOS BÁSICOS -->
+    <h3>Datos de Basicos</h3>
     <label>Nombre</label>
     <input [(ngModel)]="nombre" name="nombre" required />
 
@@ -66,14 +95,6 @@
       <label>Color</label>
 
       <div class="color-selector">
-
-        <!-- Selector manual -->
-        <!-- <input
-          type="color"
-          [(ngModel)]="variante.color"
-          name="color-{{i}}"
-          (change)="onColorManualChange(variante.color, i)"
-        /> -->
 
         <!-- Paleta -->
         <div class="color-palette">

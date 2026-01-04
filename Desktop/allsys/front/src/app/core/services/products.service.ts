@@ -38,6 +38,8 @@ export class ProductsService {
 
   
 
+  
+
   // ---------------- MARCAS ----------------
   cargarMarcas(): Observable<any[]> {
     if (this.marcasCache.length > 0) {
@@ -73,6 +75,8 @@ export class ProductsService {
   eliminarProducto(productoId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/productos/${productoId}`);
   }
+
+
 
   // ---------------- VARIANTES ----------------
   editarVariante(

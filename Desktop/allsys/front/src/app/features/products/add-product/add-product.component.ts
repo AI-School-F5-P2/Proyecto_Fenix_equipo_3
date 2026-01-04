@@ -39,6 +39,10 @@ export class AddProductComponent implements OnInit {
   rutaCategorias: any[] = [];
   categoriaSeleccionadaFinal: number | null = null;
 
+  lugarCompra: string = '';
+  fechaCompra: string | null = null; // formato yyyy-mm-dd
+  precioCompra: number | null = null;
+
   dropdownAbierto = false;
   tipo: string = 'General'; // no editable por el usuario
 
@@ -233,8 +237,17 @@ onSubmit(): void {
     return;
   }
 
+  if (!this.lugarCompra || !this.fechaCompra || this.precioCompra === null) {
+    alert('Debes completar los datos de compra');
+    return;
+  }
+
+
   // Construir FormData
   const formData = new FormData();
+  formData.append('lugar_compra', this.lugarCompra);
+  formData.append('fecha_compra', this.fechaCompra!);
+  formData.append('precio_compra', this.precioCompra!.toString());
   formData.append('nombre', this.nombre);
   formData.append('descripcion', this.descripcion);
   formData.append('tipo', this.tipo); // ya tiene el valor automático

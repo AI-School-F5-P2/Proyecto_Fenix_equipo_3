@@ -167,6 +167,25 @@ export class ProductEditComponent implements OnInit {
 }
 
 
+eliminarProducto() {
+  if (!confirm('⚠️ ¿Eliminar este producto? Esta acción no se puede deshacer')) {
+    return;
+  }
+
+  this.productsService.eliminarProducto(this.producto.id).subscribe({
+    next: () => {
+      alert('✅ Producto eliminado correctamente');
+      window.history.back(); // o navegar a listado
+    },
+    error: (err) => {
+      console.error(err);
+      alert('❌ Error al eliminar el producto');
+    }
+  });
+}
+
+
+
 
   // ================== VARIANTES ==================
 
@@ -240,7 +259,7 @@ eliminarImagen(variante: Variante, imagen: any) {
   formData.append('categoria_id', this.categoriaSeleccionadaFinal!.toString());
   formData.append('marca_id', this.marcaSeleccionada!.toString());
 
-  // Enviar variantes sin las imágenes
+  // ===== VARIANTES =====
   const variantesPayload = this.producto.variantes.map((v: Variante) => ({
     id: v.id,
     color: v.color,
@@ -250,38 +269,49 @@ eliminarImagen(variante: Variante, imagen: any) {
     tallas: v.tallas,
     imagenes_eliminadas: v.imagenes_eliminadas || []
   }));
+
   formData.append('variantes', JSON.stringify(variantesPayload));
 
-  // Enviar imágenes como archivos separados con nombre variante-{id}
+  // ===== IMÁGENES VARIANTES =====
   this.producto.variantes.forEach((v: Variante, idx: number) => {
     if (v.imagenesFiles && v.imagenesFiles.length > 0) {
       v.imagenesFiles.forEach(file => {
-        // "imagenes" será el nombre que FastAPI recibirá
-        formData.append('imagenes', file, `variante-${v.id || idx}-${file.name}`);
+        let filename: string;
+        if (v.id) {
+          // Variante existente: usar el ID
+          filename = `variante-${v.id}-${file.name}`;
+        } else {
+          // Nueva variante: usar índice
+          filename = `imagenes_nueva_variante_${idx}-${file.name}`;
+        }
+        formData.append('imagenes', file, filename);
       });
     }
   });
 
+  // ===== ENVIAR AL BACKEND =====
   this.productsService.actualizarProducto(this.producto.id, formData)
     .subscribe({
       next: () => alert('✅ Producto actualizado correctamente'),
       error: (err) => console.error(err)
     });
 
-    console.log('===== FORMDATA =====');
-formData.forEach((value, key) => {
-  if (value instanceof File) {
-    console.log(key, {
-      name: value.name,
-      size: value.size,
-      type: value.type
-    });
-  } else {
-    console.log(key, value);
-  }
-});
-console.log('====================');
+  // ===== LOG FORM DATA (opcional) =====
+  console.log('===== FORMDATA =====');
+  formData.forEach((value, key) => {
+    if (value instanceof File) {
+      console.log(key, {
+        name: value.name,
+        size: value.size,
+        type: value.type
+      });
+    } else {
+      console.log(key, value);
+    }
+  });
+  console.log('====================');
 }
+
 
 
   // ================== SALIDA ==================
@@ -294,4 +324,3 @@ console.log('====================');
 }
 
 
-// solo se esta actualixando proiducto mas no sus variantes
