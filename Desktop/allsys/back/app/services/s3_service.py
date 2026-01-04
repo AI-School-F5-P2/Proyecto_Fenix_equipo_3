@@ -42,3 +42,6 @@ def delete_image_from_s3(url: str):
         key = url[len(prefix):]
         s3_client.delete_object(Bucket=bucket_name, Key=key)
 
+
+
+

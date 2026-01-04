@@ -79,8 +79,8 @@ def editar_producto_endpoint(
     categoria_id: Optional[int] = Form(None),
     marca_id: Optional[int] = Form(None),
     tipo: Optional[str] = Form(None),
-    variantes: Optional[str] = Form(None),  # <-- JSON de variantes
-    imagenes: Optional[List[UploadFile]] = File(None)  # <-- imágenes de variantes
+    variantes: Optional[str] = Form(None),   # 👈 STRING JSON
+    imagenes: Optional[List[UploadFile]] = File(None)
 ):
     producto = editar_producto_completo(
         db=db,
@@ -91,12 +91,13 @@ def editar_producto_endpoint(
         categoria_id=categoria_id,
         marca_id=marca_id,
         tipo=tipo,
-        variantes=json.loads(variantes) if variantes else None,
+        variantes=variantes,   # 🔥 PASAR TAL CUAL
         imagenes=imagenes
     )
-    
+
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+
     return {"mensaje": "Producto actualizado correctamente"}
 
 
