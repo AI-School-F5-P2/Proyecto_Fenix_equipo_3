@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ProductsService } from '../../../core/services/products.service';
+import { runPostSignalSetFn } from '@angular/core/primitives/signals';
 
 interface Talla {
   id?: number;
@@ -11,6 +12,7 @@ interface Talla {
 }
 
 interface Variante {
+  imagenes_eliminadas: any;
   id?: number;
   color: string;
   color_nombre: string;
@@ -62,7 +64,7 @@ export class ProductEditComponent implements OnInit {
       this.productsService.obtenerProducto(id).subscribe({
         next: (data) => {
           this.producto = data;
-
+          console.log(this.producto)
           this.marcaSeleccionada = this.producto.marca?.id || null;
 
           this.inicializarCategorias();
@@ -207,12 +209,19 @@ export class ProductEditComponent implements OnInit {
     });
   }
 
-  eliminarImagen(variante: Variante, imagen: any) {
-    if (!confirm('¿Eliminar esta imagen?')) return;
-    const idx = variante.imagenes.indexOf(imagen);
-    if (idx >= 0) variante.imagenes.splice(idx, 1);
-    if (variante.imagenesFiles) variante.imagenesFiles.splice(idx, 1);
+eliminarImagen(variante: Variante, imagen: any) {
+  if (!confirm('¿Eliminar imagen?')) return;
+
+  if (!variante.imagenes_eliminadas) {
+    variante.imagenes_eliminadas = [];
   }
+
+  if (imagen.id) {
+    variante.imagenes_eliminadas.push(imagen.id);
+  }
+
+  variante.imagenes = variante.imagenes.filter(i => i !== imagen);
+}
 
   verImagen(url: string) {
     window.open(url, '_blank');
@@ -238,7 +247,8 @@ export class ProductEditComponent implements OnInit {
     color_nombre: v.color_nombre,
     precio: v.precio,
     descuento: v.descuento,
-    tallas: v.tallas
+    tallas: v.tallas,
+    imagenes_eliminadas: v.imagenes_eliminadas || []
   }));
   formData.append('variantes', JSON.stringify(variantesPayload));
 
@@ -257,6 +267,20 @@ export class ProductEditComponent implements OnInit {
       next: () => alert('✅ Producto actualizado correctamente'),
       error: (err) => console.error(err)
     });
+
+    console.log('===== FORMDATA =====');
+formData.forEach((value, key) => {
+  if (value instanceof File) {
+    console.log(key, {
+      name: value.name,
+      size: value.size,
+      type: value.type
+    });
+  } else {
+    console.log(key, value);
+  }
+});
+console.log('====================');
 }
 
 

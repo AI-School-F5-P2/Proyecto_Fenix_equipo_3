@@ -65,7 +65,7 @@
       <input type="file" multiple (change)="onFilesSelected($event, v)" />
       <div class="preview-images">
         <div *ngFor="let img of v.imagenes; let j = index">
-          <img [src]="img.url || img" />
+          <img [src]="img.url" />
           <button type="button" (click)="eliminarImagen(v, img)">🗑️</button>
         </div>
       </div>
