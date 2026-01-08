@@ -2,8 +2,18 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal, engine, Base
 
 # Importar modelos
+# from app.models.categorias_model import Categoria
+# from app.models.producto_model import Producto
+
+
 from app.models.categorias_model import Categoria
 from app.models.producto_model import Producto
+from app.models.marcas_model import Marca
+from app.models.variantes_model import Variante
+from app.models.talla_model import Talla
+from app.models.variante_imagen_model import Imagen
+from app.models.ventas_model import Venta
+
 
 
 def borrar_todas_categorias_seguro(db: Session):

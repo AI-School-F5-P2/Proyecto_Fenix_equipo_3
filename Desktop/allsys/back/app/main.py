@@ -6,13 +6,14 @@ from app.api.v1.auth import auth_routers
 from app.api.v1.productos import producto_routers
 from app.api.v1.categorias import categorias_routers
 from app.api.v1.marcas import marcas_router
+from app.api.v1.ventas import venta_router
 
 # Models
 from app.models.producto_model import Producto
 from app.models.categorias_model import Categoria
 from app.models.marcas_model import Marca
 from app.models.variante_imagen_model import Imagen
-
+from app.models.ventas_model import Venta, DetalleVenta
 
 
 app = FastAPI(title="Mi Tienda Online")
@@ -34,6 +35,7 @@ app.include_router(auth_routers)
 app.include_router(producto_routers)
 app.include_router(categorias_routers)
 app.include_router(marcas_router)
+app.include_router(venta_router)
 
 
 @app.get("/")

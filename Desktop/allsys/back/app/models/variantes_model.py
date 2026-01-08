@@ -9,6 +9,8 @@ class Variante(Base):
     id = Column(Integer, primary_key=True, index=True)
     producto_id = Column(Integer, ForeignKey("productos.id", ondelete="CASCADE"))
 
+    sku = Column(String(100), unique=True, index=True, nullable=False)
+
     color = Column(String(20), nullable=False)
     color_nombre = Column(String(50), nullable=False)  # ✅ NUEVO
     precio = Column(Float, nullable=True)

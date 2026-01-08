@@ -93,13 +93,20 @@ def editar_producto_endpoint(
     producto_id: int,
     db: Session = Depends(get_session),
     current_admin=Depends(get_current_admin),
+
     nombre: Optional[str] = Form(None),
     descripcion: Optional[str] = Form(None),
     precio: Optional[float] = Form(None),
     categoria_id: Optional[int] = Form(None),
     marca_id: Optional[int] = Form(None),
     tipo: Optional[str] = Form(None),
-    variantes: Optional[str] = Form(None),   # 👈 STRING JSON
+
+    # 🆕 DATOS DE COMPRA
+    lugar_compra: Optional[str] = Form(None),
+    fecha_compra: Optional[str] = Form(None),
+    precio_compra: Optional[float] = Form(None),
+
+    variantes: Optional[str] = Form(None),
     imagenes: Optional[List[UploadFile]] = File(None)
 ):
     producto = editar_producto_completo(
@@ -111,7 +118,10 @@ def editar_producto_endpoint(
         categoria_id=categoria_id,
         marca_id=marca_id,
         tipo=tipo,
-        variantes=variantes,   # 🔥 PASAR TAL CUAL
+        lugar_compra=lugar_compra,
+        fecha_compra=fecha_compra,
+        precio_compra=precio_compra,
+        variantes=variantes,
         imagenes=imagenes
     )
 
@@ -119,6 +129,7 @@ def editar_producto_endpoint(
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
     return {"mensaje": "Producto actualizado correctamente"}
+
 
 
 
@@ -149,46 +160,7 @@ def editar_variante_endpoint(
     return {"mensaje": "Variante actualizada correctamente"}
 
 
-# ================= AGREGAR IMÁGENES VARIANTE =================
-# @producto_routers.post("/variantes/{variante_id}/imagenes")
-# def agregar_imagenes_variante_endpoint(
-#     variante_id: int,
-#     imagenes: List[UploadFile] = File(...),
-#     db: Session = Depends(get_session),
-#     current_admin=Depends(get_current_admin)
-# ):
-#     variante = agregar_imagenes_variante(db, variante_id, imagenes)
-#     if not variante:
-#         raise HTTPException(status_code=404, detail="Variante no encontrada")
-#     return {"mensaje": "Imágenes agregadas correctamente", "imagenes": [i.url for i in variante.imagenes]}
 
-
-# ================= ELIMINAR IMAGEN VARIANTE =================
-# @producto_routers.delete("/imagenes/{imagen_id}")
-# def eliminar_imagen_variante_endpoint(
-#     imagen_id: int,
-#     db: Session = Depends(get_session),
-#     current_admin=Depends(get_current_admin)
-# ):
-#     success = eliminar_imagen_variante(db, imagen_id)
-#     if not success:
-#         raise HTTPException(status_code=404, detail="Imagen no encontrada")
-#     return {"mensaje": "Imagen eliminada correctamente"}
-
-
-# ================= ELIMINAR PRODUCTO =================
-# @producto_routers.delete("/{producto_id}")
-# def eliminar_producto_endpoint(
-#     producto_id: int,
-#     db: Session = Depends(get_session),
-#     current_admin=Depends(get_current_admin)
-# ):
-#     success = eliminar_producto(db, producto_id)
-#     if not success:
-#         raise HTTPException(status_code=404, detail="Producto no encontrado")
-#     return {"mensaje": "Producto eliminado correctamente"}
-
-#
 @producto_routers.delete("/{producto_id}")
 def eliminar_producto_endpoint(
     producto_id: int,

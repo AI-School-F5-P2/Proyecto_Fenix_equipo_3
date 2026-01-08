@@ -14,9 +14,8 @@ class Producto(Base):
     categoria_id = Column(Integer, ForeignKey("categorias.id"))
     marca_id = Column(Integer, ForeignKey("marcas.id"))
 
+    sku = Column(String(100), unique=True, index=True, nullable=False)
     tipo = Column(String(50), nullable=False)
-
-    # 🆕 NUEVAS COLUMNAS
     lugar_compra = Column(String(150), nullable=True)
     fecha_compra = Column(Date, nullable=True)
     precio_compra = Column(Float, nullable=True)
@@ -28,8 +27,3 @@ class Producto(Base):
         back_populates="producto",
         cascade="all, delete-orphan"
     )
-
-
-    
-
-

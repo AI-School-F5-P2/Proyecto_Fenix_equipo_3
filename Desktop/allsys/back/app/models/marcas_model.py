@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 
-
 class Marca(Base):
     __tablename__ = "marcas"
 
@@ -10,5 +9,4 @@ class Marca(Base):
     nombre = Column(String(100), nullable=False, unique=True)
     descripcion = Column(String(255), nullable=True)
 
-    # Relación con productos
     productos = relationship("Producto", back_populates="marca", lazy="dynamic")
