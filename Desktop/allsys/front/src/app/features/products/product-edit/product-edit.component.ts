@@ -252,15 +252,36 @@ eliminarImagen(variante: Variante, imagen: any) {
   if (!this.producto) return;
 
   const formData = new FormData();
+
+  // ===== PRODUCTO =====
   formData.append('nombre', this.producto.nombre);
-  formData.append('descripcion', this.producto.descripcion);
+  formData.append('descripcion', this.producto.descripcion || '');
   formData.append('precio', this.producto.precio.toString());
-  formData.append('tipo', this.producto.tipo);
+  formData.append('tipo', this.producto.tipo || '');
   formData.append('categoria_id', this.categoriaSeleccionadaFinal!.toString());
   formData.append('marca_id', this.marcaSeleccionada!.toString());
 
+  // ===== DATOS DE COMPRA =====
+  if (this.producto.lugar_compra) {
+    formData.append('lugar_compra', this.producto.lugar_compra);
+  }
+
+  if (this.producto.fecha_compra) {
+    formData.append(
+      'fecha_compra',
+      this.producto.fecha_compra.substring(0, 10)
+    );
+  }
+
+  if (this.producto.precio_compra !== null) {
+    formData.append(
+      'precio_compra',
+      this.producto.precio_compra.toString()
+    );
+  }
+
   // ===== VARIANTES =====
-  const variantesPayload = this.producto.variantes.map((v: Variante) => ({
+  const variantesPayload = this.producto.variantes.map((v: any) => ({
     id: v.id,
     color: v.color,
     color_nombre: v.color_nombre,
@@ -272,45 +293,25 @@ eliminarImagen(variante: Variante, imagen: any) {
 
   formData.append('variantes', JSON.stringify(variantesPayload));
 
-  // ===== IMÁGENES VARIANTES =====
-  this.producto.variantes.forEach((v: Variante, idx: number) => {
-    if (v.imagenesFiles && v.imagenesFiles.length > 0) {
-      v.imagenesFiles.forEach(file => {
-        let filename: string;
-        if (v.id) {
-          // Variante existente: usar el ID
-          filename = `variante-${v.id}-${file.name}`;
-        } else {
-          // Nueva variante: usar índice
-          filename = `imagenes_nueva_variante_${idx}-${file.name}`;
-        }
-        formData.append('imagenes', file, filename);
-      });
-    }
+  // ===== IMÁGENES =====
+  this.producto.variantes.forEach((v: any, idx: number) => {
+    v.imagenesFiles?.forEach((file: File) => {
+      const filename = v.id
+        ? `variante-${v.id}-${file.name}`
+        : `imagenes_nueva_variante_${idx}-${file.name}`;
+
+      formData.append('imagenes', file, filename);
+    });
   });
 
-  // ===== ENVIAR AL BACKEND =====
-  this.productsService.actualizarProducto(this.producto.id, formData)
+  this.productsService
+    .actualizarProducto(this.producto.id, formData)
     .subscribe({
       next: () => alert('✅ Producto actualizado correctamente'),
-      error: (err) => console.error(err)
+      error: err => console.error(err)
     });
-
-  // ===== LOG FORM DATA (opcional) =====
-  console.log('===== FORMDATA =====');
-  formData.forEach((value, key) => {
-    if (value instanceof File) {
-      console.log(key, {
-        name: value.name,
-        size: value.size,
-        type: value.type
-      });
-    } else {
-      console.log(key, value);
-    }
-  });
-  console.log('====================');
 }
+
 
 
 

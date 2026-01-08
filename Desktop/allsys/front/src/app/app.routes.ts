@@ -7,6 +7,7 @@ import { AddProductComponent } from './features/products/add-product/add-product
 import { ProductsListComponent } from './features/products/products-list/products-list.component';
 import { ProductDetailComponent } from './features/products/product-detail/product-detail.component';
 import { ProductEditComponent } from './features/products/product-edit/product-edit.component';
+import { VentaCreateComponent } from './features/ventas/venta-create/venta-create.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -24,6 +25,8 @@ export const routes: Routes = [
       { path: 'view-products', component: ProductsListComponent },
       { path: 'detail-product/:id', component: ProductDetailComponent },
       { path: 'edit-product/:id', component: ProductEditComponent },
+      { path: 'venta-create', component: VentaCreateComponent },
+      { path: 'venta-create/:id', component: VentaCreateComponent }
     ],
   },
 

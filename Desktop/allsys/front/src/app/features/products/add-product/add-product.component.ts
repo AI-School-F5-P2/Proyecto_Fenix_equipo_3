@@ -12,7 +12,7 @@ interface Talla {
 
 interface Variante {
   color: string;        // hex
-  colorNombre: string;  // nombre legible
+  color_nombre: string;  // nombre legible
   precio: number | null;
   descuento: number | null;
   tallas: Talla[];
@@ -66,7 +66,7 @@ export class AddProductComponent implements OnInit {
  variantes: Variante[] = [
   {
     color: '#000000',
-    colorNombre: 'Negro',
+    color_nombre: 'Negro',
     precio: null,
     descuento: null,
     tallas: [{ talla: '', stock: 0 }],
@@ -137,7 +137,7 @@ export class AddProductComponent implements OnInit {
 
   seleccionarColor(color: any, index: number) {
   this.variantes[index].color = color.hex;
-  this.variantes[index].colorNombre = color.nombre;
+  this.variantes[index].color_nombre = color.nombre;
 }
 
 onColorManualChange(hex: string, index: number) {
@@ -146,9 +146,9 @@ onColorManualChange(hex: string, index: number) {
   );
 
   if (encontrado) {
-    this.variantes[index].colorNombre = encontrado.nombre;
+    this.variantes[index].color_nombre = encontrado.nombre;
   } else {
-    this.variantes[index].colorNombre = 'Color personalizado';
+    this.variantes[index].color_nombre = 'Color personalizado';
   }
 }
 
@@ -177,7 +177,7 @@ onColorManualChange(hex: string, index: number) {
  agregarVariante() {
   this.variantes.push({
     color: '#000000',
-    colorNombre: 'Negro',
+    color_nombre: 'Negro',
     precio: null,
     descuento: null,
     tallas: [{ talla: '', stock: 0 }],

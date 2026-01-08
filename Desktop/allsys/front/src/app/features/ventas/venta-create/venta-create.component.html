@@ -1,0 +1,94 @@
+<h2>Registrar Venta</h2>
+
+<!-- 🔎 Búsqueda de producto -->
+<div>
+  <label>Buscar producto por ID de talla</label>
+  <input
+    type="text"
+    [(ngModel)]="busqueda"
+    name="busqueda"
+    placeholder="ID de talla"
+  />
+  <button type="button" (click)="buscarProducto()" [disabled]="loadingBusqueda">
+    {{ loadingBusqueda ? 'Buscando...' : 'Buscar' }}
+  </button>
+  <p *ngIf="errorBusqueda" style="color:red;">{{ errorBusqueda }}</p>
+</div>
+
+<!-- 📦 Producto encontrado -->
+<div
+  *ngIf="varianteEncontrada"
+  style="margin-top:20px; border:1px solid #ccc; padding:10px;"
+>
+  <h3>
+    {{ varianteEncontrada.nombre }}
+    ({{ varianteEncontrada.color_nombre }})
+  </h3>
+
+  <img
+    *ngIf="varianteEncontrada.imagenes?.length"
+    [src]="varianteEncontrada.imagenes[0].url"
+    alt="Producto"
+    width="120"
+  />
+
+  <p>Talla: {{ varianteEncontrada.talla.talla }}</p>
+  <p>Stock disponible: {{ varianteEncontrada.talla.stock }}</p>
+  <p>Precio sugerido: {{ varianteEncontrada.precio }}</p>
+</div>
+
+<!-- 🧾 Formulario de venta -->
+<div *ngIf="varianteEncontrada" style="margin-top:20px;">
+
+  <label>Precio de venta</label>
+  <input
+    type="number"
+    [(ngModel)]="precio_venta"
+    name="precio_venta"
+    min="0"
+  />
+
+  <label>Cantidad</label>
+  <input
+    type="number"
+    [(ngModel)]="cantidad"
+    name="cantidad"
+    min="1"
+  />
+
+  <label>Fecha de venta</label>
+  <input
+    type="date"
+    [(ngModel)]="fecha"
+    name="fecha"
+  />
+
+  <label>Canal</label>
+  <select [(ngModel)]="canal" name="canal">
+    <option *ngFor="let c of canales" [value]="c">
+      {{ c }}
+    </option>
+  </select>
+
+  <label>Vendedor</label>
+  <select [(ngModel)]="vendedor" name="vendedor">
+    <option *ngFor="let v of vendedores" [value]="v">
+      {{ v }}
+    </option>
+  </select>
+
+  <label>Comprador (opcional)</label>
+  <input
+    type="text"
+    [(ngModel)]="comprador"
+    name="comprador"
+  />
+
+  <button type="button" (click)="submit()" [disabled]="loading">
+    {{ loading ? 'Guardando...' : 'Registrar venta' }}
+  </button>
+</div>
+
+<p *ngIf="mensaje" style="margin-top:10px;">
+  {{ mensaje }}
+</p>
