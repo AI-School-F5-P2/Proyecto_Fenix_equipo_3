@@ -19,6 +19,7 @@ def register(usuario_in: UsuarioCreate, db: Session = Depends(get_session)):
 
 @auth_routers.post("/login", response_model=TokenResponse)
 def login(login_data: LoginRequest, db: Session = Depends(get_session)):
+    print(login_data)
     usuario = db.query(Usuario).filter(Usuario.email == login_data.email).first()
 
     if not usuario:

@@ -3,10 +3,10 @@ from app.db.database import SessionLocal, engine, Base
 
 from app.models.producto_model import Producto
 from app.models.variantes_model import Variante
-from app.models.talla_model import Talla
 from app.models.variante_imagen_model import Imagen
 from app.models.marcas_model import Marca
 from app.models.categorias_model import Categoria
+from app.models.proveedores_model import Proveedor
 
 
 # Lista de marcas de ropa (puedes agregar todas las que quieras)

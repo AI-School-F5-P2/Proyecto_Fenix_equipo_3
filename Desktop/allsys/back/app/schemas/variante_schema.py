@@ -1,5 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
+from datetime import date
+
+from app.schemas.stock_schema import StockSchema
 
 class TallaCreate(BaseModel):
     talla: str
@@ -14,3 +17,17 @@ class VarianteCreate(BaseModel):
     precio: float | None = None
     descuento: float | None = None
     tallas: list[TallaCreate]
+
+
+class VarianteSchema(BaseModel):
+    temp_id: Optional[str] = None
+    id: Optional[int] = None # Útil para la edición
+    
+    # Reglas estrictas:
+    identidad_variante: str = Field(..., min_length=1, description="El color o material es obligatorio")
+    hex_identidad: str = Field(..., min_length=1)
+    ubicacion: str = Field(..., min_length=1, description="La ubicación es obligatoria")
+    descripcion: str
+    
+    # Debe tener al menos 1 stock:
+    stocks: List[StockSchema] = Field(..., min_items=1)

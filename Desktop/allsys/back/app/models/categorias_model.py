@@ -7,6 +7,7 @@ class Categoria(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
+    genero = Column(String(255), nullable=True)
     descripcion = Column(String(255), nullable=True)
     parent_id = Column(Integer, ForeignKey("categorias.id"), nullable=True)
 

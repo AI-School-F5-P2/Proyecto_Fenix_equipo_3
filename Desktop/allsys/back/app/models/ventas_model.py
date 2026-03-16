@@ -22,19 +22,24 @@ class Venta(Base):
     )
 
 
+# app/models/venta_model.py
+# app/models/ventas_model.py
+
 class DetalleVenta(Base):
-    __tablename__ = "detalle_venta"
-
+    __tablename__ = "detalles_venta"
     id = Column(Integer, primary_key=True)
-
-    venta_id = Column(Integer, ForeignKey("ventas.id"), nullable=False)
-    variante_id = Column(Integer, ForeignKey("variantes.id"), nullable=False)
-    talla_id = Column(Integer, ForeignKey("tallas.id"), nullable=False)
-
+    venta_id = Column(Integer, ForeignKey("ventas.id", ondelete="CASCADE"))
+    
+    # ❌ ANTES: ForeignKey("items_venta.id")
+    # ✅ AHORA:
+    stock_id = Column(Integer, ForeignKey("stocks.id")) 
+    
     cantidad = Column(Integer, nullable=False)
     precio_unitario = Column(Float, nullable=False)
-    subtotal = Column(Float, nullable=False)
 
+    # También actualiza la relación si la tienes
     venta = relationship("Venta", back_populates="detalles")
-    variante = relationship("Variante")
-    talla = relationship("Talla")
+    
+    # 🔄 Cambia el nombre de la relación para que sea coherente
+    stock = relationship("Stock")
+
