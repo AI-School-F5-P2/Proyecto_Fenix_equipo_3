@@ -1,175 +1,199 @@
-<div class="product-form">
-  <h2>Agregar producto</h2>
+<h2 class="title">{{ isEditMode ? 'Editar' : 'Agregar' }} producto</h2>
 
-  <form (ngSubmit)="onSubmit()">
+<form class="product-form" (ngSubmit)="onSubmit()">
 
-    <!-- DATOS DE COMPRA -->
-    <h3>Datos de compra</h3>
+  <section class="section">
+    <h3>Datos básicos</h3>
+    <div class="grid-2">
+      <div class="field">
+        <label>Nombre del Producto</label>
+        <input type="text" [(ngModel)]="nombre" name="nombre" required placeholder="Ej: Camiseta Oversize" />
+      </div>
 
-    <label>Dónde se compró la prenda</label>
-    <input
-      type="text"
-      [(ngModel)]="lugarCompra"
-      name="lugarCompra"
-      placeholder="Ej: Zara, Nike Store, Mercado Libre"
-    />
+      <div class="field marca-autocomplete">
+          <app-brand-selector 
+            [marcaInicial]="marcaSeleccionada"
+            (brandChanged)="onBrandChanged($event)">
+          </app-brand-selector>
+      </div>
 
-    <label>Fecha de compra</label>
-    <input
-      type="date"
-      [(ngModel)]="fechaCompra"
-      name="fechaCompra"
-    />
+      <div class="field">
+        <label>Estado del Artículo</label>
+        <select [(ngModel)]="estadoSeleccionado" name="estadoSeleccionado">
+          <option value="nuevo">✨ Nuevo / A estrenar</option>
+          <option value="segunda_mano">♻️ Segunda Mano / Usado</option>
+        </select>
+      </div>
+      
+      <div class="field">
+        <label>Público / Género</label>
+        <select [(ngModel)]="publicoSeleccionado" name="publicoSeleccionado" required>
+          <option value="" disabled selected>Selecciona...</option>
+          <option *ngFor="let p of listaPublicos" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Concepto e Información General</label>
+      <textarea 
+        [(ngModel)]="descripcion" 
+        name="descripcion" 
+        placeholder="Describe la colección, inspiración o beneficios que comparten todas las variantes (Ej: Diseño artesanal, incluye empaque de regalo, garantía de por vida...)">
+      </textarea>
+    </div>
+  </section>
 
-    <label>Precio de compra</label>
-    <input
-      type="number"
-      [(ngModel)]="precioCompra"
-      name="precioCompra"
-      min="0"
-      step="0.01"
-    />
-
-
-    <!-- DATOS BÁSICOS -->
-    <h3>Datos de Basicos</h3>
-    <label>Nombre</label>
-    <input [(ngModel)]="nombre" name="nombre" required />
-
-    <label>Marca</label>
-    <select
-      [(ngModel)]="marcaSeleccionada"
-      name="marca"
-      required
-    >
-      <option [ngValue]="null" disabled selected>
-        Seleccionar marca
-      </option>
-
-      <option
-        *ngFor="let marca of marcas"
-        [ngValue]="marca.id">
-        {{ marca.nombre }}
-      </option>
-    </select>
-
-    <label>Descripción</label>
-    <textarea [(ngModel)]="descripcion" name="descripcion"></textarea>
-
-    <label>Precio</label>
-    <input type="number" [(ngModel)]="precio" name="precio" required />
-
-    <!-- CATEGORÍA -->
+  <section class="section">
     <h3>Categoría</h3>
-    <div class="custom-dropdown">
+    
+    <app-category-selector 
+    [categoriaInicial]="categoriaSeleccionadaFinal" 
+    (categorySelected)="onCategorySelected($event)">
+  </app-category-selector>
 
-      <div class="dropdown-header" (click)="dropdownAbierto = !dropdownAbierto">
-        {{ getNombreCategoriaSeleccionada() }}
-      </div>
+  </section>
 
-      <div class="dropdown-options" *ngIf="dropdownAbierto">
+  <!-- <section class="section"> -->
+<div class="" *ngIf="categoriaSeleccionadaFinal">
 
-        <!-- VOLVER -->
-        <div class="dropdown-back"
-             *ngIf="rutaCategorias.length > 0"
-             (click)="volverCategoria()">
-          ⬅ Volver
-        </div>
-
-        <!-- OPCIONES -->
-        <div class="dropdown-option"
-             *ngFor="let cat of categoriaActual"
-             (click)="seleccionarCategoria(cat)">
-          {{ cat.nombre }}
-          <span *ngIf="tieneSubcategorias(cat)">➤</span>
-        </div>
-
-      </div>
+  <div class="variant-card" *ngFor="let v of variantes; let i=index">
+    
+    <div class="variant-visual-header" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 class="variant-title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
+        Variante #{{i+1}}: 
+        <span style="color: #007bff;">{{ v.identidad_variante || 'Sin definir' }}</span>
+        
+        <span *ngIf="v.hex_identidad && v.hex_identidad !== '#FFFFFF'" 
+              style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #ccc; display: inline-block;" 
+              [style.background]="v.hex_identidad">
+        </span>
+      </h3>
+      <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">
+        La identidad de esta variante se genera automáticamente al rellenar el atributo marcado con la ⭐ abajo.
+      </p>
     </div>
 
-    <!-- VARIANTES -->
-    <h3>Variantes</h3>
+    
 
-    <div *ngFor="let variante of variantes; let i = index" class="variant">
+    <div class="field image-upload-section">
+      <label>Fotos del producto en <strong>{{ v.identidad_variante || 'esta variante' }}</strong></label>
+      <input type="file" [id]="'file-upload-' + i" multiple (change)="onFilesSelected($event,i)" accept="image/*" style="display: none;" />
 
-      <label>Color</label>
-
-      <div class="color-selector">
-
-        <!-- Paleta -->
-        <div class="color-palette">
-          <div
-            *ngFor="let color of coloresPredefinidos"
-            class="color-item"
-            [class.active]="variante.color === color.hex"
-            (click)="seleccionarColor(color, i)"
-          >
-            <span
-              class="color-circle"
-              [style.background]="color.hex"
-            >
-              <span
-                *ngIf="variante.color === color.hex"
-                class="check">
-                ✓
-              </span>
-            </span>
-
-            <span class="color-label">
-              {{ color.nombre }}
-            </span>
-          </div>
+      <label [for]="'file-upload-' + i" class="upload-box-modern">
+        <div class="upload-content">
+          <span class="upload-icon">📸</span>
+          <span class="upload-text">Añadir fotos de este estilo</span>
         </div>
+      </label>
 
-      </div>
-
-
-
-
-      <label>Precio específico</label>
-      <input type="number" [(ngModel)]="variante.precio" name="precio-{{i}}" />
-
-      <label>Descuento (%)</label>
-      <input type="number" [(ngModel)]="variante.descuento" name="descuento-{{i}}" />
-
-      <!-- TALLAS -->
-      <div *ngFor="let talla of variante.tallas; let j = index" class="size">
-        <label>Talla</label>
-        <input [(ngModel)]="talla.talla" name="talla-{{i}}-{{j}}" />
-
-        <label>Stock</label>
-        <input type="number" [(ngModel)]="talla.stock" name="stock-{{i}}-{{j}}" />
-
-        <button type="button" (click)="eliminarTalla(i, j)">❌</button>
-      </div>
-
-      <button type="button" (click)="agregarTalla(i)">+ Añadir talla</button>
-
-      <!-- IMÁGENES -->
-      <h4>Fotos</h4>
-      <input type="file" multiple (change)="onFilesSelected($event, i)" />
-
-      <div class="preview-images">
-        <div *ngFor="let img of variante.imagenes; let j = index">
+      <div class="image-preview" *ngIf="v.imagenes.length">
+        <div class="image-box" *ngFor="let img of v.imagenes; let k=index">
           <img [src]="img" />
-          <button type="button" (click)="eliminarImagen(i, j)">🗑️</button>
+          <button type="button" class="btn-img-del" (click)="eliminarImagen(i,k)">🗑️</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="field" style="margin-top: 15px;">
+          <label>Descripción específica de este estilo ({{ v.identidad_variante }})</label>
+          <textarea [(ngModel)]="v.descripcion" 
+                    [name]="'desc_var' + v.temp_id" 
+                    placeholder="Ej: Cuidados especiales para este material, historia de la pieza..."></textarea>
+    </div>
+
+    <div class="stock-section">
+      <h5 style="color: #007bff; margin-bottom: 1rem;">Unidades en Inventario y Medidas Técnicas</h5>
+      
+      <div class="stock-card" *ngFor="let s of v.stocks; let j=index">
+        <div class="grid-3">
+          
+          <div class="field" *ngFor="let attr of s.atributos; let k=index">
+            <label>
+        <strong>{{ formatLabel(attr.nombre) }}</strong>
+        <span *ngIf="attr.nombre === mapeoIdentidadPorCategoria" title="Define la identidad de la variante">⭐</span>
+      </label>
+
+      <app-color-selector 
+        *ngIf="attr.tipo === 'color-dropdown'"
+        [colores]="colores" 
+        [initialHex]="getHexColor(attr.valor)"
+        (colorChanged)="seleccionarColorAtributo(attr, $event, v)">
+      </app-color-selector>
+
+      <input *ngIf="attr.tipo !== 'color-dropdown' && attr.tipo !== 'select'" 
+             [type]="attr.tipo"
+             [(ngModel)]="attr.valor" 
+             (ngModelChange)="sincronizarIdentidadVariante(v)"
+             [name]="'attr'+i+j+k" 
+             [placeholder]="getPlaceholder(attr.nombre)" />
+
+      <select *ngIf="attr.tipo === 'select'" 
+              [(ngModel)]="attr.valor" 
+              (ngModelChange)="sincronizarIdentidadVariante(v)"
+              [name]="'attr'+i+j+k">
+        <option [ngValue]="null" disabled selected>Selecciona...</option>
+        <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
+      </select>
+            
+          
+
+          </div>
+          <div class="field"><label>Unidades</label><input type="number" [(ngModel)]="s.stock" [name]="'stock'+i+j" /></div>
+          <div class="field"><label>Precio Venta</label><input type="number" step="0.01" [(ngModel)]="s.precio_venta" [name]="'pv'+i+j" /></div>
+          
+          <div class="field">
+            <label>Fecha de Compra</label>
+            <input type="date" [(ngModel)]="s.fecha_compra" [name]="'fecha_compra'+i+j" />
+          </div>
+
+          <div class="field proveedor-autocomplete">
+            <app-supplier-selector 
+              [proveedorInicialId]="s.proveedor_id"
+              (supplierChanged)="onSupplierChanged($event, s)">
+            </app-supplier-selector>
+          </div>
+ 
+          <div class="field"><label>Precio Compra</label><input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc'+i+j" /></div>
+          <div class="field"><label>Ubicación</label><input type="text" [(ngModel)]="v.ubicacion" [name]="'ubicacion'+i" placeholder="Pasillo..." /></div>
+          <div class="field"><label>Descuento %</label><input type="number" [(ngModel)]="s.descuento" [name]="'desc'+i+j" /></div>
+          
+        </div>
+        
+
+        <div class="stock-footer">
+          <div class="publish-options">
+            <!-- <label class="checkbox-label"><input type="checkbox" [(ngModel)]="s.publicar_vinted" [name]="'v'+i+j" /> <strong>Vinted</strong></label> -->
+            <label class="checkbox-label"><input type="checkbox" [(ngModel)]="s.publicar_web" [name]="'w'+i+j" /> <strong>Web</strong></label>
+          </div>
+          <button type="button" class="btn-delete-text" (click)="eliminarStock(i,j)">🗑️ Eliminar stock</button>
         </div>
       </div>
 
-      <button type="button" (click)="eliminarVariante(i)">
-        Eliminar variante
-      </button>
-
-      <hr />
+      <button type="button" class="btn-add-stock" (click)="agregarStock(i)">+ Añadir otra medida/talla</button>
     </div>
 
-    <button type="button" (click)="agregarVariante()">
-      + Añadir variante
-    </button>
+    <button type="button" class="btn-delete variant-del" (click)="eliminarVariante(i)">Eliminar este estilo completo</button>
+  </div>
 
-    <br /><br />
-    <button type="submit">Guardar producto</button>
-
-  </form>
+  <button type="button" class="btn-add-variant" (click)="agregarVariante()">+ Añadir otro Estilo/Material/Color</button>
 </div>
 
+
+  
+    
+
+    <button type="submit" class="btn-primary" [disabled]="isSubmitting || cargandoDatos">
+      
+      <span *ngIf="isSubmitting">
+        ⏳ Guardando...
+      </span>
+
+      <span *ngIf="!isSubmitting">
+        {{ isEditMode ? 'Guardar Cambios' : 'Publicar Producto' }}
+      </span>
+
+    </button>
+
+
+</form>

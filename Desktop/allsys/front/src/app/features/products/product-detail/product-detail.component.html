@@ -1,55 +1,90 @@
-<button [routerLink]="['/edit-product', producto.id]">Editar Producto</button>
+<button [routerLink]="['/edit', producto?.id]">Editar Producto</button>
+
 <div class="product-detail-container" *ngIf="!cargando && producto; else loading">
-  <!-- Información principal del producto -->
+  
   <div class="product-header">
     <h1>{{ producto.nombre | titlecase }}</h1>
     <p class="descripcion">{{ producto.descripcion }}</p>
+    
     <div class="meta">
-      <span>Precio: ${{ producto.precio }}</span>
-      <span>Tipo: {{ producto.tipo | titlecase }}</span>
-      <span>Categoría: {{ producto.categoria.nombre }}</span>
-      <span>Marca: {{ producto.marca.nombre }}</span>
-      <span>Stock total: {{ producto.stock }}</span>
+      <span><strong>Tipo:</strong> {{ producto.tipo | titlecase }}</span>
+      <span *ngIf="producto.publico_objetivo"><strong>Público:</strong> {{ producto.publico_objetivo }}</span>
+      
+      <span *ngIf="producto.categoria?.nombre"><strong>Categoría:</strong> {{ producto.categoria?.nombre }}</span>
+      <span *ngIf="producto.marca?.nombre"><strong>Marca:</strong> {{ producto.marca?.nombre }}</span>
     </div>
   </div>
 
-  <!-- Variantes -->
   <div class="variantes-container">
     <h2>Variantes</h2>
+    
     <div class="variante-card" *ngFor="let v of producto.variantes">
       <div class="variante-header">
-        <div class="color-box" [style.background]="v.color"></div>
-        <span class="color-nombre">{{ v.color_nombre }}</span>
-        <span class="precio">Precio: ${{ v.precio }}</span>
-        <span class="descuento" *ngIf="v.descuento > 0">Descuento: {{ v.descuento }}%</span>
+        <div class="color-box" [style.background]="v.hex_identidad"></div>
+        <span class="color-nombre">{{ v.identidad_variante | titlecase }}</span>
+        
+        <span class="ubicacion" *ngIf="v.ubicacion">
+          📍 Ubicación: {{ v.ubicacion }}
+        </span>
       </div>
 
-      <!-- Imágenes de la variante -->
-      <div class="imagenes-variante">
+      <div class="imagenes-variante" *ngIf="v.imagenes && v.imagenes.length > 0">
         <h3>Imágenes</h3>
         <div class="imagen-lista">
-          <img *ngFor="let img of v.imagenes" [src]="img.url" (click)="verImagen(img.url)" alt="Imagen {{ v.color_nombre }}">
+          <img *ngFor="let img of v.imagenes" 
+               [src]="img" 
+               (click)="verImagen(img)" 
+               alt="Imagen {{ v.identidad_variante }}">
         </div>
       </div>
 
-      <!-- Tallas de la variante -->
       <div class="tallas-variante">
-        <h3>Tallas</h3>
+        <h3>Inventario y Precios</h3>
         <table>
           <thead>
             <tr>
-              <th>Talla</th>
+              <th>SKU</th>
+              <th>Opción / Talla</th>
               <th>Stock</th>
+              <th>Precio Venta</th>
+              <th>Estado / Canales</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let t of v.tallas">
-              <td>{{ t.talla | uppercase }}</td>
-              <td>{{ t.stock }}</td>
+            <tr *ngFor="let s of v.stocks">
+              <td><small>{{ s.sku }}</small></td>
+              
+              <td>
+                <strong>{{ s.etiqueta }}</strong>
+                
+                <div class="atributos-detalle" *ngIf="s.atributos && s.atributos.length > 0">
+                  <small *ngFor="let attr of s.atributos; let isLast = last">
+                    {{ attr.nombre }}: {{ attr.valor }}{{ !isLast ? ', ' : '' }}
+                  </small>
+                </div>
+              </td>
+              
+              <td>
+                <span [class.sin-stock]="s.cantidad === 0">{{ s.cantidad }} unid.</span>
+              </td>
+              
+              <td>${{ s.precio_venta }}</td>
+
+              <td class="canales-badges">
+                <span class="badge inventario" *ngIf="!s.publicar_web && !s.publicar_vinted && !s.publicar_wallapop">
+                  📦 Solo Inventario
+                </span>
+
+                <span class="badge web" *ngIf="s.publicar_web">🌐 Web</span>
+                <span class="badge vinted" *ngIf="s.publicar_vinted">👗 Vinted</span>
+                <span class="badge wallapop" *ngIf="s.publicar_wallapop">🏷️ Wallapop</span>
+              </td>
+
             </tr>
           </tbody>
         </table>
       </div>
+      
     </div>
   </div>
 </div>

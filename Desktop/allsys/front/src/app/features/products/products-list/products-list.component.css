@@ -1,132 +1,250 @@
-/* Contenedor general */
+
 .products-container {
-  padding: 2rem;
-  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  background-color: var(--bg-body);
+  min-height: 100vh;
 }
 
-/* Título */
-.products-container h2 {
-  margin-bottom: 1rem;
-  color: #333;
+/* Header */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
 }
 
-/* Estado vacío */
-.empty-state {
-  text-align: center;
-  color: #888;
-  padding: 2rem;
+.list-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
 }
 
-/* Grid de productos */
+.total-count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Grid */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 2rem;
 }
 
-/* Tarjeta de producto */
+/* Card */
 .product-card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-  overflow: hidden;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  border: 1px solid var(--border-color);
 }
 
 .product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-md);
+  border-color: #e2e8f0;
 }
 
-/* Imagen */
+/* Image Container */
+.product-image {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+  cursor: pointer;
+}
+
 .product-image img {
   width: 100%;
-  height: 150px;
+  height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
-/* Información del producto */
+.product-card:hover .product-image img {
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-overlay span {
+  color: white;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  backdrop-filter: blur(4px);
+}
+
+.product-image:hover .image-overlay {
+  opacity: 1;
+}
+
+/* Info Section */
 .product-info {
-  padding: 1rem;
-  flex-grow: 1;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.top-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.stock-badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.stock-badge.no-stock {
+  background: #fef2f2;
+  color: #991b1b;
 }
 
 .product-info h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: #222;
-}
-
-.product-info p {
-  margin: 0.3rem 0;
-  font-size: 0.9rem;
-  color: #555;
-}
-
-.product-info .price {
-  font-weight: bold;
-  color: #1a73e8;
-}
-
-/* Acciones */
-.product-actions {
-  display: flex;
-  justify-content: space-around;
-  padding: 0.8rem;
-  border-top: 1px solid #eee;
-}
-
-.product-actions button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
+  color: var(--text-main);
+  line-height: 1.4;
   cursor: pointer;
+  font-weight: 600;
+}
+
+.category-type {
   font-size: 0.85rem;
-  transition: background 0.2s;
+  color: var(--text-muted);
+  margin: 0;
 }
 
-.product-actions button:first-child {
-  background: #f1f1f1;
-  color: #333;
+.dot { margin: 0 4px; color: #cbd5e1; }
+
+.mid-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 0.5rem;
 }
 
-.product-actions button:first-child:hover {
-  background: #e0e0e0;
+.price-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
 }
 
-.product-actions button:last-child {
-  background: #1a73e8;
-  color: white;
+.price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
 }
 
-.product-actions button:last-child:hover {
-  background: #1669c1;
+/* Colors */
+.color-swatches {
+  display: flex;
+  flex-direction: row-reverse;
 }
 
-/* Botón cargar más */
+.color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #e2e8f0;
+  margin-left: -5px;
+  transition: transform 0.2s;
+}
+
+.color-dot:hover {
+  transform: translateY(-3px);
+  z-index: 10;
+}
+
+/* Published Logos */
+.published-status {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.logos-container {
+  display: flex;
+  gap: 12px;
+}
+
+.logos-container img {
+  height: 16px;
+  width: auto;
+  opacity: 0.6;
+  filter: grayscale(1);
+  transition: all 0.3s;
+}
+
+.product-card:hover .logos-container img {
+  opacity: 1;
+  filter: grayscale(0);
+}
+
+/* Button Load More */
 .load-more {
-  text-align: center;
-  margin-top: 2rem;
+  margin-top: 4rem;
+  display: flex;
+  justify-content: center;
 }
 
-.load-more button {
-  padding: 0.7rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: none;
-  background: #1a73e8;
-  color: white;
+.btn-load-more {
+  background: var(--card-bg);
+  color: var(--text-main);
+  border: 1px solid var(--text-main);
+  padding: 0.8rem 2.5rem;
+  border-radius: 30px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s;
 }
 
-.load-more button:hover {
-  background: #1669c1;
+.btn-load-more:hover {
+  background: var(--text-main);
+  color: white;
 }
 
-.load-more button:disabled {
-  background: #a1c2f5;
-  cursor: not-allowed;
+/* Utils */
+.title-truncate {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

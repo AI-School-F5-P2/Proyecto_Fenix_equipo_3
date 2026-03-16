@@ -23,7 +23,7 @@ interface TokenResponse {
 })
 export class AuthService {
 
-  private apiUrl = 'http://localhost:8000/auth'; // 🔹 URL base del backend FastAPI
+  private apiUrl = 'http://localhost:8000/api/v1/auth'; // 🔹 URL base del backend FastAPI
 
   constructor(private http: HttpClient) {}
 

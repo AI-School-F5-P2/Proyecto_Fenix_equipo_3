@@ -1,17 +1,26 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { ProductoBackend } from '../../features/products/add-product/add-product.component';
+
+export interface PaginatedResponse {
+  total: number;
+  items: any[];
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductsService {
 
-  private apiUrl = 'http://localhost:8000';
+  
+
+  private apiUrl = 'http://localhost:8000/api/v1';
 
   // 🧠 CACHES
   private categoriasCache: any[] = [];
   private marcasCache: any[] = [];
+  private proveedoresCache: any[] = [];
 
   constructor(private http: HttpClient) {}
 
@@ -36,10 +45,6 @@ export class ProductsService {
     return this.categoriasCache.filter(c => c.parent_id === parentId);
   }
 
-  
-
-  
-
   // ---------------- MARCAS ----------------
   cargarMarcas(): Observable<any[]> {
     if (this.marcasCache.length > 0) {
@@ -53,17 +58,32 @@ export class ProductsService {
     );
   }
 
+  // ---------------- PROVEEDORES ----------------
+  cargarProveedores(): Observable<any[]> {
+    if (this.proveedoresCache.length > 0) {
+      return new Observable(observer => {
+        observer.next(this.proveedoresCache);
+        observer.complete();
+      });
+    }
+    return this.http.get<any[]>(`${this.apiUrl}/proveedores`).pipe(
+      tap(data => this.proveedoresCache = data)
+    );
+  }
+
   // ---------------- PRODUCTOS ----------------
   crearProducto(formData: FormData): Observable<any> {
     return this.http.post(`${this.apiUrl}/productos/`, formData);
   }
 
-  obtenerProducto(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/productos/${id}`);
-  }
+  obtenerProducto(id: number): Observable<ProductoBackend> {
+  return this.http.get<ProductoBackend>(`${this.apiUrl}/productos/${id}`);
+}
 
-  obtenerProductos(pagina: number = 1, offset: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/productos?limit=10&offset=${offset}`);
+  obtenerProductos(page: number = 1, limit: number = 10): Observable<PaginatedResponse> {
+    // Fíjate que cambiamos <any[]> por <PaginatedResponse>
+    // Y actualizamos los parámetros para usar 'page' y 'limit'
+    return this.http.get<PaginatedResponse>(`${this.apiUrl}/productos?page=${page}&limit=${limit}`);
   }
 
   // ---------------- ACTUALIZAR PRODUCTO ----------------
@@ -76,8 +96,6 @@ export class ProductsService {
     return this.http.delete(`${this.apiUrl}/productos/${productoId}`);
   }
 
-
-
   // ---------------- VARIANTES ----------------
   editarVariante(
     varianteId: number,
@@ -89,42 +107,18 @@ export class ProductsService {
       tallas?: { id: number; stock: number }[];
     }
   ): Observable<any> {
-    return this.http.put(
-      `${this.apiUrl}/variantes/${varianteId}`,
-      data
-    );
+    return this.http.put(`${this.apiUrl}/variantes/${varianteId}`, data);
   }
-
 
   // ---------------- EDITAR PRODUCTO (JSON) ----------------
-  editarProducto(productoId: number, data: {
-    nombre?: string;
-    descripcion?: string;
-    precio?: number;
-    categoria_id?: number;
-    marca_id?: number;
-    tipo?: string;
-  }): Observable<any> {
-    return this.http.put(
-      `${this.apiUrl}/productos/${productoId}`,
-      data
-    );
-  }
-
-
-
-
-
-
-
+  editarProducto(id: number, formData: FormData) {
+  return this.http.put(`${this.apiUrl}/productos/${id}`, formData);
+}
 
   // ---------------- IMÁGENES ----------------
   agregarImagenesVariante(varianteId: number, formData: FormData): Observable<any> {
-  return this.http.post(
-    `${this.apiUrl}/variantes/${varianteId}/imagenes`,
-    formData
-  );
-}
+    return this.http.post(`${this.apiUrl}/variantes/${varianteId}/imagenes`, formData);
+  }
 
   eliminarImagenVariante(imagenId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/imagenes/${imagenId}`);

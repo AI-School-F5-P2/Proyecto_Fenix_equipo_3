@@ -1,239 +1,402 @@
+/* ==========================================================================
+   1. VARIABLES DE COMPONENTE (Scope: Add Product)
+   ========================================================================== */
+
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 .product-form {
-  width: 100%;
-  max-width: 800px;
-  margin: 40px auto;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 40px 50px;
-  font-family: 'Inter', sans-serif;
-}
-
-.product-form h2 {
-  text-align: center;
-  margin-bottom: 25px;
-  color: #333;
-  font-size: 1.8rem;
-  font-weight: 600;
-}
-
-.product-form h3 {
-  margin-top: 25px;
-  color: #007bff;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.product-form label {
-  display: block;
-  margin-top: 15px;
-  font-weight: 600;
-  color: #444;
-}
-
-.product-form input,
-.product-form textarea,
-.product-form select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-top: 5px;
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.product-form input:focus,
-.product-form textarea:focus,
-.product-form select:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
-  outline: none;
-}
-
-/* Dropdown personalizado */
-.custom-dropdown {
-  position: relative;
-  margin-top: 10px;
-  cursor: pointer;
-}
-
-.dropdown-header {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-}
-
-.dropdown-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 100;
-}
-
-.dropdown-options div {
-  padding: 8px 12px;
-  transition: background 0.2s;
-}
-
-.dropdown-options div:hover {
-  background: #f0f0f0;
-}
-
-/* Variantes */
-.product-form .variant {
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 15px 20px;
-  margin-top: 15px;
-  position: relative;
-}
-
-.product-form .variant hr {
-  margin: 15px 0;
-  border: none;
-  border-top: 1px solid #e1e1e1;
-}
-
-/* Tallas */
-.product-form .size {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
-.product-form .size label {
-  margin-top: 0;
-  font-weight: 500;
-}
-
-.product-form .size input {
-  width: 120px;
-  padding: 6px 8px;
-}
-
-.product-form button {
-  margin-top: 8px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-.product-form .variant button[type='button']:last-child {
-  background: #dc3545;
-  color: white;
-}
-
-.product-form .variant button[type='button']:last-child:hover {
-  background: #b52a38;
-}
-
-.product-form button[type='submit'] {
-  background: #007bff;
-  color: white;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.product-form button[type='submit']:hover {
-  background: #0056b3;
-}
-
-/* Sección de imágenes */
-.preview-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.preview-images img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-
-.color-selector {
+  max-width: 900px;
+  margin: 2rem auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+  padding: 0 1rem;
 }
+
+/* ==========================================================================
+   2. JERARQUÍA DE NIVELES (LAYOUT)
+   ========================================================================== */
+
+.section {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  background: var(--bg-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.section h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  padding-bottom: 0.75rem;
+}
+
+.variant-card {
+  border: 2px solid var(--ap-border-light);
+  border-radius: var(--ap-radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  background: var(--ap-bg-variant);
+  position: relative;
+}
+
+.stock-card {
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid var(--ap-color-primary);
+  border-radius: var(--ap-radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: var(--ap-bg-stock);
+  margin-top: 10px;
+}
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   3. ELEMENTOS DE FORMULARIO (INPUTS)
+   ========================================================================== */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.field input, 
+.field textarea, 
+.field select {
+  padding: 0.7rem 0.8rem;
+
+  border-radius: var(--ap-radius-md);
+  border: 3px solid var(--ap-border-base);
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--ap-color-primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* ==========================================================================
+   4. COMPONENTE: CATEGORÍAS
+   ========================================================================== */
+.category-box {
+  padding: 0.8rem;
+  border: 1.5px solid var(--ap-border-base);
+  border-radius: var(--ap-radius-md);
+  cursor: pointer;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+}
+
+.category-box:hover {
+  border-color: var(--ap-color-primary);
+}
+
+.category-dropdown {
+  margin-top: 0.5rem;
+  border: 1.5px solid var(--ap-border-base);
+  border-radius: var(--ap-radius-md);
+  background: white;
+  max-height: 280px;
+  overflow-y: auto;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.category-item, .category-back {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.category-item:hover {
+  background: #f9fafb;
+  color: var(--ap-color-primary);
+}
+
+.category-back {
+  font-weight: 700;
+  color: var(--ap-color-primary);
+  background: #f0f7ff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ==========================================================================
+   5. PALETA Y AUTOCOMPLETE (CORREGIDO)
+   ========================================================================== */
 
 .color-palette {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--ap-border-base);
+  border-radius: 10px;
 }
 
-.color-item {
+.color-swatch {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  justify-content: center;
+  border: 1px solid rgba(0,0,0,0.1);
 }
 
-.color-item:hover {
-  background: #f5f5f5;
+.color-swatch.active {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--ap-color-primary);
 }
 
-.color-item.active {
-  background: #eaf4ff;
-  box-shadow: 0 0 0 2px #2196f3 inset;
+/* --- ESTILOS DE AUTOCOMPLETE RECUPERADOS --- */
+.marca-autocomplete, .proveedor-autocomplete { 
+  position: relative; /* FUNDAMENTAL para que la lista no se vaya volando */
 }
 
-.color-circle {
-  position: relative;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid #ccc;
-}
-
-.check {
+.dropdown-list {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 14px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 0 0 2px rgba(0,0,0,0.6);
+  top: 100%; left: 0; width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--ap-border-base);
+  border-radius: 0 0 var(--ap-radius-md) var(--ap-radius-md);
+  z-index: 100;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-
-.color-item:hover {
-  background: #f0f0f0;
+/* ESTO FALTABA: Da padding y forma a los items para que no sean invisibles */
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.95rem;
+  background: white;
 }
 
-.color-circle {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+.dropdown-item:hover { 
+  background: #f9fafb; 
+}
+
+.dropdown-item.selected {
+  background: #eff6ff;
+  border-left: 4px solid var(--ap-color-primary);
+  position: sticky; top: 0;
+  z-index: 10;
+}
+
+/* ==========================================================================
+   6. IMÁGENES
+   ========================================================================== */
+.image-box img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: var(--ap-radius-md);
+  border: 1px solid var(--ap-border-base);
+}
+
+.btn-img-del {
+  position: absolute;
+  top: -8px; right: -8px;
+  background: var(--ap-color-danger);
+  color: white; border: none; border-radius: 50%;
+  width: 22px; height: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Contenedor principal del botón de subida */
+.upload-box-modern {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 100px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  background-color: #fafafa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+}
+
+/* Efecto al pasar el ratón */
+.upload-box-modern:hover {
+  background-color: #f0f8ff; /* Un tono azul muy claro */
+  border-color: #007bff;     /* Color primario (ajusta al tuyo) */
+}
+
+/* Contenido dentro de la caja */
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+.upload-icon {
+  font-size: 2rem; /* Tamaño grande para el icono */
+  line-height: 1;
+}
+
+.upload-text {
+  color: #666;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.upload-text strong {
+  color: #333;
+}
+
+/* Contenedor de la galería de fotos */
+.image-preview {
+  display: flex;
+  flex-wrap: wrap; /* Permite que pasen a la siguiente línea si no caben */
+  gap: 12px;       /* Espacio entre las fotos */
+  margin-top: 15px;
+}
+
+/* Caja individual de cada foto */
+.image-box {
+  position: relative; /* Importante para poder posicionar la papelera encima */
+  width: 100px;       /* Ancho fijo de la miniatura */
+  height: 150px;      /* Alto fijo de la miniatura */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid #eee;
+}
+
+/* La imagen dentro de la caja */
+.image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Recorta la imagen para que llene el cuadrado sin deformarse */
+  border-radius: 8px;
+}
+
+/* El botón de eliminar (papelera) */
+.btn-img-del {
+  position: absolute;
+  top: -6px;         /* Lo saca un poquito por arriba */
+  right: -6px;       /* Lo saca un poquito por la derecha */
+  background: white;
   border: 1px solid #ccc;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  padding: 0;
+  transition: transform 0.2s;
 }
 
-.color-label {
-  font-size: 14px;
+.btn-img-del:hover {
+  transform: scale(1.1); /* Efecto de crecimiento al pasar el ratón */
+  color: red;
+}
+/* ==========================================================================
+   7. BOTONES
+   ========================================================================== */
+
+.btn-primary {
+  background: var(--ap-color-primary);
+  color: var(--ap-text-on-primary);
+  padding: 1rem 2.5rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary:hover { background: var(--ap-color-primary-hover); }
+
+.btn-add-variant {
+  width: 100%;
+  background: #eff6ff;
+  color: var(--ap-color-primary);
+  border: 2px dashed #bfdbfe;
+  padding: 1rem;
+  border-radius: var(--ap-radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-add-stock {
+  width: 100%;
+  background: var(--ap-color-success-bg);
+  color: var(--ap-color-success);
+  border: 2px dashed #bbf7d0;
+  padding: 0.8rem;
+  border-radius: var(--ap-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.variant-del {
+  background: var(--ap-color-danger-bg);
+  color: var(--ap-color-danger);
+  border: 1px solid #fecaca;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--ap-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.btn-delete-text {
+  background: none; border: none;
+  color: var(--ap-color-danger);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.stock-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
 }
 
 
@@ -247,25 +410,76 @@
 
 
 
+.stock-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Por si en móviles no cabe en una línea */
+  gap: 15px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed #e0e0e0;
+}
 
-/* Responsivo */
-@media (max-width: 768px) {
-  .product-form {
-    padding: 25px 20px;
-  }
+.publish-options {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
 
-  .product-form .size {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.publish-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin-right: 5px;
+}
 
-  .product-form input,
-  .product-form textarea,
-  .product-form select {
-    font-size: 0.9rem;
-  }
 
-  .product-form button[type='submit'] {
-    width: 100%;
-  }
+
+/* ==========================================================================
+   8. ESTILOS DE LA LISTA DESPLEGABLE (SELECT MODERN)
+   ========================================================================== */
+/* ==========================================================================
+   ESTILOS DE LA FILA (CON CSS GRID)
+   ========================================================================== */
+.dropdown-item {
+  display: grid;                               /* Usamos GRID en lugar de FLEX */
+  grid-template-columns: minmax(0, 1fr) auto;  /* Columna 1: Texto, Columna 2: Radio */
+  gap: 12px;                                   /* Separación entre texto y radio */
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: white;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background-color: #f9fafb;
+}
+
+.dropdown-item.selected {
+  background-color: #e6f2ff; 
+  color: #0056b3;            
+  font-weight: 600;          
+}
+
+/* ==========================================================================
+   ELEMENTOS INTERNOS
+   ========================================================================== */
+.item-text {
+  text-align: left;
+  white-space: nowrap;     /* En una sola línea */
+  overflow: hidden;        /* Oculta lo que se desborde */
+  text-overflow: ellipsis; /* Añade los puntos suspensivos (...) */
+  color: #333;
+}
+
+.item-radio {
+  margin: 0;
+  pointer-events: none;    /* Evita que un clic accidental rompa la selección */
 }

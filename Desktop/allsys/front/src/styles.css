@@ -4,3 +4,42 @@
     margin: 0px;
     box-sizing: border-box;
 }
+
+:root {
+
+  --primary: #2563eb;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --bg-body: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: #f1f5f9;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);
+  /* Colores de Marca/Acción */
+  --ap-color-primary: #2563eb;
+  --ap-color-primary-hover: #1d4ed8;
+  --ap-color-success: #16a34a;
+  --ap-color-success-bg: #f0fdf4;
+  --ap-color-danger: #dc2626;
+  --ap-color-danger-bg: #fee2e2;
+
+  /* Colores de Texto */
+  --ap-text-main: #1f2937;
+  --ap-text-muted: #6b7280;
+  --ap-text-on-primary: #ffffff;
+
+  /* Colores de Fondo y Bordes */
+  --ap-bg-main: #ffffff;
+  --ap-bg-variant: #f9fafb;
+  --ap-bg-stock: #ffffff;
+  --ap-border-base: #e6e8ec;
+  --ap-border-light: #e5e7eb;
+  
+  /* Sombras y Otros */
+  --ap-shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --ap-radius-lg: 12px;
+  --ap-radius-md: 8px;
+
+
+  
+}

@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 })
 export class VentasService {
 
-  private API_URL = 'http://localhost:8000';
+  private API_URL = 'http://localhost:8000/api/v1/auth';
 
   constructor(private http: HttpClient) {}
 

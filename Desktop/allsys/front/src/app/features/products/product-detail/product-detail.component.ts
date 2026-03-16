@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductsService } from '../../../core/services/products.service';
 
 @Component({
@@ -16,11 +16,13 @@ export class ProductDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private productsService: ProductsService
+    private productsService: ProductsService,
+    private router: Router,
   ) {}
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
+    console.log(id)
     if (id) {
       this.productsService.obtenerProducto(id)
         .subscribe({
@@ -40,6 +42,10 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 
+
+  editarProducto(id: number) {
+  this.router.navigate(['/edit', id]);
+}
   
 
   // Ejemplo: ver imagen grande

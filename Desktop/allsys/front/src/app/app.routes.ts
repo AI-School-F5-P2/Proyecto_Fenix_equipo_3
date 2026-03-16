@@ -21,10 +21,10 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
-      { path: 'add-product', component: AddProductComponent },
+      { path: 'new', component: AddProductComponent },
+      { path: 'edit/:id', component: AddProductComponent },
       { path: 'view-products', component: ProductsListComponent },
       { path: 'detail-product/:id', component: ProductDetailComponent },
-      { path: 'edit-product/:id', component: ProductEditComponent },
       { path: 'venta-create', component: VentaCreateComponent },
       { path: 'venta-create/:id', component: VentaCreateComponent }
     ],

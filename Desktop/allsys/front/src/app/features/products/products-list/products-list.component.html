@@ -1,30 +1,70 @@
 <div class="products-container">
-  <h2>Lista de Productos</h2>
+  <header class="list-header">
+    <h2>Lista de Productos</h2>
+    <span class="total-count" *ngIf="totalProductos > 0">{{ totalProductos }} productos encontrados</span>
+  </header>
 
   <div *ngIf="productos.length === 0 && !cargando" class="empty-state">
-    No hay productos disponibles.
+    <div class="icon">📦</div>
+    <p>No hay productos disponibles en este momento.</p>
   </div>
 
   <div class="products-grid">
-    <div class="product-card" *ngFor="let producto of productos">
-      <div class="product-image">
-        <img [src]="producto.imagen_principal || 'assets/img/default-product.png'" alt="{{ producto.nombre }}">
+    <article class="product-card" *ngFor="let producto of productos">
+      
+      <div class="product-image" [routerLink]="['/detail-product', producto.id]">
+        <img [src]="producto.imagen || 'assets/img/default-product.png'" alt="{{ producto.nombre }}">
+        <div class="image-overlay">
+          <span>Ver detalle</span>
+        </div>
       </div>
+      
       <div class="product-info">
-        <h3>{{ producto.nombre }}</h3>
-        <p class="type">Tipo: {{ producto.tipo | titlecase }}</p>
-        <p class="price">\${{ producto.precio | number:'1.2-2' }}</p>
+        <div class="top-info">
+          <span class="brand" *ngIf="producto.marca">{{ producto.marca.nombre }}</span>
+          <div class="stock-badge" [ngClass]="{'no-stock': producto.stock_total === 0}">
+            {{ producto.stock_total > 0 ? producto.stock_total + ' en stock' : 'Agotado' }}
+          </div>
+        </div>
+        
+        <h3 class="title-truncate" [routerLink]="['/detail-product', producto.id]">{{ producto.nombre | titlecase }}</h3>
+        
+        <p class="category-type">{{ producto.categoria?.nombre }} <span class="dot">•</span> {{ producto.tipo | titlecase }}</p>
+
+        <div class="mid-info">
+          <div class="price-container">
+            <span class="price-label">Precio</span>
+            <p class="price" *ngIf="producto.precio_min !== null">
+              ${{ producto.precio_min | number:'1.2-2' }}
+              <span *ngIf="producto.precio_min !== producto.precio_max"> - ${{ producto.precio_max | number:'1.2-2' }}</span>
+            </p>
+            <p class="price" *ngIf="producto.precio_min === null">Consultar</p>
+          </div>
+
+          <div class="color-swatches" *ngIf="producto.colores?.length">
+            <span class="color-dot" 
+                  *ngFor="let hex of producto.colores" 
+                  [style.background]="hex"
+                  [title]="'Color: ' + hex">
+            </span>
+          </div>
+        </div>
+
+        <div class="published-status" *ngIf="producto.canales?.web || producto.canales?.vinted || producto.canales?.wallapop">
+          <div class="logos-container">
+            <img *ngIf="producto.canales.web" src="assets/img/logos/web-logo.png" alt="Web" title="Web">
+            <img *ngIf="producto.canales.vinted" src="assets/img/logos/vinted-logo.png" alt="Vinted" title="Vinted">
+            <img *ngIf="producto.canales.wallapop" src="assets/img/logos/wallapop-logo.png" alt="Wallapop" title="Wallapop">
+          </div>
+        </div>
       </div>
-      <div class="product-actions">
-        <button [routerLink]="['/detail-product', producto.id]">Ver</button>
-        <!-- <button (click)="editarProducto(producto.id)">Editar</button> -->
-      </div>
-    </div>
+    </article>
   </div>
 
   <div class="load-more" *ngIf="!sinMasProductos">
-    <button (click)="cargarProductos()" [disabled]="cargando">
-      {{ cargando ? 'Cargando...' : 'Cargar más productos' }}
+    <button (click)="cargarProductos()" [disabled]="cargando" class="btn-load-more">
+      <span *ngIf="!cargando">Cargar más productos</span>
+      <span *ngIf="cargando" class="spinner"></span>
     </button>
   </div>
 </div>

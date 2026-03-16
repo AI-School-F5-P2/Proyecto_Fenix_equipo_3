@@ -1,199 +1,306 @@
-/* ================= PRODUCT FORM ================= */
+/* ==========================================================================
+   1. CONTENEDOR PRINCIPAL Y HEADER
+   ========================================================================== */
 .product-form {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  max-width: 1000px;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--ap-text-main);
+  padding: 0 1.5rem;
 }
 
-.product-form h2, .product-form h3, .product-form h4 {
-  margin-top: 20px;
-  margin-bottom: 10px;
+.header-edit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--ap-border-light);
 }
 
-.product-form label {
-  display: block;
-  margin-top: 10px;
-  font-weight: bold;
+.header-edit h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--ap-text-main);
+  letter-spacing: -0.025em;
 }
 
-.product-form input[type="text"],
-.product-form input[type="number"],
-.product-form textarea,
-.product-form select {
-  width: 100%;
-  padding: 6px 8px;
-  margin-top: 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
+/* ==========================================================================
+   2. SECCIONES Y TARJETAS (LAYOUT)
+   ========================================================================== */
+.section {
+  border: 1px solid var(--ap-border-light);
+  border-radius: var(--ap-radius-lg);
+  padding: 2rem;
+  background: var(--ap-bg-main);
+  box-shadow: var(--ap-shadow-sm);
 }
 
-.product-form textarea {
-  resize: vertical;
+h3 {
+  margin: 1.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ap-text-main);
 }
 
-/* ================= DROPDOWN ================= */
-.custom-dropdown {
+.variant-card {
+  border: 2px solid var(--ap-border-light);
+  border-radius: var(--ap-radius-lg);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  background: var(--ap-bg-variant); /* Gris sutil */
   position: relative;
-  width: 100%;
+  transition: box-shadow 0.2s ease;
+}
+
+.variant-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Grillas Responsivas */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   3. CAMPOS DE FORMULARIO (INPUTS)
+   ========================================================================== */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
-.dropdown-header {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-  user-select: none;
+.field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ap-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.dropdown-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
+.field input, 
+.field textarea, 
+.field select {
+  padding: 0.75rem 1rem;
+  border-radius: var(--ap-radius-md);
+  border: 1px solid var(--ap-border-base);
+  font-size: 0.95rem;
+  background-color: var(--ap-bg-main);
+  color: var(--ap-text-main);
+  transition: all 0.2s ease;
   width: 100%;
-  max-height: 250px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  border-top: none;
-  background: #fff;
-  z-index: 100;
-  border-radius: 0 0 4px 4px;
 }
 
-.dropdown-back {
-  padding: 6px 10px;
-  background-color: #f0f0f0;
-  cursor: pointer;
-  font-size: 14px;
+.field input:focus, .field textarea:focus, .field select:focus {
+  outline: none;
+  border-color: var(--ap-color-primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
-.dropdown-option {
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.dropdown-option:hover {
-  background-color: #e0e0e0;
-}
-
-.dropdown-option.selected {
-  background-color: #007bff;
-  color: #fff;
-  font-weight: bold;
-}
-
-/* ================= VARIANTES ================= */
-.variant {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-top: 15px;
-  border-radius: 6px;
-  background: #fafafa;
-}
-
-.variant hr {
-  margin-top: 15px;
-  margin-bottom: 15px;
-  border: none;
-  border-top: 1px solid #ddd;
-}
-
-.size {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.size input[type="text"], .size input[type="number"] {
-  width: 80px;
-}
-
-.size button {
-  background-color: #ff4d4f;
-  color: #fff;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
+/* Especial para input de color */
+input[type="color"] {
+  height: 45px;
+  padding: 0.2rem;
   cursor: pointer;
 }
 
-.size button:hover {
-  background-color: #e04344;
+/* ==========================================================================
+   4. GALERÍA DE IMÁGENES
+   ========================================================================== */
+.images-section {
+  margin: 1.5rem 0;
 }
 
-/* ================= IMÁGENES ================= */
-.preview-images {
+.image-preview {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 10px;
 }
 
-.preview-images div {
+.image-box {
   position: relative;
+  width: 100px;
+  height: 130px;
+  border-radius: var(--ap-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--ap-border-base);
+  background: #fff;
 }
 
-.preview-images img {
-  width: 80px;
-  height: 80px;
+.image-box img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
-.preview-images button {
+.btn-img-del {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  background-color: #ff4d4f;
-  border: none;
+  top: 4px;
+  right: 4px;
+  background: var(--ap-color-danger);
   color: #fff;
+  border: none;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 12px;
+  width: 22px;
+  height: 22px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.preview-images button:hover {
-  background-color: #e04344;
+.btn-add-img {
+  width: 100px;
+  height: 130px;
+  border: 2px dashed var(--ap-border-base);
+  border-radius: var(--ap-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  background: #fff;
+  transition: all 0.2s;
 }
 
-/* ================= BOTONES ================= */
-button[type="button"] {
-  margin-top: 8px;
-  padding: 6px 10px;
+.btn-add-img:hover {
+  border-color: var(--ap-color-primary);
+  color: var(--ap-color-primary);
+  background: var(--ap-color-success-bg);
+}
+
+/* ==========================================================================
+   5. TABLA DE STOCK E INVENTARIO
+   ========================================================================= */
+.stock-section {
+  margin-top: 2rem;
+  background: var(--ap-bg-main);
+  padding: 1.5rem;
+  border-radius: var(--ap-radius-md);
+  border: 1px solid var(--ap-border-base);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--ap-text-muted);
+  padding: 10px;
+  border-bottom: 1px solid var(--ap-border-light);
+}
+
+td {
+  padding: 8px 5px;
+}
+
+/* Inputs dentro de la tabla */
+td input {
+  padding: 0.5rem !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+}
+
+td input:hover, td input:focus {
+  border-color: var(--ap-border-base) !important;
+  background: var(--ap-bg-variant) !important;
+}
+
+/* ==========================================================================
+   6. BOTONES Y ACCIONES
+   ========================================================================== */
+.btn-primary {
+  background: var(--ap-color-primary);
+  color: var(--ap-text-on-primary);
+  padding: 1rem 2.5rem;
+  border-radius: var(--ap-radius-md);
   border: none;
-  border-radius: 4px;
+  font-weight: 700;
   cursor: pointer;
-  background-color: #007bff;
-  color: white;
+  transition: background 0.2s;
 }
 
-button[type="button"]:hover {
-  background-color: #0062cc;
+.btn-primary:hover {
+  background: var(--ap-color-primary-hover);
 }
 
-button[type="submit"] {
-  margin-top: 15px;
-  padding: 10px 16px;
+.btn-danger {
+  background: var(--ap-color-danger-bg);
+  color: var(--ap-color-danger);
+  border: 1px solid var(--ap-color-danger);
+  padding: 0.5rem 1rem;
+  border-radius: var(--ap-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: var(--ap-color-danger);
+  color: #fff;
+}
+
+.btn-add-stock {
+  width: 100%;
+  background: var(--ap-color-success-bg);
+  color: var(--ap-color-success);
+  border: 1px dashed var(--ap-color-success);
+  padding: 0.75rem;
+  border-radius: var(--ap-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.btn-add-variant {
+  width: 100%;
+  background: #fff;
+  color: var(--ap-color-primary);
+  border: 2px dashed var(--ap-color-primary);
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.variant-del {
+  background: none;
   border: none;
-  border-radius: 6px;
+  color: var(--ap-color-danger);
+  text-decoration: underline;
+  font-weight: 600;
   cursor: pointer;
-  background-color: #28a745;
-  color: white;
-  font-weight: bold;
-  font-size: 16px;
+  margin-top: 1.5rem;
+  display: block;
 }
 
-button[type="submit"]:hover {
-  background-color: #218838;
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--ap-border-light);
+}
+
+/* Estado de carga */
+.loading {
+  text-align: center;
+  padding: 5rem;
+  color: var(--ap-text-muted);
+  font-style: italic;
 }
