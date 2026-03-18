@@ -143,11 +143,16 @@ def crear_producto(
                 attr_dicts = [{"nombre": a.nombre, "valor": a.valor} for a in s_data.atributos]
                 guardar_valores_stock(db, stock_obj, attr_dicts)
 
-        # Imágenes
-        if imagenes and v_data.temp_id in imagenes:
-            for file in imagenes[v_data.temp_id]:
-                url = upload_image_to_s3(file, folder=f"productos/{producto.id}/{nueva_variante.id}")
-                db.add(Imagen(url=url, variante_id=nueva_variante.id))
+            # Imágenes
+            lista_mezclada = v_data.imagenes if v_data.imagenes else []
+            for indice, marcador in enumerate(lista_mezclada):
+                if isinstance(marcador, str) and marcador.startswith('NUEVA_'):
+                    # La clave enviada por Angular es "file_{temp_id}_{marcador}"
+                    key_archivo = f"file_{v_data.temp_id}_{marcador}"
+                    if imagenes and key_archivo in imagenes:
+                        file_to_upload = imagenes[key_archivo][0]
+                        url_s3 = upload_image_to_s3(file_to_upload, folder=f"productos/{producto.id}/{nueva_variante.id}")
+                        db.add(Imagen(url=url_s3, variante_id=nueva_variante.id, orden=indice))
 
     db.commit()
     db.refresh(producto)
@@ -177,7 +182,22 @@ def obtener_productos_paginados(db: Session, page: int = 1, limit: int = 10):
     for p in productos:
         stock_acumulado = sum(s.cantidad for v in p.variantes for s in v.stocks)
         precios = [s.precio_venta for v in p.variantes for s in v.stocks]
-        imagen_cover = p.variantes[0].imagenes[0].url if (p.variantes and p.variantes[0].imagenes) else None
+        
+        # ✨ CORRECCIÓN DE LA FOTO DE PORTADA ✨
+        imagen_cover = None
+        if p.variantes:
+            # 1. Buscamos la primera variante activa que tenga imágenes
+            variante_principal = next((v for v in p.variantes if v.activo and v.imagenes), None)
+            
+            if variante_principal:
+                # 2. Ordenamos sus imágenes por el campo 'orden'
+                # Usamos (img.orden or 0) por si algún valor es None
+                imagenes_ordenadas = sorted(variante_principal.imagenes, key=lambda img: img.orden or 0)
+                
+                # 3. La primera de esa lista ordenada es nuestra PORTADA REAL
+                if imagenes_ordenadas:
+                    imagen_cover = imagenes_ordenadas[0].url
+
         colores_unicos = list({v.hex_identidad for v in p.variantes if v.hex_identidad})
         # Verificamos canales de publicación (si al menos un stock lo tiene en True)
         publicado_web = any(s.publicar_web for v in p.variantes for s in v.stocks)
@@ -242,7 +262,7 @@ def obtener_producto_completo(db: Session, p_id: int):
                 "identidad_variante": v.identidad_variante, # ✨ Actualizado
                 "ubicacion": v.ubicacion,
                 "descripcion":v.descripcion,
-                "imagenes": [img.url for img in v.imagenes],
+                "imagenes": [img.url for img in sorted(v.imagenes, key=lambda x: x.orden or 0)],
                 "stocks": [
                     {
                         
@@ -274,6 +294,56 @@ import random
 from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
 
+import json
+import random
+from typing import Optional, List, Dict
+from sqlalchemy.orm import Session
+from app.models.producto_model import Producto
+from app.models.variantes_model import Variante
+from app.models.stock_model import Stock
+from app.models.marcas_model import Marca
+from app.models.variante_imagen_model import Imagen
+from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
+from app.repositories.proveedores_repo import buscar_o_crear
+from app.repositories.marcas_repo import crear_marca
+import json
+import random
+from typing import Optional, List, Dict
+from sqlalchemy.orm import Session
+from app.models.producto_model import Producto
+from app.models.variantes_model import Variante
+from app.models.stock_model import Stock
+from app.models.marcas_model import Marca
+from app.models.variante_imagen_model import Imagen
+from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
+from app.repositories.proveedores_repo import buscar_o_crear
+from app.repositories.marcas_repo import crear_marca
+import json
+import random
+from typing import Optional, List, Dict
+from sqlalchemy.orm import Session
+from app.models.producto_model import Producto
+from app.models.variantes_model import Variante
+from app.models.stock_model import Stock
+from app.models.marcas_model import Marca
+from app.models.variante_imagen_model import Imagen
+from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
+from app.repositories.proveedores_repo import buscar_o_crear
+from app.repositories.marcas_repo import crear_marca
+
+import json
+import random
+from typing import Optional, List, Dict
+from sqlalchemy.orm import Session
+from app.models.producto_model import Producto
+from app.models.variantes_model import Variante
+from app.models.stock_model import Stock
+from app.models.marcas_model import Marca
+from app.models.variante_imagen_model import Imagen
+from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
+from app.repositories.proveedores_repo import buscar_o_crear
+from app.repositories.marcas_repo import crear_marca
+
 def editar_producto_completo(
     db: Session, 
     producto_id: int, 
@@ -293,7 +363,7 @@ def editar_producto_completo(
     if not producto:
         return None
 
-    # 2. Actualizar campos básicos del producto
+    # 2. Actualizar campos básicos
     producto.nombre = nombre
     producto.descripcion = descripcion
     producto.categoria_id = categoria_id
@@ -301,9 +371,10 @@ def editar_producto_completo(
     producto.estado = estado
     producto.publico_objetivo = publico_objetivo
     
-    # 3. Lógica de Marca (Corregida: Evita asignar ID 0 si falla el frontend)
-    if marca_id and marca_id > 0:
-        producto.marca_id = marca_id
+    # 3. Lógica de Marca
+    m_id = int(marca_id) if (marca_id and str(marca_id).isdigit() and int(marca_id) > 0) else None
+    if m_id:
+        producto.marca_id = m_id
     elif marca_nombre and marca_nombre.strip():
         nombre_clean = marca_nombre.strip()
         marca_existente = db.query(Marca).filter(Marca.nombre.ilike(nombre_clean)).first()
@@ -317,16 +388,16 @@ def editar_producto_completo(
     variantes_data = json.loads(variantes)
     ids_variantes_vienen = [v.get("id") for v in variantes_data if v.get("id")]
     
-    # Eliminar variantes que ya no están en la lista enviada
+    # Desactivar variantes que ya no vienen en el JSON
     for v_old in producto.variantes:
         if v_old.id not in ids_variantes_vienen:
-            v_old.activo = False  # Lo apagamos
+            v_old.activo = False 
 
-    for v_data in variantes_data:
+    # --- BUCLE DE VARIANTES (Ordenadas por el Drag & Drop de variantes) ---
+    for indice_v, v_data in enumerate(variantes_data):
         v_id = v_data.get("id")
         v_temp_id = str(v_data.get("temp_id"))
         
-        # Crear o Actualizar Variante
         if v_id:
             nv = db.query(Variante).filter(Variante.id == v_id).first()
             if nv:
@@ -334,106 +405,116 @@ def editar_producto_completo(
                 nv.identidad_variante = v_data.get("identidad_variante")
                 nv.ubicacion = v_data.get("ubicacion")
                 nv.descripcion = v_data.get("descripcion")
+                nv.orden = indice_v  # ✨ Orden de variante
+                nv.activo = True
         else:
             nv = Variante(
                 producto_id=producto.id,
-                sku=generar_sku(tipo, random.randint(100, 999)), # SKU Temporal
+                sku="TEMP",
                 hex_identidad=v_data.get("hex_identidad"),
                 identidad_variante=v_data.get("identidad_variante"),
                 ubicacion=v_data.get("ubicacion"),
-                descripcion=v_data.get("descripcion")
+                descripcion=v_data.get("descripcion"),
+                orden=indice_v  # ✨ Orden para nueva variante
             )
             db.add(nv)
-            db.flush() # Para obtener el ID de la nueva variante
+            db.flush() 
             nv.sku = generar_sku(tipo, nv.id)
 
-        # Obtenemos las URLs que Angular nos manda (las que el usuario NO borró)
-        urls_que_se_quedan = v_data.get("imagenes", [])
+        # --- GESTIÓN DE IMÁGENES (Ordenadas por el Drag & Drop de imágenes) ---
+        lista_mezclada = v_data.get("imagenes", []) 
+        urls_permanecen = {item.strip() for item in lista_mezclada if isinstance(item, str) and item.startswith('http')}
         
-        # Buscamos todas las imágenes actuales de esta variante en la DB
         imagenes_en_db = db.query(Imagen).filter(Imagen.variante_id == nv.id).all()
-        
         for img_db in imagenes_en_db:
-            if img_db.url not in urls_que_se_quedan:
-                # ¡El usuario la borró en el Frontend!
-                
-                # A) Primero la borramos de Amazon S3 (Envuelto en try/except por seguridad)
+            if img_db.url.strip() not in urls_permanecen:
                 try:
                     delete_image_from_s3(img_db.url)
-                    print(f"🗑️ ÉXITO: Imagen borrada de S3 -> {img_db.url}")
-                except Exception as e:
-                    print(f"⚠️ ADVERTENCIA: No se pudo borrar de S3 (Quizás ya no existía) -> {e}")
-                
-                # B) Luego la borramos de nuestra tabla en MySQL/Postgres
+                except: pass
                 db.delete(img_db)
 
-        # 5. Procesar Stocks dentro de la variante
+        for indice_img, item in enumerate(lista_mezclada):
+            item_clean = item.strip() if isinstance(item, str) else item
+            
+            if isinstance(item_clean, str) and item_clean.startswith('http'):
+                img_existente = db.query(Imagen).filter(Imagen.url == item_clean, Imagen.variante_id == nv.id).first()
+                if img_existente:
+                    img_existente.orden = indice_img # ✨ Sincronizamos orden de imagen
+            
+            elif isinstance(item_clean, str) and item_clean.startswith('NUEVA_'):
+                key_archivo = f"file_{v_temp_id}_{item_clean}"
+                if imagenes and key_archivo in imagenes:
+                    file_to_upload = imagenes[key_archivo][0]
+                    url_s3 = upload_image_to_s3(file_to_upload, folder=f"productos/{producto.id}/{nv.id}")
+                    db.add(Imagen(url=url_s3, variante_id=nv.id, orden=indice_img)) # ✨ Orden nueva imagen
+
+        # --- GESTIÓN DE STOCKS (Ordenados por el Drag & Drop de stocks) ---
         stocks_data = v_data.get("stocks", [])
         ids_stocks_vienen = [s.get("id") for s in stocks_data if s.get("id")]
         
-        # Eliminar registros de stock que no vienen en el JSON
         db.query(Stock).filter(
             Stock.variante_id == nv.id, 
             Stock.id.notin_(ids_stocks_vienen) if ids_stocks_vienen else Stock.id > 0
         ).update({"activo": False}, synchronize_session=False)
 
-        for s_data in stocks_data:
+        for indice_s, s_data in enumerate(stocks_data):
             s_id = s_data.get("id")
             
-            # Gestión de Proveedor
-            p_id = s_data.get("proveedor_id")
-            if not p_id or p_id == 0:
+            # Limpieza del proveedor_id
+            raw_p_id = s_data.get("proveedor_id")
+            p_id = int(raw_p_id) if (raw_p_id and str(raw_p_id).isdigit() and int(raw_p_id) > 0) else None
+
+            if not p_id:
                 nombre_p = s_data.get("proveedor_nombre_nuevo") or s_data.get("proveedor")
-                if nombre_p:
-                    proveedor_obj = buscar_o_crear(db, nombre_p)
-                    p_id = proveedor_obj.id if proveedor_obj else None
+                if nombre_p and nombre_p.strip():
+                    prov_obj = buscar_o_crear(db, nombre_p.strip())
+                    p_id = prov_obj.id if prov_obj else None
 
             fecha_c = s_data.get("fecha_compra")
-            if not fecha_c: fecha_c = None
+            if not fecha_c or fecha_c == "": fecha_c = None
 
             if s_id:
-                # Actualizar Stock existente
                 so = db.query(Stock).filter(Stock.id == s_id).first()
                 if so:
                     so.etiqueta = s_data.get("etiqueta")
-                    # ✨ CAMBIO CLAVE: Usamos 'cantidad' porque es lo que envía Angular
-                    so.cantidad = s_data.get("cantidad", 0) 
+                    so.cantidad = s_data.get("cantidad", 0) or s_data.get("stock", 0)
                     so.precio_compra = s_data.get("precio_compra", 0)
                     so.precio_venta = s_data.get("precio_venta", 0)
-                    so.proveedor_id = p_id
+                    so.proveedor_id = p_id 
                     so.fecha_compra = fecha_c
                     so.descuento = s_data.get("descuento", 0)
+                    so.publicar_web = s_data.get("publicar_web", False)
+                    so.orden = indice_s # ✨ GUARDAMOS EL ORDEN DEL STOCK
+                    so.activo = True
             else:
-                # Crear nuevo registro de Stock
                 so = Stock(
                     variante_id=nv.id, 
                     proveedor_id=p_id,
                     etiqueta=s_data.get("etiqueta", "Única"),
-                    # ✨ CAMBIO CLAVE: Usamos 'cantidad'
-                    cantidad=s_data.get("cantidad", 0),
+                    cantidad=s_data.get("cantidad", 0) or s_data.get("stock", 0),
                     precio_compra=s_data.get("precio_compra", 0),
                     precio_venta=s_data.get("precio_venta", 0),
                     fecha_compra=fecha_c,
-                    sku=generar_sku(tipo, random.randint(100, 999))
+                    descuento=s_data.get("descuento", 0),
+                    publicar_web=s_data.get("publicar_web", False),
+                    orden=indice_s, # ✨ Orden para nuevo stock
+                    sku="TEMP"
                 )
                 db.add(so)
                 db.flush()
                 so.sku = generar_sku(tipo, so.id)
 
-            # Actualizar Atributos (Talla, Material, etc.)
             if s_data.get("atributos"):
                 guardar_valores_stock(db, so, s_data.get("atributos"))
 
-        # 6. Procesar nuevas imágenes si existen
-        if imagenes and v_temp_id in imagenes:
-            for file in imagenes[v_temp_id]:
-                url = upload_image_to_s3(file, folder=f"productos/{producto.id}/{nv.id}")
-                db.add(Imagen(url=url, variante_id=nv.id))
-
-    # 7. Confirmar cambios en la DB
     db.commit()
     db.refresh(producto)
     return producto
+
+
+
+
+
 
 # =====================================================
 # ELIMINAR PRODUCTO

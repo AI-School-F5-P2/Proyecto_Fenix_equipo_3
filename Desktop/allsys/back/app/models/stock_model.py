@@ -16,10 +16,8 @@ class Stock(Base):
     etiqueta = Column(String(100)) # Ej: "Talla M", "256GB"
     fecha_compra = Column(Date, nullable=True)
     sku = Column(String(100), unique=True, index=True)
-    
-    # 🔄 CAMBIADO: 'stock' (columna) para no confundir con el nombre de la clase
+    orden = Column(Integer, default=0)
     cantidad = Column(Integer, default=0) 
-    
     precio_compra = Column(Float, nullable=False)
     precio_venta = Column(Float, nullable=False)
     descuento = Column(Float, default=0.0)

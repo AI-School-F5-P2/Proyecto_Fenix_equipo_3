@@ -14,8 +14,7 @@ class Variante(Base):
     hex_identidad = Column(String(50))     # El color para el Front (si aplica)
     ubicacion = Column(String(200))           # Estante, pasillo, etc.
     descripcion = Column(String(500))
-
-    # Relaciones (se mantienen igual)
+    orden = Column(Integer, default=0)
     stocks = relationship("Stock", back_populates="variante", cascade="all, delete-orphan")
     imagenes = relationship("Imagen", back_populates="variante", cascade="all, delete-orphan")
     producto = relationship("Producto", back_populates="variantes")

@@ -28,6 +28,6 @@ class VarianteSchema(BaseModel):
     hex_identidad: str = Field(..., min_length=1)
     ubicacion: str = Field(..., min_length=1, description="La ubicación es obligatoria")
     descripcion: str
-    
-    # Debe tener al menos 1 stock:
+    imagenes: List[str] = []
+    orden: Optional[int] = 0
     stocks: List[StockSchema] = Field(..., min_items=1)

@@ -32,91 +32,66 @@ producto_routers = APIRouter(
 # =====================================================
 # CREAR PRODUCTO
 # =====================================================
+# app/api/v1/productos.py
+
+# --- REEMPLAZA EL CONTENIDO DE crear_producto_endpoint ---
 @producto_routers.post("/")
-async def crear_producto_endpoint(request: Request, db: Session = Depends(get_session),):
-    # ---------------------------
-    # Recibimos todo dinámicamente
-    # ---------------------------
+async def crear_producto_endpoint(request: Request, db: Session = Depends(get_session)):
     form = await request.form()
     
-    # Campos básicos
-    nombre = form.get("nombre")
-    descripcion = form.get("descripcion")
-    tipo = form.get("tipo")
-    categoria_id = form.get("categoria_id")
-    publico_objetivo = form.get("publico_objetivo")
-    # Marca: puede venir como id o como nombre
-    marca_id = form.get("marca_id")
-    marca_nombre = form.get("marca_nombre")
-    estado = form.get("estado")
-    variantes_json = form.get("variantes")
-
-
-    # Si por algún motivo llegara vacío, le damos un valor por defecto
-    if not estado:
-        estado = "nuevo"
-    
-    # ---------------------------
-    # Extraer archivos por temp_id
-    # ---------------------------
-    archivos_por_variante = {}
+    # 1. Atrapamos TODOS los archivos que empiecen con "file_"
+    archivos_dict = {}
     for key, value in form.multi_items():
-        if key.startswith("imagenes_"):
-            temp_id = key.replace("imagenes_", "")
-            archivos_por_variante.setdefault(temp_id, []).append(value)
-    
-    # ---------------------------
-    # Debug: imprimir datos crudos
-    # ---------------------------
-    print("===== DATOS DEL FORMULARIO CRUDO =====")
-    print("Nombre:", nombre)
-    print("Descripcion:", descripcion)
-    print("Tipo:", tipo)
-    print("Categoria ID:", categoria_id)
-    print("Marca ID:", marca_id)
-    print("genero:", publico_objetivo)
-    print("Marca Nombre:", marca_nombre)
-    print("Variantes (JSON crudo):", variantes_json)
-    print("Archivos por variante:")
-    for temp_id, files in archivos_por_variante.items():
-        print(f"- Variante {temp_id}: {[file.filename for file in files]}")
-    print("======================================\n")
-    
-    # ---------------------------
-    # Parseamos el JSON de variantes
-    # ---------------------------
-    try:
-        variantes_data = json.loads(variantes_json)
-        # Asociamos los archivos a cada variante según temp_id
-        for variante in variantes_data:
-            temp_id = variante.get("temp_id")
-            variante["imagenes_files"] = archivos_por_variante.get(temp_id, [])
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Error al parsear variantes JSON: {e}")
+        if key.startswith("file_"):
+            # Guardamos la clave completa: "file_UUID_NUEVA_0"
+            archivos_dict[key] = [value] 
 
-
-    # ---------------------------
-    # Aquí podrías llamar a tu función para crear el producto
+    # 2. Llamamos al repo (pasamos los campos uno a uno)
     producto = crear_producto(
-                              db=db,
-                              nombre=nombre, 
-                              descripcion=descripcion, 
-                              tipo=tipo, 
-                              categoria_id=categoria_id, 
-                              marca_id=marca_id, 
-                              marca_nombre=marca_nombre,
-                              variantes=variantes_json,
-                              imagenes=archivos_por_variante,
-                              publico_objetivo=publico_objetivo,
-                              estado=estado
-                              )
-    # ---------------------------
+        db=db,
+        nombre=form.get("nombre"),
+        descripcion=form.get("descripcion"),
+        tipo=form.get("tipo"),
+        categoria_id=int(form.get("categoria_id")),
+        publico_objetivo=form.get("publico_objetivo"),
+        marca_id=form.get("marca_id"),
+        marca_nombre=form.get("marca_nombre"),
+        variantes=form.get("variantes"),
+        imagenes=archivos_dict, # Enviamos el dict con las claves "file_..."
+        estado=form.get("estado")
+    )
+
+    return {"mensaje": "Producto creado", "producto_id": producto.id}
+
+# --- REEMPLAZA EL CONTENIDO DE editar_producto_endpoint ---
+@producto_routers.put("/{producto_id}")
+async def editar_producto_endpoint(producto_id: int, request: Request, db: Session = Depends(get_session)):
+    form = await request.form()
+    
+    archivos_dict = {}
+    for key, value in form.multi_items():
+        if key.startswith("file_"):
+            archivos_dict[key] = [value]
+
+    producto = editar_producto_completo(
+        db=db,
+        producto_id=producto_id,
+        nombre=form.get("nombre"),
+        descripcion=form.get("descripcion"),
+        categoria_id=int(form.get("categoria_id")),
+        tipo=form.get("tipo"),
+        estado=form.get("estado"),
+        publico_objetivo=form.get("publico_objetivo"),
+        variantes=form.get("variantes"),
+        marca_id=form.get("marca_id"),
+        marca_nombre=form.get("marca_nombre"),
+        imagenes=archivos_dict
+    )
+    return {"mensaje": "Actualizado", "producto_id": producto.id}
 
 
-    return {
-        "mensaje": "Producto creado correctamente",
-        "producto_id": producto
-    }
+
+
 
 # =====================================================
 # OBTENER PRODUCTO COMPLETO
@@ -174,6 +149,11 @@ async def editar_producto_endpoint( # ✨ 2. DEBE SER 'async def' para poder lee
     try:
         # ✨ 5. ATRAPAMOS LAS FOTOS DINÁMICAS AQUÍ
         form_data = await request.form()
+
+        # 🧪 PRINT DE SEGURIDAD 2: Ver lo que llega al endpoint
+        print("\n=== 📥 RECIBIDO EN ENDPOINT ===")
+        print(f"Variantes JSON: {form_data.get('variantes')}")
+        
         imagenes_dict = {}
         
         for key, value in form_data.multi_items():

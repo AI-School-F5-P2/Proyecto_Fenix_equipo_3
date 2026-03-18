@@ -19,3 +19,4 @@ class StockSchema(BaseModel):
     proveedor_id: Optional[int] = None
     proveedor_nombre_nuevo: Optional[str] = None
     atributos: List[AtributoSchema] = []
+    orden: Optional[int] = 0

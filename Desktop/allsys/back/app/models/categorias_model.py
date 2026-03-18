@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 
@@ -10,7 +10,7 @@ class Categoria(Base):
     genero = Column(String(255), nullable=True)
     descripcion = Column(String(255), nullable=True)
     parent_id = Column(Integer, ForeignKey("categorias.id"), nullable=True)
-
+    activo = Column(Boolean, default=True)
     # Relaciones
     subcategorias = relationship(
         "Categoria",
