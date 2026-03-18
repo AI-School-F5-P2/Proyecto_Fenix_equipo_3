@@ -1,18 +1,21 @@
-<div class="body-nav-bar">
-  <ul class="list">
-    <li class="item">
-      <button (click)="logout()" class="logout-btn">
-        Cerrar sesión
-      </button>
-      <button routerLink="/new" class="addp-product-btn">
-        Agregar Nuevo Producto
-      </button>
-      <button routerLink="/view-products" class="view-product-btn">
-        Ver Producrtos
-      </button>
-      <button routerLink="/venta-create" class="venta-create-btn">
-        Registrar venta
-      </button>
-    </li>
-  </ul>
-</div>
+<nav class="top-navbar">
+  <div class="nav-brand">
+    <span class="brand-logo">📦</span>
+    <span class="brand-text">ALLSY</span>
+  </div>
+
+  <!-- <div class="nav-actions">
+    <button routerLink="/new" class="btn-primary-sm">
+      + Nuevo Producto
+    </button>
+    <button routerLink="/venta-create" class="btn-outline-sm">
+      Registrar venta
+    </button>
+    
+    <div class="divider"></div>
+    
+    <button (click)="logout()" class="btn-text-danger">
+      Cerrar sesión
+    </button>
+  </div> -->
+</nav>

@@ -1,70 +1,86 @@
-<div class="products-container">
-  <header class="list-header">
-    <h2>Lista de Productos</h2>
-    <span class="total-count" *ngIf="totalProductos > 0">{{ totalProductos }} productos encontrados</span>
+<div class="page-container products-view">
+  
+  <header class="page-header">
+    <div class="header-content">
+      <!-- <h1 class="title">Lista de Productos</h1> -->
+      <p class="subtitle" *ngIf="totalProductos > 0">{{ totalProductos }} productos encontrados</p>
+    </div>
   </header>
 
-  <div *ngIf="productos.length === 0 && !cargando" class="empty-state">
-    <div class="icon">📦</div>
-    <p>No hay productos disponibles en este momento.</p>
+  <div *ngIf="productos.length === 0 && !cargando" class="empty-state card-section">
+    <div class="empty-icon">📦</div>
+    <h3 class="empty-title">No hay productos</h3>
+    <p class="empty-text">Aún no tienes productos disponibles en este momento o no coinciden con tu búsqueda.</p>
   </div>
 
-  <div class="products-grid">
+  <div class="products-grid" *ngIf="productos.length > 0">
     <article class="product-card" *ngFor="let producto of productos">
       
-      <div class="product-image" [routerLink]="['/detail-product', producto.id]">
-        <img [src]="producto.imagen || 'assets/img/default-product.png'" alt="{{ producto.nombre }}">
+      <div class="product-image-container" [routerLink]="['/detail-product', producto.id]">
+        <img class="product-image" [src]="producto.imagen || 'assets/img/default-product.png'" alt="{{ producto.nombre }}">
         <div class="image-overlay">
-          <span>Ver detalle</span>
+          <span class="overlay-btn">Ver detalle</span>
         </div>
       </div>
       
-      <div class="product-info">
+      <div class="product-content">
+        
         <div class="top-info">
-          <span class="brand" *ngIf="producto.marca">{{ producto.marca.nombre }}</span>
-          <div class="stock-badge" [ngClass]="{'no-stock': producto.stock_total === 0}">
+          <span class="brand-name" *ngIf="producto.marca">{{ producto.marca.nombre }}</span>
+          <span class="stock-badge" [ngClass]="{'no-stock': producto.stock_total === 0}">
             {{ producto.stock_total > 0 ? producto.stock_total + ' en stock' : 'Agotado' }}
-          </div>
+          </span>
         </div>
         
-        <h3 class="title-truncate" [routerLink]="['/detail-product', producto.id]">{{ producto.nombre | titlecase }}</h3>
+        <h3 class="product-title title-truncate" [routerLink]="['/detail-product', producto.id]">
+          {{ producto.nombre | titlecase }}
+        </h3>
         
-        <p class="category-type">{{ producto.categoria?.nombre }} <span class="dot">•</span> {{ producto.tipo | titlecase }}</p>
+        <p class="category-type">
+          {{ producto.categoria?.nombre || 'Sin categoría' }} <span class="dot">•</span> {{ producto.tipo | titlecase }}
+        </p>
 
-        <div class="mid-info">
-          <div class="price-container">
-            <span class="price-label">Precio</span>
-            <p class="price" *ngIf="producto.precio_min !== null">
-              ${{ producto.precio_min | number:'1.2-2' }}
-              <span *ngIf="producto.precio_min !== producto.precio_max"> - ${{ producto.precio_max | number:'1.2-2' }}</span>
-            </p>
-            <p class="price" *ngIf="producto.precio_min === null">Consultar</p>
+        <div class="card-footer-info">
+          
+          <div class="mid-info">
+            <div class="price-container">
+              <span class="price-label">Precio desde</span>
+              <p class="price" *ngIf="producto.precio_min !== null">
+                ${{ producto.precio_min | number:'1.2-2' }}
+                <span class="price-max" *ngIf="producto.precio_min !== producto.precio_max"> - ${{ producto.precio_max | number:'1.2-2' }}</span>
+              </p>
+              <p class="price empty-price" *ngIf="producto.precio_min === null">Consultar</p>
+            </div>
+
+            <div class="color-swatches" *ngIf="producto.colores?.length">
+              <span class="color-dot" 
+                    *ngFor="let hex of producto.colores | slice:0:4" 
+                    [style.background]="hex"
+                    [title]="'Color: ' + hex">
+              </span>
+              <span class="color-dot-more" *ngIf="producto.colores.length > 4">+{{ producto.colores.length - 4 }}</span>
+            </div>
           </div>
 
-          <div class="color-swatches" *ngIf="producto.colores?.length">
-            <span class="color-dot" 
-                  *ngFor="let hex of producto.colores" 
-                  [style.background]="hex"
-                  [title]="'Color: ' + hex">
-            </span>
+          <div class="published-status" *ngIf="producto.canales?.web || producto.canales?.vinted || producto.canales?.wallapop">
+            <span class="channels-label">Publicado en:</span>
+            <div class="logos-container">
+              <img class="channel-logo" *ngIf="producto.canales.web" src="assets/img/logos/web-logo.png" alt="Web" title="Web">
+              <img class="channel-logo" *ngIf="producto.canales.vinted" src="assets/img/logos/vinted-logo.png" alt="Vinted" title="Vinted">
+              <img class="channel-logo" *ngIf="producto.canales.wallapop" src="assets/img/logos/wallapop-logo.png" alt="Wallapop" title="Wallapop">
+            </div>
           </div>
-        </div>
 
-        <div class="published-status" *ngIf="producto.canales?.web || producto.canales?.vinted || producto.canales?.wallapop">
-          <div class="logos-container">
-            <img *ngIf="producto.canales.web" src="assets/img/logos/web-logo.png" alt="Web" title="Web">
-            <img *ngIf="producto.canales.vinted" src="assets/img/logos/vinted-logo.png" alt="Vinted" title="Vinted">
-            <img *ngIf="producto.canales.wallapop" src="assets/img/logos/wallapop-logo.png" alt="Wallapop" title="Wallapop">
-          </div>
         </div>
       </div>
     </article>
   </div>
 
-  <div class="load-more" *ngIf="!sinMasProductos">
-    <button (click)="cargarProductos()" [disabled]="cargando" class="btn-load-more">
+  <div class="load-more-container" *ngIf="!sinMasProductos && productos.length > 0">
+    <button (click)="cargarProductos()" [disabled]="cargando" class="btn-outline-primary">
       <span *ngIf="!cargando">Cargar más productos</span>
-      <span *ngIf="cargando" class="spinner"></span>
+      <span *ngIf="cargando" class="spinner-small"></span>
     </button>
   </div>
+
 </div>

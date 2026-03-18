@@ -43,6 +43,7 @@ export class CategorySelectorComponent implements OnInit {
   private cargarCategorias(): void {
     this.productsService.cargarCategorias().subscribe({
       next: (data) => {
+        console.log("categorias : ", data)
         this.todasLasCategorias = data;
         this.categoriaActual = data.filter((c: any) => c.parent_id === null);
         

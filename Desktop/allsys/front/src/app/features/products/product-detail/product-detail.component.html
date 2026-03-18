@@ -1,94 +1,119 @@
-<button [routerLink]="['/edit', producto?.id]">Editar Producto</button>
-
-<div class="product-detail-container" *ngIf="!cargando && producto; else loading">
+<div class="page-container" *ngIf="!cargando && producto; else loading">
   
-  <div class="product-header">
-    <h1>{{ producto.nombre | titlecase }}</h1>
-    <p class="descripcion">{{ producto.descripcion }}</p>
-    
-    <div class="meta">
-      <span><strong>Tipo:</strong> {{ producto.tipo | titlecase }}</span>
-      <span *ngIf="producto.publico_objetivo"><strong>Público:</strong> {{ producto.publico_objetivo }}</span>
-      
-      <span *ngIf="producto.categoria?.nombre"><strong>Categoría:</strong> {{ producto.categoria?.nombre }}</span>
-      <span *ngIf="producto.marca?.nombre"><strong>Marca:</strong> {{ producto.marca?.nombre }}</span>
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="title">{{ producto.nombre | titlecase }}</h1>
+      <p class="subtitle">{{ producto.descripcion }}</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" [routerLink]="['/edit', producto?.id]">
+        ✏️ Editar Producto
+      </button>
     </div>
   </div>
 
+  <section class="card-section info-card">
+    <h3 class="section-title">Información General</h3>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Tipo</span>
+        <span class="meta-value">{{ producto.tipo | titlecase }}</span>
+      </div>
+      <div class="meta-item" *ngIf="producto.publico_objetivo">
+        <span class="meta-label">Público</span>
+        <span class="meta-value">{{ producto.publico_objetivo }}</span>
+      </div>
+      <div class="meta-item" *ngIf="producto.categoria?.nombre">
+        <span class="meta-label">Categoría</span>
+        <span class="meta-value badge-neutral">{{ producto.categoria?.nombre }}</span>
+      </div>
+      <div class="meta-item" *ngIf="producto.marca?.nombre">
+        <span class="meta-label">Marca</span>
+        <span class="meta-value">{{ producto.marca?.nombre }}</span>
+      </div>
+    </div>
+  </section>
+
   <div class="variantes-container">
-    <h2>Variantes</h2>
+    <h2 class="section-main-title">Variantes y Stock</h2>
     
-    <div class="variante-card" *ngFor="let v of producto.variantes">
-      <div class="variante-header">
-        <div class="color-box" [style.background]="v.hex_identidad"></div>
-        <span class="color-nombre">{{ v.identidad_variante | titlecase }}</span>
-        
-        <span class="ubicacion" *ngIf="v.ubicacion">
-          📍 Ubicación: {{ v.ubicacion }}
-        </span>
+    <section class="card-section variant-card" *ngFor="let v of producto.variantes">
+      
+      <div class="variant-header">
+        <div class="variant-title-group">
+          <div class="color-dot" *ngIf="v.hex_identidad" [style.background]="v.hex_identidad"></div>
+          <h3 class="variant-title">{{ v.identidad_variante | titlecase }}</h3>
+        </div>
+        <span class="badge-location" *ngIf="v.ubicacion">📍 {{ v.ubicacion }}</span>
       </div>
 
       <div class="imagenes-variante" *ngIf="v.imagenes && v.imagenes.length > 0">
-        <h3>Imágenes</h3>
-        <div class="imagen-lista">
+        <div class="image-gallery">
           <img *ngFor="let img of v.imagenes" 
                [src]="img" 
                (click)="verImagen(img)" 
-               alt="Imagen {{ v.identidad_variante }}">
+               alt="Imagen {{ v.identidad_variante }}"
+               class="gallery-img">
         </div>
       </div>
 
       <div class="tallas-variante">
-        <h3>Inventario y Precios</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Opción / Talla</th>
-              <th>Stock</th>
-              <th>Precio Venta</th>
-              <th>Estado / Canales</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let s of v.stocks">
-              <td><small>{{ s.sku }}</small></td>
-              
-              <td>
-                <strong>{{ s.etiqueta }}</strong>
+        <h4 class="table-title">Inventario y Precios</h4>
+        <div class="table-responsive">
+          <table class="saas-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Opción / Atributos</th>
+                <th>Stock</th>
+                <th>Precio Venta</th>
+                <th>Canales Activos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of v.stocks">
+                <td class="text-muted"><small>{{ s.sku || 'Sin SKU' }}</small></td>
                 
-                <div class="atributos-detalle" *ngIf="s.atributos && s.atributos.length > 0">
-                  <small *ngFor="let attr of s.atributos; let isLast = last">
-                    {{ attr.nombre }}: {{ attr.valor }}{{ !isLast ? ', ' : '' }}
-                  </small>
-                </div>
-              </td>
-              
-              <td>
-                <span [class.sin-stock]="s.cantidad === 0">{{ s.cantidad }} unid.</span>
-              </td>
-              
-              <td>${{ s.precio_venta }}</td>
+                <td>
+                  <strong>{{ s.etiqueta }}</strong>
+                  <div class="atributos-detalle" *ngIf="s.atributos && s.atributos.length > 0">
+                    <span class="attr-pill" *ngFor="let attr of s.atributos">
+                      {{ attr.nombre }}: <strong>{{ attr.valor }}</strong>
+                    </span>
+                  </div>
+                </td>
+                
+                <td>
+                  <span class="stock-status" [class.out-of-stock]="s.cantidad === 0">
+                    {{ s.cantidad }} unid.
+                  </span>
+                </td>
+                
+                <td class="price-cell">${{ s.precio_venta }}</td>
 
-              <td class="canales-badges">
-                <span class="badge inventario" *ngIf="!s.publicar_web && !s.publicar_vinted && !s.publicar_wallapop">
-                  📦 Solo Inventario
-                </span>
-
-                <span class="badge web" *ngIf="s.publicar_web">🌐 Web</span>
-                <span class="badge vinted" *ngIf="s.publicar_vinted">👗 Vinted</span>
-                <span class="badge wallapop" *ngIf="s.publicar_wallapop">🏷️ Wallapop</span>
-              </td>
-
-            </tr>
-          </tbody>
-        </table>
+                <td>
+                  <div class="canales-badges">
+                    <span class="badge badge-inventory" *ngIf="!s.publicar_web && !s.publicar_vinted && !s.publicar_wallapop">
+                      📦 Solo Inventario
+                    </span>
+                    <span class="badge badge-web" *ngIf="s.publicar_web">🌐 Web</span>
+                    <span class="badge badge-vinted" *ngIf="s.publicar_vinted">👗 Vinted</span>
+                    <span class="badge badge-wallapop" *ngIf="s.publicar_wallapop">🏷️ Wallapop</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       
-    </div>
+    </section>
   </div>
 </div>
 
 <ng-template #loading>
-  <div class="loading">Cargando producto...</div>
+  <div class="page-container loading-container">
+    <div class="spinner"></div>
+    <p>Cargando información del producto...</p>
+  </div>
 </ng-template>

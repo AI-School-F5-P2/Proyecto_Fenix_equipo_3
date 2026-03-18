@@ -1,393 +1,242 @@
-/* ==========================================================================
-   1. VARIABLES DE COMPONENTE (Scope: Add Product)
-   ========================================================================== */
-
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* VARIABLES GLOBALES Y PALETA */
+:host {
+  --vinted-teal: #007782;
+  --vinted-teal-hover: #005c65;
+  --vinted-teal-light: #e6f2f3;
+  --bg-app: #f4f6f8;
+  --card-bg: #ffffff;
+  --text-main: #2c3e50;
+  --text-muted: #7f8c8d;
+  --border-color: #e0e6ed;
+  --danger: #e74c3c;
+  --danger-light: #fceceb;
+  --border-radius-lg: 12px;
+  --border-radius-md: 8px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --transition: all 0.2s ease-in-out;
 }
 
-.product-form {
-  max-width: 900px;
-  margin: 2rem auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  font-family: system-ui, -apple-system, sans-serif;
-  color: var(--text-main);
-  padding: 0 1rem;
-}
-
-/* ==========================================================================
-   2. JERARQUÍA DE NIVELES (LAYOUT)
-   ========================================================================== */
-
-.section {
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+/* CONTENEDOR PRINCIPAL */
+.page-container {
+  background-color: var(--bg-app);
   padding: 2rem;
-  background: var(--bg-main);
-  box-shadow: var(--shadow-sm);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-main);
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.section h3 {
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem;
+.form-header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.8rem;
   font-weight: 700;
-  color: #111827;
-  padding-bottom: 0.75rem;
+  color: var(--vinted-teal);
+  margin: 0 0 0.5rem 0;
 }
 
-.variant-card {
-  border: 2px solid var(--ap-border-light);
-  border-radius: var(--ap-radius-lg);
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* SECCIONES Y TARJETAS (Estilo Imagen 1 y 2) */
+.card-section, .variant-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius-lg);
   padding: 1.5rem;
   margin-bottom: 2rem;
-  background: var(--ap-bg-variant);
-  position: relative;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
 }
 
-.stock-card {
-  border: 1px solid #cbd5e1;
-  border-left: 4px solid var(--ap-color-primary);
-  border-radius: var(--ap-radius-md);
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  background: var(--ap-bg-stock);
-  margin-top: 10px;
+.section-header h3 {
+  font-size: 1.1rem;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
 }
 
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+/* GRIDS */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.2rem; }
 
-@media (max-width: 768px) {
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
-}
-
-/* ==========================================================================
-   3. ELEMENTOS DE FORMULARIO (INPUTS)
-   ========================================================================== */
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+/* CAMPOS DE FORMULARIO */
+.field { display: flex; flex-direction: column; margin-bottom: 1rem; }
+.field.full-width { margin-top: 1rem; }
 
 .field label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #4b5563;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
 }
 
-.field input, 
+.field input[type="text"], 
+.field input[type="number"], 
+.field input[type="date"], 
 .field textarea, 
-.field select {
-  padding: 0.7rem 0.8rem;
-
-  border-radius: var(--ap-radius-md);
+.custom-select select {
+  width: 100%;
+  padding: 0.75rem 1rem;
   border: 3px solid var(--ap-border-base);
+  border-radius: var(--border-radius-md);
   font-size: 0.95rem;
-  background-color: #ffffff;
-  transition: all 0.2s ease;
-  width: 100%;
+  background-color: #fcfcfc;
+  transition: var(--transition);
+  box-sizing: border-box;
 }
 
-.field input:focus {
+.field input:focus, .field textarea:focus, .custom-select select:focus {
   outline: none;
-  border-color: var(--ap-color-primary);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  border-color: var(--vinted-teal);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px var(--vinted-teal-light);
 }
 
-/* ==========================================================================
-   4. COMPONENTE: CATEGORÍAS
-   ========================================================================== */
-.category-box {
-  padding: 0.8rem;
-  border: 1.5px solid var(--ap-border-base);
-  border-radius: var(--ap-radius-md);
+.custom-select select {
+  appearance: none;
   cursor: pointer;
-  background: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 500;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237f8c8d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
 }
 
-.category-box:hover {
-  border-color: var(--ap-color-primary);
+/* VARIANTE CARD */
+.variant-card {
+  border-left: 4px solid var(--vinted-teal); /* Detalle visual */
 }
 
-.category-dropdown {
-  margin-top: 0.5rem;
-  border: 1.5px solid var(--ap-border-base);
-  border-radius: var(--ap-radius-md);
-  background: white;
-  max-height: 280px;
-  overflow-y: auto;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.category-item, .category-back {
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.category-item:hover {
-  background: #f9fafb;
-  color: var(--ap-color-primary);
-}
-
-.category-back {
-  font-weight: 700;
-  color: var(--ap-color-primary);
-  background: #f0f7ff;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* ==========================================================================
-   5. PALETA Y AUTOCOMPLETE (CORREGIDO)
-   ========================================================================== */
-
-.color-palette {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px;
-  background: #ffffff;
-  border: 1.5px solid var(--ap-border-base);
-  border-radius: 10px;
-}
-
-.color-swatch {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(0,0,0,0.1);
-}
-
-.color-swatch.active {
-  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--ap-color-primary);
-}
-
-/* --- ESTILOS DE AUTOCOMPLETE RECUPERADOS --- */
-.marca-autocomplete, .proveedor-autocomplete { 
-  position: relative; /* FUNDAMENTAL para que la lista no se vaya volando */
-}
-
-.dropdown-list {
-  position: absolute;
-  top: 100%; left: 0; width: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-  background: white;
-  border: 1px solid var(--ap-border-base);
-  border-radius: 0 0 var(--ap-radius-md) var(--ap-radius-md);
-  z-index: 100;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-/* ESTO FALTABA: Da padding y forma a los items para que no sean invisibles */
-.dropdown-item {
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 0.95rem;
-  background: white;
-}
-
-.dropdown-item:hover { 
-  background: #f9fafb; 
-}
-
-.dropdown-item.selected {
-  background: #eff6ff;
-  border-left: 4px solid var(--ap-color-primary);
-  position: sticky; top: 0;
-  z-index: 10;
-}
-
-/* ==========================================================================
-   6. IMÁGENES
-   ========================================================================== */
-.image-box img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  border-radius: var(--ap-radius-md);
-  border: 1px solid var(--ap-border-base);
-}
-
-.btn-img-del {
-  position: absolute;
-  top: -8px; right: -8px;
-  background: var(--ap-color-danger);
-  color: white; border: none; border-radius: 50%;
-  width: 22px; height: 22px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Contenedor principal del botón de subida */
-.upload-box-modern {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  min-height: 100px;
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  background-color: #fafafa;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 12px;
-}
-
-/* Efecto al pasar el ratón */
-.upload-box-modern:hover {
-  background-color: #f0f8ff; /* Un tono azul muy claro */
-  border-color: #007bff;     /* Color primario (ajusta al tuyo) */
-}
-
-/* Contenido dentro de la caja */
-.upload-content {
+.variant-header {
+  background: var(--bg-app);
+  padding: 1rem;
+  border-radius: var(--border-radius-md);
+  margin-bottom: 1.5rem;
+  cursor: grab;
   display: flex;
   flex-direction: column;
+}
+
+.variant-header:active { cursor: grabbing; }
+
+.variant-title-group {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 20px;
+  gap: 0.8rem;
 }
 
-.upload-icon {
-  font-size: 2rem; /* Tamaño grande para el icono */
-  line-height: 1;
-}
+.drag-icon { color: #a0aec0; font-size: 1.2rem; }
+.variant-title { margin: 0; font-size: 1.05rem; }
+.variant-highlight { color: var(--vinted-teal); font-weight: 600; }
+.color-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border-color); display: inline-block; }
+.drag-hint { margin: 0.3rem 0 0 2rem; font-size: 0.8rem; color: var(--text-muted); }
 
-.upload-text {
-  color: #666;
-  font-size: 0.95rem;
+/* UPLOAD DE IMÁGENES (Estilo Imagen 3) */
+.upload-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius-lg);
+  background-color: #fafbfc;
+  cursor: pointer;
+  transition: var(--transition);
   text-align: center;
 }
 
-.upload-text strong {
-  color: #333;
+.upload-box:hover {
+  border-color: var(--vinted-teal);
+  background-color: var(--vinted-teal-light);
 }
 
-/* Contenedor de la galería de fotos */
-.image-preview {
+.upload-content { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.upload-icon { font-size: 1.5rem; color: var(--vinted-teal); font-weight: bold; }
+.upload-title { font-weight: 600; color: var(--text-main); }
+.upload-subtitle { font-size: 0.8rem; color: var(--text-muted); }
+
+.image-preview-list {
   display: flex;
-  flex-wrap: wrap; /* Permite que pasen a la siguiente línea si no caben */
-  gap: 12px;       /* Espacio entre las fotos */
-  margin-top: 15px;
+  gap: 1rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
 }
 
-/* Caja individual de cada foto */
-.image-box {
-  position: relative; /* Importante para poder posicionar la papelera encima */
-  width: 100px;       /* Ancho fijo de la miniatura */
-  height: 150px;      /* Alto fijo de la miniatura */
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  border: 1px solid #eee;
+.image-thumbnail {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  flex-shrink: 0;
 }
 
-/* La imagen dentro de la caja */
-.image-box img {
+.image-thumbnail img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Recorta la imagen para que llene el cuadrado sin deformarse */
-  border-radius: 8px;
+  object-fit: cover;
+  border-radius: var(--border-radius-md);
 }
 
-/* El botón de eliminar (papelera) */
-.btn-img-del {
+.btn-remove-img {
   position: absolute;
-  top: -6px;         /* Lo saca un poquito por arriba */
-  right: -6px;       /* Lo saca un poquito por la derecha */
-  background: white;
-  border: 1px solid #ccc;
+  top: -6px;
+  right: -6px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  font-size: 0.7rem;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  padding: 0;
-  transition: transform 0.2s;
 }
 
-.btn-img-del:hover {
-  transform: scale(1.1); /* Efecto de crecimiento al pasar el ratón */
-  color: red;
-}
-/* ==========================================================================
-   7. BOTONES
-   ========================================================================== */
-
-.btn-primary {
-  background: var(--ap-color-primary);
-  color: var(--ap-text-on-primary);
-  padding: 1rem 2.5rem;
+.badge-cover {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 0.65rem;
+  padding: 2px 6px;
   border-radius: 10px;
-  border: none;
-  font-weight: 700;
-  cursor: pointer;
 }
 
-.btn-primary:hover { background: var(--ap-color-primary-hover); }
+/* STOCK ITEMS (Filas limpias) */
+.stock-title { font-size: 1rem; color: var(--vinted-teal); margin-bottom: 1rem; }
 
-.btn-add-variant {
-  width: 100%;
-  background: #eff6ff;
-  color: var(--ap-color-primary);
-  border: 2px dashed #bfdbfe;
+.stock-item {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
   padding: 1rem;
-  border-radius: var(--ap-radius-lg);
-  font-weight: 600;
-  cursor: pointer;
+  margin-bottom: 1rem;
+  background: #fafbfc;
 }
 
-.btn-add-stock {
-  width: 100%;
-  background: var(--ap-color-success-bg);
-  color: var(--ap-color-success);
-  border: 2px dashed #bbf7d0;
-  padding: 0.8rem;
-  border-radius: var(--ap-radius-md);
+.stock-header {
   font-weight: 600;
-  cursor: pointer;
-}
-
-.variant-del {
-  background: var(--ap-color-danger-bg);
-  color: var(--ap-color-danger);
-  border: 1px solid #fecaca;
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--ap-radius-md);
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.btn-delete-text {
-  background: none; border: none;
-  color: var(--ap-color-danger);
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .stock-footer {
@@ -396,90 +245,101 @@
   align-items: center;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px dashed var(--border-color);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-.stock-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap; /* Por si en móviles no cabe en una línea */
-  gap: 15px;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px dashed #e0e0e0;
-}
-
-.publish-options {
+/* TOGGLE SWITCH (Estilo Imagen 4) */
+.toggle-switch {
   display: flex;
   align-items: center;
-  gap: 15px;
-}
-
-.publish-hint {
-  font-size: 0.85rem;
-  color: #666;
-  margin-right: 5px;
-}
-
-
-
-/* ==========================================================================
-   8. ESTILOS DE LA LISTA DESPLEGABLE (SELECT MODERN)
-   ========================================================================== */
-/* ==========================================================================
-   ESTILOS DE LA FILA (CON CSS GRID)
-   ========================================================================== */
-.dropdown-item {
-  display: grid;                               /* Usamos GRID en lugar de FLEX */
-  grid-template-columns: minmax(0, 1fr) auto;  /* Columna 1: Texto, Columna 2: Radio */
-  gap: 12px;                                   /* Separación entre texto y radio */
-  align-items: center;
-  width: 100%;
-  padding: 10px 12px;
-  box-sizing: border-box;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 0.5rem;
+}
+
+.toggle-switch input { display: none; }
+
+.slider {
+  width: 40px;
+  height: 22px;
+  background-color: #ccc;
+  border-radius: 20px;
+  position: relative;
+  transition: 0.3s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
   background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
 }
 
-.dropdown-item:last-child {
-  border-bottom: none;
+.toggle-switch input:checked + .slider { background-color: var(--vinted-teal); }
+.toggle-switch input:checked + .slider::before { transform: translateX(18px); }
+.toggle-label { font-size: 0.9rem; font-weight: 500; }
+
+/* BOTONES */
+.btn-primary {
+  background: var(--vinted-teal);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
 }
 
-.dropdown-item:hover {
-  background-color: #f9fafb;
+.btn-primary:hover:not(:disabled) { background: var(--vinted-teal-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.btn-outline-primary {
+  background: transparent;
+  color: var(--vinted-teal);
+  border: 1px dashed var(--vinted-teal);
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.9rem;
 }
 
-.dropdown-item.selected {
-  background-color: #e6f2ff; 
-  color: #0056b3;            
-  font-weight: 600;          
+.btn-outline-primary:hover { background: var(--vinted-teal-light); }
+
+.full-width-btn { width: 100%; padding: 1rem; margin-top: 1rem; }
+
+.btn-text-danger {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-md);
+  transition: var(--transition);
 }
 
-/* ==========================================================================
-   ELEMENTOS INTERNOS
-   ========================================================================== */
-.item-text {
-  text-align: left;
-  white-space: nowrap;     /* En una sola línea */
-  overflow: hidden;        /* Oculta lo que se desborde */
-  text-overflow: ellipsis; /* Añade los puntos suspensivos (...) */
-  color: #333;
-}
+.btn-text-danger:hover { background: var(--danger-light); }
 
-.item-radio {
-  margin: 0;
-  pointer-events: none;    /* Evita que un clic accidental rompa la selección */
+.variant-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
+.form-actions { display: flex; justify-content: flex-end; margin-top: 2rem; }
+.main-submit { min-width: 200px; padding: 1rem; font-size: 1.1rem; }
+
+/* Drag and Drop Helpers de Angular CDK */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  background: white;
+  opacity: 0.9;
 }
+.cdk-drag-placeholder { opacity: 0; }
+.cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }

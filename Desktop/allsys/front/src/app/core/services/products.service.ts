@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { ProductoBackend } from '../../features/products/add-product/add-product.component';
+import { Categoria, ProductoBackend } from '../../features/products/add-product/product-form.config';
+
 
 export interface PaginatedResponse {
   total: number;
@@ -25,25 +26,25 @@ export class ProductsService {
   constructor(private http: HttpClient) {}
 
   // ---------------- CATEGORÍAS ----------------
-  cargarCategorias(): Observable<any[]> {
-    if (this.categoriasCache.length > 0) {
-      return new Observable(observer => {
-        observer.next(this.categoriasCache);
-        observer.complete();
-      });
-    }
-    return this.http.get<any[]>(`${this.apiUrl}/categorias`).pipe(
-      tap(data => this.categoriasCache = data)
-    );
+cargarCategorias(): Observable<Categoria[]> { // ✨ Cambiado any[] por Categoria[]
+  if (this.categoriasCache.length > 0) {
+    return new Observable(observer => {
+      observer.next(this.categoriasCache);
+      observer.complete();
+    });
   }
+  return this.http.get<Categoria[]>(`${this.apiUrl}/categorias`).pipe( // ✨ Tipado aquí también
+    tap(data => this.categoriasCache = data)
+  );
+}
 
-  getCategoriasPadre(): any[] {
-    return this.categoriasCache.filter(c => c.parent_id === null);
-  }
+getCategoriasPadre(): Categoria[] {
+  return this.categoriasCache.filter(c => c.parent_id === null);
+}
 
-  getSubcategorias(parentId: number): any[] {
-    return this.categoriasCache.filter(c => c.parent_id === parentId);
-  }
+getSubcategorias(parentId: number): Categoria[] {
+  return this.categoriasCache.filter(c => c.parent_id === parentId);
+}
 
   // ---------------- MARCAS ----------------
   cargarMarcas(): Observable<any[]> {

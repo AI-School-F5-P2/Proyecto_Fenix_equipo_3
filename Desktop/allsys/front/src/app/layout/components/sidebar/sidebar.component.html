@@ -1,3 +1,27 @@
-<div class="body-side-bar">
+<aside class="side-navbar">
+  <div class="nav-menu">
+    <p class="menu-label">Menú Principal</p>
     
-</div>
+    <a routerLink="/view-products" routerLinkActive="active-link" class="nav-item">
+      <span class="icon">📋</span>
+      Ver Productos
+    </a>
+    
+    <a routerLink="/venta-create" routerLinkActive="active-link" class="nav-item">
+      <span class="icon">💰</span>
+      Registrar Venta
+    </a>
+    
+    <a routerLink="/new" routerLinkActive="active-link" class="nav-item">
+      <span class="icon">➕</span>
+      Agregar Producto
+    </a>
+  </div>
+
+  <div class="nav-footer">
+    <button (click)="logout()" class="nav-item logout-item">
+      <span class="icon">🚪</span>
+      Cerrar Sesión
+    </button>
+  </div>
+</aside>
