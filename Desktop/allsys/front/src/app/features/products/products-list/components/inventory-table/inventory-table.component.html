@@ -1,0 +1,53 @@
+<div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th class="text-center">ID</th> <th>Producto</th>
+          <th>SKU Físico</th>
+          <th>Estilo / Color</th>
+          <th class="text-center">Talla</th>
+          <th>Ubicación</th>
+          <th>Precio (Web)</th>
+          <th class="text-center">Stock</th>
+          <th class="text-center">Web</th> <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let stock of stocks">
+          <td class="text-center">
+            <span class="prod-id" title="ID Único de Inventario">#{{ stock.stock_id }}</span>
+          </td>
+          <td>
+            <div class="prod-info-flat">
+              <img [src]="stock.imagen_cover || 'assets/img/default-product.png'" class="table-prod-img-small" alt="img">
+              <div class="prod-text-group">
+                <span class="prod-name-bold">{{ stock.producto_nombre | titlecase }}</span>
+                <span class="prod-brand-small" *ngIf="stock.marca">{{ stock.marca.nombre }}</span>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge-sku">{{ stock.stock_sku }}</span></td>
+          <td>
+            <div class="style-cell">
+              <span class="color-dot" [style.background]="stock.hex_identidad" *ngIf="stock.hex_identidad !== '#FFFFFF'"></span>
+              <span class="style-name">{{ stock.identidad_variante }}</span>
+            </div>
+          </td>
+          <td class="text-center"><span class="badge-size">{{ stock.talla || 'Única' }}</span></td>
+          <td><span class="location-text">{{ stock.ubicacion_almacen || '--' }}</span></td>
+          <td class="price-sale">${{ stock.precio_venta | number:'1.2-2' }}</td>
+          <td class="text-center">
+            <span class="stock-number" [ngClass]="{'low-stock': stock.stock_disponible === 0}">
+              {{ stock.stock_disponible }}
+            </span>
+          </td>
+          <td class="text-center">
+            <span class="dot-status" [class.active]="stock.canales?.web" title="Publicado en Web">Web</span>
+          </td>
+          <td class="text-center">
+            <button class="btn-icon" [routerLink]="['/edit', stock.producto_id]" title="Editar Producto Completo">✏️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>

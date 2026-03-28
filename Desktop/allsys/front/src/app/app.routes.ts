@@ -6,7 +6,6 @@ import { authGuard } from './core/guards/auth.guard';
 import { AddProductComponent } from './features/products/add-product/add-product.component';
 import { ProductsListComponent } from './features/products/products-list/products-list.component';
 import { ProductDetailComponent } from './features/products/product-detail/product-detail.component';
-import { ProductEditComponent } from './features/products/product-edit/product-edit.component';
 import { VentaCreateComponent } from './features/ventas/venta-create/venta-create.component';
 
 export const routes: Routes = [

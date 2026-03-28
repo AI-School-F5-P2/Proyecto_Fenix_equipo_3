@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ProductsService } from '../../core/services/products.service';
+import { ProductsService } from '../../../../../core/services/products.service';
 
 export interface Marca {
   id?: number;

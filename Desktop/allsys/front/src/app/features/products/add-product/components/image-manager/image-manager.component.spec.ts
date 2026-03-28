@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ProductEditComponent } from './product-edit.component';
+import { ImageManagerComponent } from './image-manager.component';
 
-describe('ProductEditComponent', () => {
-  let component: ProductEditComponent;
-  let fixture: ComponentFixture<ProductEditComponent>;
+describe('ImageManagerComponent', () => {
+  let component: ImageManagerComponent;
+  let fixture: ComponentFixture<ImageManagerComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ProductEditComponent]
+      imports: [ImageManagerComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ProductEditComponent);
+    fixture = TestBed.createComponent(ImageManagerComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

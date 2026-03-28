@@ -1,0 +1,15 @@
+<div class="category-box" (click)="abrirCategorias()">
+  {{ getNombreCategoriaSeleccionada() }} 
+  <span class="arrow" [class.open]="dropdownAbierto">▼</span>
+</div>
+
+<div class="category-dropdown" *ngIf="dropdownAbierto">
+  <div class="category-back" *ngIf="rutaCategorias.length > 0" (click)="volverCategoria()">
+    ⬅ Volver
+  </div>
+  
+  <div class="category-item" *ngFor="let c of categoriaActual" (click)="seleccionarCategoria(c)">
+    <span class="category-name">{{ c.nombre }}</span>
+    <span class="sub-arrow" *ngIf="tieneHijos(c)">▶</span>
+  </div>
+</div>

@@ -1,48 +1,51 @@
 <div class="page-container">
   <div class="form-header">
     <h2 class="title">{{ isEditMode ? 'Editar' : 'Agregar' }} producto</h2>
+
+    <button 
+      type="button" 
+      class="btn-text-danger delete-product-btn" 
+      *ngIf="isEditMode" 
+      (click)="moverProductoPapelera()" 
+      [disabled]="isSubmitting || cargandoDatos">
+      🗑️ Eliminar Producto
+    </button>
   </div>
 
   <form class="product-form" (ngSubmit)="onSubmit()">
+    
     <section class="card-section">
       <div class="section-header">
         <h3>Datos básicos</h3>
       </div>
       
       <div class="grid-2">
-        <div class="field">
-          <label>Nombre del Producto</label>
-          <input type="text" [(ngModel)]="nombre" name="nombre" required placeholder="Ej: Camiseta Oversize" />
-        </div>
+  <div class="field">
+    <label>
+      Nombre del Producto 
+      <span class="required-web-asterisk" *ngIf="productoVaAPublicarse()" title="Requerido para publicar">*</span>
+    </label>
+    <input type="text" [(ngModel)]="nombre" name="nombre" placeholder="Ej: Camiseta Oversize" />
+  </div>
 
-        <div class="field marca-autocomplete">
-          <label>Marca</label>
-          <app-brand-selector 
-            [marcaInicial]="marcaSeleccionada"
-            (brandChanged)="onBrandChanged($event)">
-          </app-brand-selector>
-        </div>
+  <div class="field marca-autocomplete">
+    <label>Marca <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+    <app-brand-selector 
+      [marcaInicial]="marcaSeleccionada"
+      (brandChanged)="onBrandChanged($event)">
+    </app-brand-selector>
+  </div>
 
-        <div class="field">
-          <label>Estado del Artículo</label>
-          <div class="custom-select">
-            <select [(ngModel)]="estadoSeleccionado" name="estadoSeleccionado">
-              <option value="nuevo">✨ Nuevo / A estrenar</option>
-              <option value="segunda_mano">♻️ Segunda Mano / Usado</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="field">
-          <label>Público / Género</label>
-          <div class="custom-select">
-            <select [(ngModel)]="publicoSeleccionado" name="publicoSeleccionado" required>
-              <option value="" disabled selected>Selecciona...</option>
-              <option *ngFor="let p of listaPublicos" [value]="p">{{ p }}</option>
-            </select>
-          </div>
-        </div>
-      </div>
+  <div class="field">
+    <label>Estado del Artículo <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+    <div class="custom-select">
+      <select [(ngModel)]="estadoSeleccionado" name="estadoSeleccionado">
+        <option value="nuevo">✨ Nuevo / A estrenar</option>
+        <option value="segunda_mano">♻️ Segunda Mano / Usado</option>
+      </select>
+    </div>
+  </div>
+</div>
 
       <div class="field full-width">
         <label>Concepto e Información General</label>
@@ -57,7 +60,7 @@
 
     <section class="card-section">
       <div class="section-header">
-        <h3>Categoría</h3>
+        <h3>Categoría <span class="required-asterisk" title="Requerido para inventario">*</span></h3>
       </div>
       <app-category-selector 
         [categoriaInicial]="categoriaSeleccionadaFinal" 
@@ -82,28 +85,16 @@
         </div>
 
         <div class="field image-upload-section">
-          <!-- <label>Fotos del producto en <strong>{{ v.identidad_variante || 'esta variante' }}</strong></label> -->
-          
-          <div class="upload-wrapper">
-            <input type="file" [id]="'file-upload-' + i" multiple (change)="onFilesSelected($event,i)" accept="image/*" style="display: none;" />
-            
-            <label [for]="'file-upload-' + i" class="upload-box">
-              <div class="upload-content">
-                <span class="upload-icon">↑_</span>
-                <span class="upload-title">Subir imágenes</span>
-                <span class="upload-subtitle">Elige imágenes o arrástralas aquí. Max 20 MB.</span>
-              </div>
-            </label>
-          </div>
-
-          <div class="image-preview-list" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="onImageDrop($event, i)">
-            <div class="image-thumbnail" *ngFor="let img of v.imagenes; let k=index" cdkDrag>
-              <img [src]="img" alt="Vista previa"/>
-              <span class="badge-cover" *ngIf="k === 0">Portada</span>
-              <button type="button" class="btn-remove-img" (click)="eliminarImagen(i,k)">✕</button>
-              <div class="example-custom-placeholder" *cdkDragPlaceholder></div>
-            </div>
-          </div>
+          <label>
+            Fotos del estilo
+            <span class="required-web-asterisk" *ngIf="varianteVaAPublicarse(v)" title="Requerido para publicar">*</span>
+          </label>
+          <app-image-manager
+            [variantId]="v.temp_id"
+            [imagenes]="v.imagenes"
+            [imagenesFiles]="v.imagenesFiles"
+            (imagesChanged)="v.imagenes = $event.imagenes; v.imagenesFiles = $event.files">
+          </app-image-manager>
         </div>
 
         <div class="field full-width">
@@ -122,15 +113,33 @@
               </div>
               
               <div class="grid-4">
+                
                 <div class="field" *ngFor="let attr of s.atributos; let k=index">
                   <label>
                     {{ formatLabel(attr.nombre) }}
+                    
                     <span class="identity-star" *ngIf="attr.nombre === mapeoIdentidadPorCategoria" title="Define la identidad de la variante">⭐</span>
+                    
+                    <span class="required-asterisk" *ngIf="attr.nombre === mapeoIdentidadPorCategoria" title="Requerido para inventario">*</span>
+                    
+                    <span class="required-asterisk" *ngIf="attr.nombre === 'talla'" title="Requerido para inventario">*</span>
+                    
+                    <span class="required-web-asterisk" *ngIf="(s.publicar_web || s.publicar_vinted || s.publicar_wallapop) && attr.nombre === 'peso_kg'" title="Requerido para envíos">*</span>
                   </label>
 
-                  <app-color-selector *ngIf="attr.tipo === 'color-dropdown'" [colores]="colores" [initialHex]="getHexColor(attr.valor)" (colorChanged)="seleccionarColorAtributo(attr, $event, v)"></app-color-selector>
+                  <app-color-selector 
+                    *ngIf="attr.tipo === 'color-dropdown'"
+                    [initialHex]="getHexColor(attr.valor)" 
+                    (colorChanged)="seleccionarColorAtributo(attr, $event, v)">
+                  </app-color-selector>
 
-                  <input *ngIf="attr.tipo !== 'color-dropdown' && attr.tipo !== 'select'" [type]="attr.tipo" [(ngModel)]="attr.valor" (ngModelChange)="sincronizarIdentidadVariante(v)" [name]="'attr'+i+j+k" [placeholder]="getPlaceholder(attr.nombre)" />
+                  <input 
+                    *ngIf="attr.tipo !== 'color-dropdown' && attr.tipo !== 'select'" 
+                    [type]="attr.tipo" 
+                    [(ngModel)]="attr.valor" 
+                    (ngModelChange)="sincronizarIdentidadVariante(v)" 
+                    [name]="'attr'+i+j+k" 
+                    [placeholder]="getPlaceholder(attr.nombre)" />
 
                   <div class="custom-select" *ngIf="attr.tipo === 'select'">
                     <select [(ngModel)]="attr.valor" (ngModelChange)="sincronizarIdentidadVariante(v)" [name]="'attr'+i+j+k">
@@ -140,18 +149,43 @@
                   </div>
                 </div>
 
-                <div class="field"><label>Unidades</label><input type="number" [(ngModel)]="s.stock" [name]="'stock'+i+j" /></div>
-                <div class="field"><label>Precio Venta</label><input type="number" step="0.01" [(ngModel)]="s.precio_venta" [name]="'pv'+i+j" /></div>
-                <div class="field"><label>Fecha de Compra</label><input type="date" [(ngModel)]="s.fecha_compra" [name]="'fecha_compra'+i+j" /></div>
-                
+                <div class="field">
+                  <label>Unidades / stocks <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+                  <input type="number" [(ngModel)]="s.stock" [name]="'stock'+i+j" />
+                </div>
+
+                <div class="field">
+                  <label>Precio Compra <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+                  <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc'+i+j" />
+                </div>
+
                 <div class="field proveedor-autocomplete">
-                  <label>Proveedor</label>
+                  <label>Proveedor <span class="required-asterisk" title="Requerido para inventario">*</span></label>
                   <app-supplier-selector [proveedorInicialId]="s.proveedor_id" (supplierChanged)="onSupplierChanged($event, s)"></app-supplier-selector>
                 </div>
-                
-                <div class="field"><label>Precio Compra</label><input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc'+i+j" /></div>
-                <div class="field"><label>Ubicación</label><input type="text" [(ngModel)]="v.ubicacion" [name]="'ubicacion'+i" placeholder="Pasillo..." /></div>
-                <div class="field"><label>Descuento %</label><input type="number" [(ngModel)]="s.descuento" [name]="'desc'+i+j" /></div>
+
+                <div class="field">
+                  <label>Fecha de Compra <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+                  <input type="date" [(ngModel)]="s.fecha_compra" [name]="'fecha_compra'+i+j" />
+                </div>
+
+                <div class="field">
+                  <label>
+                    Precio Venta 
+                    <span class="required-web-asterisk" *ngIf="s.publicar_web || s.publicar_vinted || s.publicar_wallapop" title="Requerido para publicar">*</span>
+                  </label>
+                  <input type="number" step="0.01" [(ngModel)]="s.precio_venta" [name]="'pv'+i+j" />
+                </div>
+
+                <div class="field">
+                  <label>Ubicación de almacenaje <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+                  <input type="text" [(ngModel)]="v.ubicacion" [name]="'ubicacion'+i" placeholder="Pasillo..." />
+                </div>
+
+                <div class="field">
+                  <label>Descuento %</label>
+                  <input type="number" [(ngModel)]="s.descuento" [name]="'desc'+i+j" />
+                </div>
               </div>
 
               <div class="stock-footer">

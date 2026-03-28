@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SuppliersService } from '../../core/services/proveedores.service'; // Ajusta la ruta
+import { SuppliersService } from '../../../../../core/services/proveedores.service'; // Ajusta la ruta
 
 export interface Proveedor {
   id?: number;

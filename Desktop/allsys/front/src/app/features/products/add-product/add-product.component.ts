@@ -4,24 +4,27 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductsService } from '../../../core/services/products.service';
 import { SuppliersService } from '../../../core/services/proveedores.service';
-import { BrandSelectorComponent } from "../../../components/brand-selector/brand-selector.component";
-import { Proveedor, SupplierSelectorComponent } from "../../../components/supplier-selector/supplier-selector.component";
-import { Color, ColorSelectorComponent } from '../../../components/color-selector/color-selector.component';
-import { CategorySelectionEvent, CategorySelectorComponent } from '../../../components/category-selector/category-selector.component';
+import { BrandSelectorComponent } from "./components/brand-selector/brand-selector.component";
+import { SupplierSelectorComponent, Proveedor } from "./components/supplier-selector/supplier-selector.component";
+import { ImageManagerComponent } from "./components/image-manager/image-manager.component";
+import { CategorySelectorComponent,  CategorySelectionEvent} from "../../../shared/components/selectors/category-selector/category-selector.component";
+import { ColorSelectorComponent} from "../../../shared/components/selectors/color-selector/color-selector.component";
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+
 
 // ✨ IMPORTACIONES ESTRUCTURADAS
 import { 
-  ATRIBUTOS_BASE, ATRIBUTOS_POR_TIPO, COLORES_PALETA, MATERIALES_JOYERIA, MAPEO_IDENTIDAD_POR_TIPO,
+  ATRIBUTOS_BASE, ATRIBUTOS_POR_TIPO, COLORES_PALETA, MATERIALES_JOYERIA, 
   Variante, StockVariante, ProductoBackend, AtributoBackend, Marca, EstadoPrenda 
 } from './product-form.config';
 
-import { generarTempId, formatLabel, getPlaceholder, determinarTipoBase } from './product-utils';
+import { generarTempId, formatLabel, getPlaceholder, determinarTipoBase, MAPEO_IDENTIDAD_POR_TIPO, MAPEO_MATERIAL_A_COLOR, determinarGenero } from './product-utils';
+// import { ImageManagerComponent } from "../../../components/image-manager/image-manager.component";
 
 @Component({
   selector: 'app-add-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, BrandSelectorComponent, DragDropModule, SupplierSelectorComponent, ColorSelectorComponent, CategorySelectorComponent],
+  imports: [CommonModule, FormsModule, BrandSelectorComponent, DragDropModule, SupplierSelectorComponent, ColorSelectorComponent, CategorySelectorComponent, ImageManagerComponent],
   templateUrl: './add-product.component.html',
   styleUrls: ['./add-product.component.css']
 })
@@ -112,6 +115,18 @@ export class AddProductComponent implements OnInit {
     });
   }
 
+  // Helper para saber si alguna talla de esta variante tiene el switch activado
+  varianteVaAPublicarse(v: Variante): boolean {
+    return v.stocks.some(s => s.publicar_web || s.publicar_vinted || s.publicar_wallapop);
+  }
+
+  // // Helper para saber si EL PRODUCTO EN GENERAL se va a publicar en algún lado
+  // productoVaAPublicarse(): boolean {
+  //   return this.variantes.some(v => 
+  //     v.stocks.some(s => s.publicar_web || s.publicar_vinted || s.publicar_wallapop)
+  //   );
+  // }
+
   // ================== EVENTOS SELECTORES ==================
   onBrandChanged(marca: Marca) { this.marcaSeleccionada = marca; }
 
@@ -121,12 +136,47 @@ export class AddProductComponent implements OnInit {
     if (prov.isNew) (stock as any).proveedor_nombre_nuevo = prov.nombre;
   }
 
-  onCategorySelected(event: CategorySelectionEvent): void {
-    const esMisma = this.categoriaSeleccionadaFinal === event.categoriaId;
-    this.categoriaSeleccionadaFinal = event.categoriaId;
-    this.tipoProductoBase = determinarTipoBase(event.rutaCategorias);
-    if (!esMisma) this.refrescarAtributosEnVariantes();
+  // En add-product.component.ts
+
+onCategorySelected(event: CategorySelectionEvent): void {
+  // 1. Guardamos el estado previo para saber si cambió la categoría
+  const esMisma = this.categoriaSeleccionadaFinal === event.categoriaId;
+  this.categoriaSeleccionadaFinal = event.categoriaId;
+
+  // 2. Si la categoría es null (limpieza), reseteamos valores y salimos
+  if (event.categoriaId === null) {
+    this.tipoProductoBase = '';
+    this.publicoSeleccionado = '';
+    return;
   }
+
+  // ✨ EL ARREGLO: Usamos (event.rutaCategorias || []) para asegurar que siempre sea un Array
+  const rutaSegura = event.rutaCategorias || [];
+
+  // 3. Determinamos si es Ropa Superior, Inferior, Calzado, etc.
+  this.tipoProductoBase = determinarTipoBase(rutaSegura);
+
+  // 4. 🔥 AUTOMATIZACIÓN DEL GÉNERO
+  // Extraemos el género usando la función de utils enviando la ruta segura
+  const generoDetectado = determinarGenero(rutaSegura);
+
+  // Si el género detectado no es 'unisex', lo asignamos automáticamente
+  if (generoDetectado && generoDetectado !== 'unisex') {
+    // Mapeamos el valor del backend al valor de tu listaPublicos
+    this.publicoSeleccionado = this.capitalizar(generoDetectado);
+  }
+
+  // 5. Si la categoría cambió realmente, refrescamos los atributos de las variantes (Talla, Material, etc.)
+  if (!esMisma) {
+    this.refrescarAtributosEnVariantes();
+  }
+}
+
+// Pequeño helper para pasar de 'mujer' a 'Mujer'
+private capitalizar(s: string): string {
+  if (!s) return '';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
   // ================== GESTIÓN DE VARIACIÓN ==================
   resetVariantes(): void { this.variantes = [this.nuevaVariante()]; }
@@ -161,23 +211,110 @@ export class AddProductComponent implements OnInit {
     this.variantes.forEach(v => v.stocks.forEach(s => s.atributos = JSON.parse(JSON.stringify(nuevos))));
   }
 
-  sincronizarIdentidadVariante(variante: Variante): void {
-    const masterAttr = this.mapeoIdentidadPorCategoria;
-    const primerStock = variante.stocks[0];
-    const attr = primerStock.atributos.find(a => a.nombre === masterAttr);
-    if (attr && attr.valor) {
-      variante.identidad_variante = attr.valor;
-      if (masterAttr === 'color') {
-        const found = this.colores.find(c => c.nombre === attr.valor);
-        variante.hex_identidad = found ? found.hex : '#FFFFFF';
+// DENTRO DE AddProductComponent
+
+sincronizarIdentidadVariante(variante: Variante): void {
+  const nombreAtributoMaestro = this.mapeoIdentidadPorCategoria; // 'material' en joyeria
+  const primerStock = variante.stocks[0];
+  const atributoMaestro = primerStock.atributos.find(a => a.nombre === nombreAtributoMaestro);
+
+  if (atributoMaestro && atributoMaestro.valor) {
+    variante.identidad_variante = atributoMaestro.valor;
+
+    // --- LÓGICA AUTOMÁTICA PARA JOYERÍA ---
+    if (this.tipoProductoBase.startsWith('joyeria')) {
+      // 1. Buscamos el color correspondiente al material
+      const nombreColorAuto = MAPEO_MATERIAL_A_COLOR[atributoMaestro.valor];
+      
+      if (nombreColorAuto) {
+        // 2. Buscamos el atributo 'color' en TODOS los stocks de la variante y lo rellenamos
+        variante.stocks.forEach(s => {
+          const attrColor = s.atributos.find(a => a.nombre === 'color');
+          if (attrColor) {
+            attrColor.valor = nombreColorAuto;
+          }
+        });
+
+        // 3. Actualizamos el círculo visual (HEX) de la variante
+        const found = this.colores.find(c => c.nombre === nombreColorAuto);
+        variante.hex_identidad = found ? found.hex : '#E2E8F0';
       }
+    } 
+    // --- LÓGICA NORMAL PARA ROPA/CALZADO ---
+    else if (nombreAtributoMaestro === 'color') {
+      const found = this.colores.find(c => c.nombre === atributoMaestro.valor);
+      variante.hex_identidad = found ? found.hex : '#FFFFFF';
+    } 
+    else {
+      variante.hex_identidad = '#E2E8F0';
     }
-    variante.stocks.forEach(s => {
-      const a = s.atributos.find(at => at.nombre === masterAttr);
-      if (a) a.valor = variante.identidad_variante;
-    });
   }
 
+  // Sincronización Vertical del maestro (Material/Color/ML)
+  variante.stocks.forEach(s => {
+    const attr = s.atributos.find(at => at.nombre === nombreAtributoMaestro);
+    if (attr) attr.valor = variante.identidad_variante;
+  });
+}
+// 1. Primero, el helper que revisa si el producto entero va para la web
+productoVaAPublicarse(): boolean {
+  return this.variantes.some(v => 
+    v.stocks.some(s => s.publicar_web || s.publicar_vinted || s.publicar_wallapop)
+  );
+}
+
+// 2. La función de validación corregida
+private validarFormulario(): boolean {
+  // ✨ AQUÍ DEFINIMOS LA VARIABLE QUE TE DABA ERROR
+  const vaAPublicarGlobal = this.productoVaAPublicarse();
+
+  // 1. GLOBAL
+  // Solo exigimos el nombre si el switch de publicar está encendido en alguna talla
+  if (vaAPublicarGlobal && (!this.nombre || !this.nombre.trim())) {
+    return this.lanzarError('El nombre del producto es obligatorio para poder publicarlo en la web.');
+  }
+
+  if (!this.categoriaSeleccionadaFinal) return this.lanzarError('Selecciona una categoría.');
+  if (!this.marcaSeleccionada) return this.lanzarError('Selecciona una marca.');
+
+  const maestro = this.mapeoIdentidadPorCategoria;
+
+  for (let i = 0; i < this.variantes.length; i++) {
+    const v = this.variantes[i];
+    const nV = i + 1;
+
+    // 2. INVENTARIO (Obligatorio para guardar)
+    if (!v.identidad_variante) return this.lanzarError(`Variante ${nV}: El campo ${maestro} es obligatorio.`);
+    if (!v.descripcion?.trim()) return this.lanzarError(`Variante ${nV}: Falta la descripción.`);
+    if (!v.ubicacion?.trim()) return this.lanzarError(`Variante ${nV}: Falta la ubicación en almacén.`);
+
+    for (let j = 0; j < v.stocks.length; j++) {
+      const s = v.stocks[j];
+      const nS = j + 1;
+
+      if (s.stock <= 0) return this.lanzarError(`Var ${nV}, Talla ${nS}: Stock debe ser > 0.`);
+      if (s.precio_compra <= 0) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta precio compra.`);
+      if (!s.proveedor_id && !s.proveedor) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta proveedor.`);
+      if (!s.fecha_compra) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta fecha compra.`);
+
+      // 3. PUBLICACIÓN (Solo si algún canal está activo)
+      const vaAPublicar = s.publicar_web || s.publicar_vinted || s.publicar_wallapop;
+
+      if (vaAPublicar) {
+        if (!v.imagenes || v.imagenes.length === 0) 
+          return this.lanzarError(`Variante ${nV}: Sube al menos una foto para publicar.`);
+        
+        if (s.precio_venta <= 0) 
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: El precio de venta es obligatorio.`);
+        
+        const peso = s.atributos.find(a => a.nombre === 'peso_kg')?.valor;
+        if (!peso || peso <= 0) 
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: El peso es obligatorio para el envío.`);
+      }
+    }
+  }
+  return true;
+}
   get mapeoIdentidadPorCategoria(): string {
     return MAPEO_IDENTIDAD_POR_TIPO[this.tipoProductoBase] || 'color';
   }
@@ -206,16 +343,32 @@ export class AddProductComponent implements OnInit {
   }
 
   // ================== GESTIÓN DE ARCHIVOS ==================
-  onFilesSelected(event: Event, i: number): void {
-    const files = (event.target as HTMLInputElement).files;
-    if (!files) return;
-    Array.from(files).forEach(file => {
-      this.variantes[i].imagenesFiles.push(file);
-      const reader = new FileReader();
-      reader.onload = e => this.variantes[i].imagenes.push(e.target?.result as string);
-      reader.readAsDataURL(file);
-    });
+  // Reemplaza tu onFilesSelected por este:
+async onFilesSelected(event: Event, i: number): Promise<void> {
+  const files = (event.target as HTMLInputElement).files;
+  if (!files) return;
+
+  const filesArray = Array.from(files);
+  
+  for (const file of filesArray) {
+    // 1. Añadimos el archivo al array de archivos
+    this.variantes[i].imagenesFiles.push(file);
+    
+    // 2. Esperamos a que se lea para añadir la previa en el MISMO orden
+    const base64 = await this.fileToBase64(file);
+    this.variantes[i].imagenes.push(base64);
   }
+}
+
+// Función auxiliar para convertir a base64 con promesas
+private fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.onerror = (e) => reject(e);
+    reader.readAsDataURL(file);
+  });
+}
 
   eliminarImagen(i: number, j: number): void {
     this.variantes[i].imagenes.splice(j, 1);
@@ -226,14 +379,22 @@ export class AddProductComponent implements OnInit {
     attr.valor = color.nombre; v.hex_identidad = color.hex; this.sincronizarIdentidadVariante(v);
   }
 
-  // ================== ENVÍO DE DATOS ==================
-  private validarFormulario(): boolean {
-    if (!this.nombre.trim() || !this.categoriaSeleccionadaFinal || !this.marcaSeleccionada) { 
-        alert('Faltan datos obligatorios (Nombre, Categoría o Marca)'); 
-        return false; 
-    }
-    return true;
-  }
+// Helper para limpiar el código
+private lanzarError(msj: string): boolean {
+  alert(msj);
+  return false;
+}
+
+// Helper para que el alert sea amigable
+private getMensajeErrorAtributo(tipo: string): string {
+  const mensajes: Record<string, string> = {
+    'color': 'Debes seleccionar un color.',
+    'material': 'Debes indicar el material/metal (ej: Oro, Plata).',
+    'capacidad': 'Debes indicar la capacidad (ej: 100ml).',
+    'identidad': 'El campo de identidad es obligatorio.'
+  };
+  return mensajes[tipo] || 'Falta el atributo principal de la variante.';
+}
 
   onSubmit(): void {
   if (!this.validarFormulario()) return;
@@ -268,6 +429,9 @@ export class AddProductComponent implements OnInit {
     }
   });
 }
+
+
+
 
   private construirFormData(): FormData {
     const fd = new FormData();
@@ -309,6 +473,33 @@ export class AddProductComponent implements OnInit {
   formatLabel(n: string): string { return formatLabel(n); }
   getPlaceholder(n: string): string { return getPlaceholder(n); }
   getHexColor(n: string): string { return this.colores.find(c => c.nombre === n)?.hex || '#fff'; }
+
+  moverProductoPapelera(): void {
+    if (!this.productoId) return;
+
+    // Mensaje súper sencillo, estilo Windows/Mac
+    const confirmar = confirm('¿Quieres mover este producto a la papelera?');
+
+    if (confirmar) {
+      this.cargandoDatos = true;
+      
+      // Asumiendo que llamas a tu endpoint de "mover a papelera"
+      this.productsService.moverProductoPapelera(this.productoId).subscribe({
+        next: (res: any) => {
+          alert(res.mensaje || '🗑️ Movido a la papelera.');
+          this.router.navigate(['/view-products']); 
+        },
+        error: (err) => {
+          this.cargandoDatos = false;
+          alert('❌ Error: ' + (err.error?.detail || 'Inténtalo de nuevo.'));
+        }
+      });
+    }
+  }
+
+
+
+  
 }
 
 

@@ -1,0 +1,26 @@
+<div class="color-selector-wrapper">
+  <div class="color-trigger" (click)="toggleDropdown()" [class.has-value]="colorSeleccionado">
+    <div class="preview-dot" 
+         [style.backgroundColor]="colorSeleccionado ? colorSeleccionado.hex : '#f2f2f2'"
+         [class.is-white]="!colorSeleccionado || colorSeleccionado.hex === '#FFFFFF'">
+    </div>
+    
+    <span class="color-label">
+      {{ colorSeleccionado ? colorSeleccionado.nombre : 'Color' }}
+    </span>
+
+    <span class="arrow-icon">▼</span>
+  </div>
+
+  <div class="color-menu" *ngIf="dropdownOpen">
+    <div class="color-grid">
+      <div *ngFor="let color of listaColores" 
+           class="color-option" 
+           (click)="selectColor(color)"
+           [class.selected]="colorSeleccionado?.hex === color.hex">
+        <div class="option-dot" [style.backgroundColor]="color.hex"></div>
+        <span class="option-name">{{ color.nombre }}</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -327,7 +327,32 @@
   transition: var(--transition);
 }
 
-.btn-text-danger:hover { background: var(--danger-light); }
+.btn-text-danger:hover { background: var(--danger-light); }´
+
+/* Botón de eliminar producto principal */
+.delete-product-btn {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #f87171;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-product-btn:hover:not([disabled]) {
+  background-color: #ef4444;
+  color: white;
+}
+
+.delete-product-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .variant-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
 .form-actions { display: flex; justify-content: flex-end; margin-top: 2rem; }

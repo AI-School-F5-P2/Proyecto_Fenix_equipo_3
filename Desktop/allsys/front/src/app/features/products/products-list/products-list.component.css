@@ -1,336 +1,206 @@
-/* =========================================
-   GRID Y CONTENEDOR PRINCIPAL
-   ========================================= */
+/* ✨ LAYOUT PRINCIPAL Y CABECERA */
+.page-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
 
-.products-view {
+.custom-nav {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 20px 50px 50px 50px;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.products-grid {
-  display: grid;
-  /* Grid responsivo automático: las tarjetas no bajan de 280px */
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
- 
+.title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main, #2c3e50);
+  margin: 0;
 }
 
-/* =========================================
-   TARJETAS DE PRODUCTO (CARDS)
-   ========================================= */
+.results-count {
+  color: var(--text-muted, #7f8c8d);
+  font-size: 0.95rem;
+}
 
-.product-card {
-  background-color: var(--ap-bg-main);
-  border-radius: var(--ap-radius-lg);
-  border: 1px solid var(--ap-border-base);
-  box-shadow: var(--ap-shadow-sm);
+/* PESTAÑAS (TABS) */
+.custom-tabs {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  height: 100%; /* Asegura que todas midan lo mismo en la fila */
+  gap: 16px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border-color);
 }
 
-.product-card:hover {
-  transform: translateY(-4px); /* Se eleva un poquito */
-  box-shadow: var(--ap-shadow-md);
-  border-color: var(--ap-border-light);
-}
-
-/* --- ZONA DE LA IMAGEN --- */
-.product-image-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 5; /* Formato vertical típico de ropa/moda */
-  background-color: var(--ap-bg-variant);
-  overflow: hidden;
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
   cursor: pointer;
+  position: relative;
+  transition: var(--transition);
 }
 
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+.tab-btn:hover {
+  color: var(--primary);
 }
 
-.product-card:hover .product-image {
-  transform: scale(1.03); /* Ligero zoom al hacer hover */
+.tab-btn.active {
+  color: var(--primary);
 }
 
-/* Efecto hover sobre la imagen */
-.image-overlay {
+.tab-btn.active::after {
+  content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary);
+  border-radius: 3px 3px 0 0;
+}
+
+/* BARRA DE BÚSQUEDA Y FILTROS */
+.filter-bar {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.search-group {
+  display: flex;
+  gap: 12px;
+}
+
+.input-wrapper {
+  flex-grow: 1;
+  background: var(--card-bg);
+}
+
+.input-search {
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.btn-search {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0 24px;
+  border-radius: var(--ap-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-search:hover {
+  background: var(--ap-color-primary-hover, #005c65);
+}
+
+.clear-input-icon {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+/* PÍLDORAS DE FILTROS */
+.pills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
 }
 
-.product-image-container:hover .image-overlay {
-  opacity: 1;
-}
-
-.overlay-btn {
-  background-color: var(--ap-bg-main);
-  color: var(--ap-text-main);
-  padding: 0.6rem 1.2rem;
+.filter-pill select {
+  padding: 8px 16px;
   border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.btn-clear-all {
+  background: none;
+  border: none;
+  color: var(--danger, #e74c3c);
   font-size: 0.9rem;
   font-weight: 600;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-/* --- CONTENIDO DE LA TARJETA --- */
-.product-content {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-}
-
-.top-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.brand-name {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--ap-text-muted);
-  font-weight: 600;
-}
-
-.stock-badge {
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-  background-color: var(--ap-color-success-bg);
-  color: var(--ap-color-success);
-}
-
-.stock-badge.no-stock {
-  background-color: var(--ap-color-danger-bg);
-  color: var(--ap-color-danger);
-}
-
-.product-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--ap-text-main);
-  margin: 0 0 0.3rem 0;
   cursor: pointer;
-  transition: color 0.2s ease;
+  text-decoration: underline;
 }
 
-.product-title:hover {
-  color: var(--ap-color-primary);
+/* CHIPS ACTIVOS */
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
 }
 
-.title-truncate {
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* Corta a 2 líneas si es muy largo */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.category-type {
+.filter-chip {
+  background: var(--primary);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
   font-size: 0.85rem;
-  color: var(--ap-text-muted);
-  margin: 0;
-}
-
-.dot {
-  margin: 0 0.3rem;
-  opacity: 0.5;
-}
-
-/* Contenedor que empuja el precio/logos hacia abajo para igualar alturas */
-.card-footer-info {
-  margin-top: auto;
-  padding-top: 1rem;
-}
-
-.mid-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 1rem;
-  border-top: 1px solid var(--ap-border-base);
-  padding-top: 1rem;
-}
-
-.price-label {
-  font-size: 0.75rem;
-  color: var(--ap-text-muted);
-  display: block;
-  margin-bottom: 0.2rem;
-}
-
-.price {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--ap-text-main);
-  margin: 0;
-}
-
-.price-max {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--ap-text-muted);
-}
-
-.empty-price {
-  font-size: 1rem;
-  font-style: italic;
-  font-weight: 500;
-}
-
-/* --- COLORES (Swatches) --- */
-.color-swatches {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 8px;
 }
 
-.color-dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid var(--ap-border-base);
-  box-shadow: inset 0 0 2px rgba(0,0,0,0.1);
-}
+.close-chip { cursor: pointer; font-weight: bold; }
 
-.color-dot-more {
-  font-size: 0.75rem;
-  color: var(--ap-text-muted);
-  font-weight: 600;
-  margin-left: 2px;
-}
-
-/* --- CANALES Y LOGOS --- */
-.published-status {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: var(--ap-bg-variant);
-  padding: 0.5rem 0.8rem;
-  border-radius: var(--ap-radius-md);
-}
-
-.channels-label {
-  font-size: 0.75rem;
-  color: var(--ap-text-muted);
-  font-weight: 600;
-}
-
-.logos-container {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.channel-logo {
-  height: 16px;
-  width: auto;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-  filter: grayscale(100%); /* Las pasamos a grises para que se vea más limpio */
-}
-
-.product-card:hover .channel-logo {
-  filter: grayscale(0%); /* Vuelven a color original al hacer hover */
-  opacity: 1;
-}
-
-/* =========================================
-   ESTADO VACÍO (EMPTY STATE)
-   ========================================= */
-
+/* ESTADOS VACÍOS Y BOTONES GLOBALES */
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   text-align: center;
-  padding: 4rem 2rem;
+  padding: 64px 24px;
+  background: var(--card-bg);
+  border-radius: var(--ap-radius-lg);
+  border: 1px dashed var(--border-color);
 }
 
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.empty-title {
-  font-size: 1.25rem;
-  color: var(--ap-text-main);
-  margin: 0 0 0.5rem 0;
-}
-
-.empty-text {
-  color: var(--ap-text-muted);
-  margin: 0;
-  max-width: 400px;
-}
-
-/* =========================================
-   BOTÓN CARGAR MÁS
-   ========================================= */
+.empty-icon { font-size: 3rem; margin-bottom: 16px; }
+.empty-title { color: var(--text-main); margin-bottom: 8px; }
+.empty-text { color: var(--text-muted); }
 
 .load-more-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 2rem;
+  text-align: center;
+  margin-top: 32px;
 }
 
-.btn-outline-primary {
-  background: transparent;
-  color: var(--ap-color-primary);
-  border: 2px solid var(--ap-color-primary);
-  padding: 0.8rem 2rem;
-  border-radius: 30px; /* Estilo píldora */
-  font-size: 1rem;
+.btn-load-more {
+  background: var(--card-bg);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 12px 32px;
+  border-radius: 24px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  transition: all 0.2s;
 }
 
-.btn-outline-primary:hover:not(:disabled) {
-  background: var(--ap-color-primary);
-  color: white;
-  box-shadow: var(--ap-shadow-md);
+.btn-load-more:hover {
+  background: var(--primary-light, #e6f2f3);
 }
 
-.btn-outline-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
+/* SPINNER */
 .spinner-small {
+  display: inline-block;
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(0,0,0,0.1);
-  border-top-color: currentColor;
+  border: 2px solid rgba(0, 119, 130, 0.3);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
 }
 
-/* RESPONSIVE MÓVIL (Las tarjetas se adaptan gracias al Auto-fill, solo achicamos paddings) */
-@media screen and (max-width: 480px) {
-  .products-grid { grid-template-columns: 1fr; }
-  .product-image-container { aspect-ratio: 1 / 1; /* Más cuadrada en móvil */ }
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
