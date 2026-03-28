@@ -18,16 +18,154 @@ from app.api.deps import get_current_admin
 from app.repositories.producto_repo import (
     crear_producto,
     editar_producto_completo,
+    mover_a_papelera,
     obtener_producto_completo,
     obtener_productos_paginados,
-    eliminar_producto
+    obtener_productos_papelera,
+    obtener_stocks_individuales_paginados,
+    vaciar_producto_papelera
 )
-from app.schemas.producto_schema import PaginatedProductosResponse
+from app.schemas.producto_schema import PaginatedProductosResponse, PaginatedStockResponse
 
 producto_routers = APIRouter(
     prefix="/productos",
     tags=["Productos"]
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# =====================================================
+# LISTAR STOCKS VENDIBLES (VISTA APLANADA / INVENTARIO)
+# =====================================================
+@producto_routers.get("/inventario-individual", response_model=PaginatedStockResponse)
+def listar_inventario_individual_endpoint(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    tipo_busqueda: str = Query("stock_id"), # Valor por defecto acorde a la vista
+    categoria_id: Optional[int] = Query(None),
+    marca_id: Optional[int] = Query(None),
+    color: Optional[str] = Query(None),
+    talla: Optional[str] = Query(None),
+    estado: Optional[str] = Query(None),
+    precio_min: Optional[float] = Query(None),
+    precio_max: Optional[float] = Query(None),
+    solo_vendidos: bool = Query(False),
+    ordenar_por: str = Query("fecha_desc"),
+    proveedores_ids: List[int] = Query(default=[]),
+    fecha_inicio: Optional[str] = Query(None), # ✨ NUEVO
+    fecha_fin: Optional[str] = Query(None),
+    db: Session = Depends(get_session)
+):
+    return obtener_stocks_individuales_paginados(
+        db=db, 
+        page=page, 
+        limit=limit, 
+        search=search, 
+        tipo_busqueda=tipo_busqueda,
+        categoria_id=categoria_id,
+        marca_id=marca_id,
+        color=color,
+        talla=talla,
+        estado=estado,
+        precio_min=precio_min,
+        precio_max=precio_max,
+        solo_vendidos=solo_vendidos,
+        ordenar_por=ordenar_por,
+        proveedores_ids=proveedores_ids,
+        fecha_inicio = fecha_inicio, # ✨ NUEVO
+        fecha_fin = fecha_fin,
+    )
+
+# =====================================================
+# LISTAR PRODUCTOS (VISTA MAESTRA / CATÁLOGO)
+# =====================================================
+@producto_routers.get("/", response_model=PaginatedProductosResponse)
+def listar_productos_endpoint(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    tipo_busqueda: str = Query("producto_id"), # Valor por defecto acorde a la vista
+    categoria_id: Optional[int] = Query(None),
+    marca_id: Optional[int] = Query(None),
+    color: Optional[str] = Query(None),
+    talla: Optional[str] = Query(None),
+    estado: Optional[str] = Query(None),
+    material: Optional[str] = Query(None),
+    precio_min: Optional[float] = Query(None),
+    precio_max: Optional[float] = Query(None),
+    solo_vendidos: bool = Query(False),
+    ordenar_por: str = Query("fecha_desc"),
+    proveedores_ids: List[int] = Query(default=[]),
+    fecha_inicio: Optional[str] = Query(None), # ✨ NUEVO
+    fecha_fin: Optional[str] = Query(None),
+    db: Session = Depends(get_session)
+):
+    return obtener_productos_paginados(
+        db=db, 
+        page=page, 
+        limit=limit, 
+        search=search,
+        tipo_busqueda=tipo_busqueda,
+        categoria_id=categoria_id,
+        marca_id=marca_id,
+        color=color,
+        talla=talla,
+        estado=estado,
+        material=material,
+        precio_min=precio_min,
+        precio_max=precio_max,
+        solo_vendidos=solo_vendidos,
+        ordenar_por=ordenar_por,
+        proveedores_ids=proveedores_ids,
+        fecha_inicio = fecha_inicio, # ✨ NUEVO
+        fecha_fin = fecha_fin,
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # =====================================================
 # CREAR PRODUCTO
@@ -107,19 +245,6 @@ def obtener_producto_endpoint(
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return producto
 
-
-# =====================================================
-# LISTAR PRODUCTOS (PAGINADO)
-# =====================================================
-@producto_routers.get("/", response_model=PaginatedProductosResponse)
-def listar_productos_endpoint(
-    # Exigimos que la página sea mínimo 1
-    page: int = Query(1, ge=1, description="Número de página"),
-    # Exigimos que el límite sea mínimo 1 y máximo 100 por seguridad
-    limit: int = Query(10, ge=1, le=100, description="Cantidad de ítems por página"),
-    db: Session = Depends(get_session)
-):
-    return obtener_productos_paginados(db, page, limit)
 
 
 # =====================================================
@@ -211,16 +336,65 @@ async def editar_producto_endpoint( # ✨ 2. DEBE SER 'async def' para poder lee
 # =====================================================
 # ELIMINAR PRODUCTO
 # =====================================================
-@producto_routers.delete("/{producto_id}")
-def eliminar_producto_endpoint(
+# 1. RUTA PARA ENVIAR A LA PAPELERA (Actualización de estado)
+@producto_routers.put("/{producto_id}/papelera")
+def enviar_producto_a_papelera_endpoint(
     producto_id: int,
     db: Session = Depends(get_session),
     current_admin=Depends(get_current_admin)
 ):
-    eliminado = eliminar_producto(db, producto_id)
-    if not eliminado:
+    resultado = mover_a_papelera(db, producto_id)
+    if not resultado:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+        
+    return resultado # Devuelve el dict: {"success": True, "mensaje": "..."}
 
-    return {
-        "mensaje": "Producto eliminado correctamente"
-    }
+# 2. RUTA PARA VACIAR/DESTRUIR DE LA PAPELERA (Borrado real)
+@producto_routers.delete("/papelera/{producto_id}")
+def destruir_producto_endpoint(
+    producto_id: int,
+    db: Session = Depends(get_session),
+    current_admin=Depends(get_current_admin)
+):
+    resultado = vaciar_producto_papelera(db, producto_id)
+    
+    if not resultado:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+        
+    # Si la función vaciar_producto_papelera devuelve success=False (porque tiene ventas)
+    # lanzamos un error 400 (Bad Request) para que Angular lo atrape en el bloque "error"
+    if not resultado.get("success"):
+        raise HTTPException(status_code=400, detail=resultado.get("mensaje"))
+
+    return resultado
+
+
+# ==========================================
+# RUTA: CONSULTAR PAPELERA
+# ==========================================
+@producto_routers.get("/papelera")
+def listar_papelera_endpoint(
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_session),
+    current_admin=Depends(get_current_admin)
+):
+    """
+    Devuelve los productos que han sido movidos a la papelera (Soft Delete).
+    """
+    return obtener_productos_papelera(db, page=page, limit=limit)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

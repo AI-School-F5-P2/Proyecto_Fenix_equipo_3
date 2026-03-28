@@ -223,7 +223,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Trajes y blazers Mujer",
+                        "nombre": "Trajes y blazers",
                         "descripcion": "",
                         "genero": "mujer",
                         "hijos": [
@@ -233,7 +233,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Ropa de baño Mujer",
+                        "nombre": "Ropa de baño",
                         "descripcion": "Playa y piscina",
                         "genero": "mujer",
                         "hijos": [
@@ -244,7 +244,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Lencería y pijamas Mujer",
+                        "nombre": "Lencería y pijamas",
                         "descripcion": "",
                         "genero": "mujer", 
                         "hijos": [
@@ -252,10 +252,10 @@ categorias_master = [
                             {"nombre": "Braguitas", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Conjuntos de lencería", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Lencería moldeadora", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Pijamas Mujer", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Batas Mujer", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Pijamas", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Batas", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Medias", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Calcetines Mujer", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Calcetines", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Accesorios de lencería", "descripcion": "", "genero": "mujer"},
                         ]
                     },
@@ -264,37 +264,37 @@ categorias_master = [
                         "descripcion": "",
                         "genero": "mujer", 
                         "hijos": [
-                            {"nombre": "Camisetas y blusas premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Vestidos premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Faldas premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Pantalones premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Shorts premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Monos premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Sudaderas y jerseís premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Abrigos y cazadoras premamá", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Bañadores y pareos premamá", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Camisetas y blusas", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Vestidos", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Faldas", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Pantalones", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Shorts", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Monos", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Sudaderas y jerseís", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Abrigos y cazadoras", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Bañadores y pareos", "descripcion": "", "genero": "mujer"},
                             {
-                                "nombre": "Ropa interior premamá", 
+                                "nombre": "Ropa interior", 
                                 "descripcion": "", 
                                 "genero": "mujer",
                                 "hijos":[
-                                    {"nombre": "Braguitas premamá", "descripcion": "", "genero": "mujer"},
-                                    {"nombre": "Pijamas premamá", "descripcion": "", "genero": "mujer"},
-                                    {"nombre": "Sujetadores premamá y posparto", "descripcion": "", "genero": "mujer"},
+                                    {"nombre": "Braguitas", "descripcion": "", "genero": "mujer"},
+                                    {"nombre": "Pijamas", "descripcion": "", "genero": "mujer"},
+                                    {"nombre": "Sujetadores y posparto", "descripcion": "", "genero": "mujer"},
                                 ]
                             },
-                            {"nombre": "Ropa de deporte premamá", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Ropa de deporte", "descripcion": "", "genero": "mujer"},
                         ]
                     },
                     {
-                        "nombre": "Ropa deportiva Mujer",
+                        "nombre": "Ropa deportiva",
                         "descripcion": "",
                         "genero": "mujer", 
                         "hijos": [
                             {"nombre": "Tops y camisetas deportivas", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Sujetadores deportivos", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Leggins y pantalones deportivos", "descripcion": "", "genero": "mujer"},
-                            {"nombre": "Chándales Mujer", "descripcion": "", "genero": "mujer"},
+                            {"nombre": "Chándales", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Shorts deportivos", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Faldas deportivas", "descripcion": "", "genero": "mujer"},
                             {"nombre": "Sudaderas deportivas", "descripcion": "", "genero": "mujer"},
@@ -347,7 +347,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Vaqueros Hombre",
+                        "nombre": "Vaqueros",
                         "descripcion": "Partes de abajo",
                         "genero": "hombre", 
                         "hijos": [
@@ -358,7 +358,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Pantalones Hombre",
+                        "nombre": "Pantalones",
                         "descripcion": "",
                         "genero": "hombre", 
                         "hijos": [
@@ -370,7 +370,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Shorts Hombre",
+                        "nombre": "Shorts",
                         "descripcion": "",
                         "genero": "hombre", 
                         "hijos": [
@@ -381,7 +381,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Abrigos y Chaquetas Hombre",
+                        "nombre": "Abrigos y Chaquetas",
                         "descripcion": "Prendas de exterior",
                         "genero": "hombre", 
                         "hijos": [
@@ -389,9 +389,9 @@ categorias_master = [
                                 "nombre": "Abrigos",
                                 "genero": "hombre",
                                 "hijos": [
-                                    {"nombre": "Trencas hombre", "genero": "hombre"},
+                                    {"nombre": "Trencas", "genero": "hombre"},
                                     {"nombre": "Sobretodos", "genero": "hombre"},
-                                    {"nombre": "Parkas hombre", "genero": "hombre"},
+                                    {"nombre": "Parkas", "genero": "hombre"},
                                     {"nombre": "Chaquetones marineros", "genero": "hombre"},
                                     {"nombre": "Impermeables y Gabardinas", "genero": "hombre"},
                                 ]
@@ -415,7 +415,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Jerséis y sudaderas Hombre",
+                        "nombre": "Jerséis y sudaderas",
                         "descripcion": "",
                         "genero": "hombre",
                         "hijos": [
@@ -436,7 +436,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Trajes y blazers Hombre",
+                        "nombre": "Trajes y blazers",
                         "descripcion": "",
                         "genero": "hombre",
                         "hijos": [
@@ -448,7 +448,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Ropa Interior Hombre",
+                        "nombre": "Ropa Interior",
                         "descripcion": "",
                         "genero": "hombre", 
                         "hijos": [
@@ -459,7 +459,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Pijamas Hombre",
+                        "nombre": "Pijamas",
                         "descripcion": "",
                         "genero": "hombre", 
                         "hijos": [
@@ -469,7 +469,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Ropa de baño Hombre",
+                        "nombre": "Ropa de baño",
                         "descripcion": "Playa y piscina",
                         "genero": "hombre",
                         "hijos": [
@@ -478,7 +478,7 @@ categorias_master = [
                         ]
                     },
                     {
-                        "nombre": "Ropa deportiva Hombre",
+                        "nombre": "Ropa deportiva",
                         "descripcion": "",
                         "genero": "hombre", 
                         "hijos": [
@@ -928,8 +928,9 @@ categorias_master = [
                 ]
             },
             {
-                {
-                "nombre": "Niña", "genero": "niña", "hijos": [
+                "nombre": "Niña", 
+                "genero": "niña", 
+                "hijos": [
                     {
                         "nombre": "Accesorios para el pelo", 
                         "descripcion": "Adornos para el cabello", 
@@ -961,7 +962,6 @@ categorias_master = [
                     {"nombre": "Relojes infantiles", "descripcion": "", "genero": "niña"},
                     {"nombre": "Paraguas e impermeables", "descripcion": "", "genero": "niña"}
                 ]
-                },
             },
             {
                 "nombre": "Niño", "genero": "niño", "hijos": [

@@ -1,7 +1,7 @@
 # app/models/item_venta_model.py
 from sqlalchemy import Column, ForeignKey, Integer, Float, String, DateTime, Date, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.db.database import Base
 
 # app/models/item_venta_model.py
@@ -24,8 +24,8 @@ class Stock(Base):
     publicar_web = Column(Boolean, default=False)
     publicar_vinted = Column(Boolean, default=False)
     publicar_wallapop = Column(Boolean, default=False)
-    
-    fecha_registro = Column(DateTime, default=datetime.utcnow)
+    fecha_registro = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    fecha_actualizacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # --- RELACIONES ---
     # Relación directa con los valores de los atributos (EAV)

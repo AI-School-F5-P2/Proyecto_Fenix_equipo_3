@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime, timezone
 from app.db.database import Base
 
 class Producto(Base):
@@ -15,6 +16,8 @@ class Producto(Base):
     categoria_id = Column(Integer, ForeignKey("categorias.id"))
     marca_id = Column(Integer, ForeignKey("marcas.id"))
     sku = Column(String(100), unique=True)
+    fecha_registro = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    fecha_actualizacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relaciones
     variantes = relationship("Variante", back_populates="producto", cascade="all, delete-orphan")

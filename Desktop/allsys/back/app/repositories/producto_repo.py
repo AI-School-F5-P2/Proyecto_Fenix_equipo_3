@@ -5,7 +5,6 @@ from typing import Dict, List, Optional
 from fastapi import HTTPException # Añadimos esto para lanzar errores
 from pydantic import ValidationError # Añadimos esto
 from sqlalchemy.orm import Session, joinedload
-from app.models.producto_model import Producto
 from app.models.variantes_model import Variante
 from app.models.stock_model import Stock
 from app.models.atributo_model import Atributo, ValorAtributo
@@ -15,6 +14,11 @@ from app.schemas.variante_schema import VarianteSchema
 from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
 from app.repositories.proveedores_repo import buscar_o_crear
 from app.repositories.marcas_repo import crear_marca
+from app.models.producto_model import Producto
+
+
+
+from app.models.ventas_model import DetalleVenta 
 
 # =====================================================
 # SKU GENERATOR
@@ -143,16 +147,16 @@ def crear_producto(
                 attr_dicts = [{"nombre": a.nombre, "valor": a.valor} for a in s_data.atributos]
                 guardar_valores_stock(db, stock_obj, attr_dicts)
 
-            # Imágenes
-            lista_mezclada = v_data.imagenes if v_data.imagenes else []
-            for indice, marcador in enumerate(lista_mezclada):
-                if isinstance(marcador, str) and marcador.startswith('NUEVA_'):
-                    # La clave enviada por Angular es "file_{temp_id}_{marcador}"
-                    key_archivo = f"file_{v_data.temp_id}_{marcador}"
-                    if imagenes and key_archivo in imagenes:
-                        file_to_upload = imagenes[key_archivo][0]
-                        url_s3 = upload_image_to_s3(file_to_upload, folder=f"productos/{producto.id}/{nueva_variante.id}")
-                        db.add(Imagen(url=url_s3, variante_id=nueva_variante.id, orden=indice))
+        # Imágenes
+        lista_mezclada = v_data.imagenes if v_data.imagenes else []
+        for indice, marcador in enumerate(lista_mezclada):
+            if isinstance(marcador, str) and marcador.startswith('NUEVA_'):
+                # La clave enviada por Angular es "file_{temp_id}_{marcador}"
+                key_archivo = f"file_{v_data.temp_id}_{marcador}"
+                if imagenes and key_archivo in imagenes:
+                    file_to_upload = imagenes[key_archivo][0]
+                    url_s3 = upload_image_to_s3(file_to_upload, folder=f"productos/{producto.id}/{nueva_variante.id}")
+                    db.add(Imagen(url=url_s3, variante_id=nueva_variante.id, orden=indice))
 
     db.commit()
     db.refresh(producto)
@@ -161,69 +165,398 @@ def crear_producto(
 # =====================================================
 # LISTADO PAGINADO
 # =====================================================
-def obtener_productos_paginados(db: Session, page: int = 1, limit: int = 10):
+from sqlalchemy import or_, and_, cast, String, desc
+from sqlalchemy.orm import Session, selectinload
+from app.models.producto_model import Producto
+from app.models.variantes_model import Variante
+from app.models.stock_model import Stock
+from app.models.atributo_model import Atributo, ValorAtributo
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def obtener_productos_paginados(
+    db: Session, 
+    page: int = 1, 
+    limit: int = 10,
+    search: str = None, 
+    tipo_busqueda: str = "todo", 
+    categoria_id: int = None, 
+    marca_id: int = None,
+    color: str = None, 
+    talla: str = None, 
+    estado: str = None, 
+    material: str = None, 
+    precio_min: float = None, 
+    precio_max: float = None,
+    solo_vendidos: bool = False, 
+    ordenar_por: str = "fecha_desc",
+    fecha_inicio: str = None, # ✨ NUEVO
+    fecha_fin: str = None,
+    proveedores_ids: List[int] = None # ✨ NUEVO PARÁMETRO
+):
     offset = (page - 1) * limit
-    query = (
-        db.query(Producto)
-        .filter(Producto.activo == True)
-        .options(
-            joinedload(Producto.categoria),
-            joinedload(Producto.marca),
-            joinedload(Producto.variantes).joinedload(Variante.stocks).joinedload(Stock.valores),
-            joinedload(Producto.variantes).joinedload(Variante.imagenes)
+    
+    # 1. Filtramos primero (Query base)
+    query = db.query(Producto).filter(Producto.activo == True)
+
+    # 2. Análisis inteligente de JOINs
+    # ✨ ACTUALIZADO: Si busca por proveedor, OBLIGAMOS a unir la tabla de stocks
+    necesita_join_stocks = talla or precio_min is not None or precio_max is not None or solo_vendidos or (search and tipo_busqueda == 'stock_id') or (proveedores_ids and len(proveedores_ids) > 0)
+
+    if necesita_join_stocks:
+        query = query.join(Producto.variantes).join(Variante.stocks)
+    elif color:
+        query = query.join(Producto.variantes)
+
+    # 3. Aplicación de filtros (Buscador)
+    if search and search.strip():
+        term = search.strip()
+        if tipo_busqueda == 'producto_id' and term.isdigit():
+            query = query.filter(Producto.id == int(term))
+        elif tipo_busqueda == 'stock_id' and term.isdigit():
+            query = query.filter(Stock.id == int(term))
+        else:
+            s = f"%{term}%"
+            query = query.filter(or_(
+                cast(Producto.id, String).ilike(s),
+                Producto.sku.ilike(s),
+                Producto.nombre.ilike(s)
+            ))
+
+    # 4. Filtros Normales
+    if categoria_id: query = query.filter(Producto.categoria_id == categoria_id)
+    if marca_id: query = query.filter(Producto.marca_id == marca_id)
+    if estado: query = query.filter(Producto.estado == estado)
+    
+    # ✨ NUEVO FILTRO MULTIPLE DE PROVEEDOR
+    if proveedores_ids and len(proveedores_ids) > 0:
+        query = query.filter(Stock.proveedor_id.in_(proveedores_ids))
+    
+    if color:
+        color_clean = color.strip()
+        if not color_clean.startswith('#'):
+            color_clean = f"#{color_clean}"
+        query = query.filter(Variante.hex_identidad.ilike(color_clean))
+
+    if fecha_inicio: 
+        query = query.filter(Producto.created_at >= fecha_inicio) # ✨ Filtra por Producto
+    if fecha_fin: 
+        # Añadimos ' 23:59:59' para incluir todo el día final
+        query = query.filter(Producto.created_at <= f"{fecha_fin} 23:59:59")
+        
+    if talla:
+        query = query.join(Stock.valores).join(ValorAtributo.atributo).filter(
+            and_(Atributo.nombre.ilike("talla"), ValorAtributo.valor == talla)
         )
-        .order_by(Producto.id.desc())
+    if precio_min is not None: query = query.filter(Stock.precio_venta >= precio_min)
+    if precio_max is not None: query = query.filter(Stock.precio_venta <= precio_max)
+    if solo_vendidos: query = query.filter(Stock.cantidad == 0)
+
+    # 5. Conteo total
+    total = query.distinct().count()
+
+    # 6. Carga optimizada
+    productos = (
+        query.distinct()
+        .options(
+            selectinload(Producto.categoria),
+            selectinload(Producto.marca),
+            selectinload(Producto.variantes)
+                .selectinload(Variante.stocks)
+                .selectinload(Stock.valores)
+                .selectinload(ValorAtributo.atributo),
+            selectinload(Producto.variantes)
+                .selectinload(Variante.imagenes)
+        )
+        .order_by(desc(Producto.id))
+        .offset(offset)
+        .limit(limit)
+        .all()
     )
 
-    total = query.count()
-    productos = query.offset(offset).limit(limit).all()
-
+    # 7. Construcción manual de resultados
     resultados = []
     for p in productos:
-        stock_acumulado = sum(s.cantidad for v in p.variantes for s in v.stocks)
-        precios = [s.precio_venta for v in p.variantes for s in v.stocks]
+        vars_activas = [v for v in p.variantes if v.activo]
+        stocks_activos = [s for v in vars_activas for s in v.stocks if s.activo]
         
-        # ✨ CORRECCIÓN DE LA FOTO DE PORTADA ✨
-        imagen_cover = None
-        if p.variantes:
-            # 1. Buscamos la primera variante activa que tenga imágenes
-            variante_principal = next((v for v in p.variantes if v.activo and v.imagenes), None)
-            
-            if variante_principal:
-                # 2. Ordenamos sus imágenes por el campo 'orden'
-                # Usamos (img.orden or 0) por si algún valor es None
-                imagenes_ordenadas = sorted(variante_principal.imagenes, key=lambda img: img.orden or 0)
-                
-                # 3. La primera de esa lista ordenada es nuestra PORTADA REAL
-                if imagenes_ordenadas:
-                    imagen_cover = imagenes_ordenadas[0].url
+        p_venta = stocks_activos[0].precio_venta if stocks_activos else 0.0
+        p_compra = stocks_activos[0].precio_compra if stocks_activos else 0.0
+        
+        tallas_set = set()
+        for s in stocks_activos:
+            for val in s.valores:
+                if val.atributo and val.atributo.nombre.lower() in ['talla', 'size']:
+                    tallas_set.add(val.valor)
 
-        colores_unicos = list({v.hex_identidad for v in p.variantes if v.hex_identidad})
-        # Verificamos canales de publicación (si al menos un stock lo tiene en True)
-        publicado_web = any(s.publicar_web for v in p.variantes for s in v.stocks)
-        publicado_vinted = any(s.publicar_vinted for v in p.variantes for s in v.stocks)
-        publicado_wallapop = any(s.publicar_wallapop for v in p.variantes for s in v.stocks)
+        img_url = None
+        for v in vars_activas:
+            if v.imagenes:
+                img_sorted = sorted(v.imagenes, key=lambda x: x.orden or 0)
+                if img_sorted:
+                    img_url = img_sorted[0].url
+                    break
 
         resultados.append({
             "id": p.id,
             "nombre": p.nombre,
+            "fecha_registro": p.fecha_registro.isoformat() if p.fecha_registro else None,
+            "fecha_actualizacion": p.fecha_actualizacion.isoformat() if p.fecha_actualizacion else None,
             "sku": p.sku,
             "tipo": p.tipo,
             "categoria": {"id": p.categoria.id, "nombre": p.categoria.nombre} if p.categoria else None,
             "marca": {"id": p.marca.id, "nombre": p.marca.nombre} if p.marca else None,
-            "imagen": imagen_cover,
-            "stock_total": stock_acumulado,
-            "precio_min": min(precios) if precios else None,
-            "precio_max": max(precios) if precios else None,
-            "colores": colores_unicos,
+            "imagen": img_url,
+            "stock_total": sum(s.cantidad for s in stocks_activos),
+            "precio_compra": float(p_compra),
+            "precio_venta": float(p_venta),
+            "colores": list({v.hex_identidad for v in vars_activas if v.hex_identidad}),
+            "tallas": sorted(list(tallas_set)),
             "canales": {
-                "web": publicado_web,
-                "vinted": publicado_vinted,
-                "wallapop": publicado_wallapop
+                "web": any(s.publicar_web for s in stocks_activos),
+                "vinted": any(s.publicar_vinted for s in stocks_activos),
+                "wallapop": any(s.publicar_wallapop for s in stocks_activos)
             }
         })
 
     return {"total": total, "items": resultados}
+
+
+# ==========================================================================================================
+# ==========================================================================================================
+# ==========================================================================================================
+# ==========================================================================================================
+
+def obtener_stocks_individuales_paginados(
+    db: Session, 
+    page: int = 1, 
+    limit: int = 10,
+    search: str = None, 
+    tipo_busqueda: str = "todo", 
+    categoria_id: int = None, 
+    marca_id: int = None,
+    color: str = None, 
+    talla: str = None,
+    estado: str = None,
+    precio_min: float = None, 
+    precio_max: float = None,
+    solo_vendidos: bool = False, 
+    ordenar_por: str = "fecha_desc",
+    fecha_inicio: str = None, # ✨ NUEVO
+    fecha_fin: str = None,
+    proveedores_ids: List[int] = None # ✨ NUEVO PARÁMETRO
+):
+    offset = (page - 1) * limit
+    
+    # 1. LA CONSULTA BASE
+    query = (
+        db.query(Stock)
+        .join(Stock.variante)
+        .join(Variante.producto)
+        .filter(
+            Stock.activo == True,
+            Variante.activo == True,
+            Producto.activo == True
+        )
+    )
+
+    # 2. APLICACIÓN DE FILTROS DE BÚSQUEDA
+    if search and search.strip():
+        term = search.strip()
+        if tipo_busqueda == 'stock_id' and term.isdigit():
+            query = query.filter(Stock.id == int(term))
+        elif tipo_busqueda == 'producto_id' and term.isdigit():
+            query = query.filter(Producto.id == int(term))
+        else:
+            s = f"%{term}%"
+            query = query.filter(or_(
+                cast(Stock.id, String).ilike(s),
+                Stock.sku.ilike(s),
+                Producto.sku.ilike(s),
+                Producto.nombre.ilike(s)
+            ))
+
+    # 3. Filtros Normales
+    if categoria_id: query = query.filter(Producto.categoria_id == categoria_id)
+    if marca_id: query = query.filter(Producto.marca_id == marca_id)
+    if estado: query = query.filter(Producto.estado == estado)
+    
+    # ✨ NUEVO FILTRO MULTIPLE DE PROVEEDOR
+    if proveedores_ids and len(proveedores_ids) > 0:
+        query = query.filter(Stock.proveedor_id.in_(proveedores_ids))
+
+    if color:
+        color_clean = color.strip()
+        if not color_clean.startswith('#'):
+            color_clean = f"#{color_clean}"
+        query = query.filter(Variante.hex_identidad.ilike(color_clean))
+
+    if fecha_inicio: 
+        query = query.filter(Producto.created_at >= fecha_inicio) # ✨ Filtra por Producto
+    if fecha_fin: 
+        # Añadimos ' 23:59:59' para incluir todo el día final
+        query = query.filter(Producto.created_at <= f"{fecha_fin} 23:59:59")
+    
+    if talla:
+        query = query.join(Stock.valores).join(ValorAtributo.atributo).filter(
+            and_(Atributo.nombre.ilike("talla"), ValorAtributo.valor == talla)
+        )
+        
+    if precio_min is not None: query = query.filter(Stock.precio_venta >= precio_min)
+    if precio_max is not None: query = query.filter(Stock.precio_venta <= precio_max)
+    if solo_vendidos: query = query.filter(Stock.cantidad == 0)
+
+    # Ordenamiento
+    if ordenar_por == "precio_asc": query = query.order_by(Stock.precio_venta.asc())
+    elif ordenar_por == "precio_desc": query = query.order_by(Stock.precio_venta.desc())
+    elif ordenar_por == "stock_asc": query = query.order_by(Stock.cantidad.asc())
+    elif ordenar_por == "stock_desc": query = query.order_by(Stock.cantidad.desc())
+    else: query = query.order_by(Stock.id.desc())
+
+    # 4. Conteo y Carga
+    total = query.distinct().count()
+
+    stocks_db = (
+        query.distinct()
+        .options(
+            selectinload(Stock.variante).selectinload(Variante.producto).selectinload(Producto.categoria),
+            selectinload(Stock.variante).selectinload(Variante.producto).selectinload(Producto.marca),
+            selectinload(Stock.variante).selectinload(Variante.imagenes),
+            selectinload(Stock.valores).selectinload(ValorAtributo.atributo)
+        )
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    # 5. APLANAMIENTO DE DATOS
+    resultados = []
+    for s in stocks_db:
+        v = s.variante
+        p = v.producto
+        
+        talla_val = None
+        atributos_extra = {}
+        for val in s.valores:
+            if val.atributo:
+                nombre_attr = val.atributo.nombre.lower()
+                if nombre_attr in ['talla', 'size', 'medida']:
+                    talla_val = val.valor
+                else:
+                    atributos_extra[nombre_attr] = val.valor
+
+        img_url = None
+        if v.imagenes:
+            img_sorted = sorted(v.imagenes, key=lambda x: x.orden or 0)
+            if img_sorted:
+                img_url = img_sorted[0].url
+
+        resultados.append({
+            "stock_id": s.id,
+            "stock_sku": s.sku,
+            "variante_id": v.id,
+            "producto_id": p.id,
+            "producto_nombre": p.nombre,
+            "categoria": {"id": p.categoria.id, "nombre": p.categoria.nombre} if p.categoria else None,
+            "marca": {"id": p.marca.id, "nombre": p.marca.nombre} if p.marca else None,
+            "hex_identidad": v.hex_identidad,
+            "identidad_variante": v.identidad_variante,
+            "imagen_cover": img_url,
+            "etiqueta": s.etiqueta,
+            "talla": talla_val,
+            "atributos_extra": atributos_extra,
+            "stock_disponible": s.cantidad,
+            "precio_compra": float(s.precio_compra),
+            "precio_venta": float(s.precio_venta),
+            "descuento": float(s.descuento or 0),
+            "ubicacion_almacen": v.ubicacion,
+            "canales": {
+                "web": s.publicar_web,
+                "vinted": s.publicar_vinted,
+                "wallapop": s.publicar_wallapop
+            }
+        })
+
+    return {"total": total, "items": resultados}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # =====================================================
 # DETALLE COMPLETO (Para Edición)
@@ -249,6 +582,8 @@ def obtener_producto_completo(db: Session, p_id: int):
     return {
         "id": producto.id,
         "nombre": producto.nombre,
+        "fecha_registro": producto.fecha_registro,
+        "fecha_actualizacion": producto.fecha_actualizacion,
         "descripcion": producto.descripcion,
         "tipo": producto.tipo,
         "estado": producto.estado,
@@ -286,64 +621,12 @@ def obtener_producto_completo(db: Session, p_id: int):
         ]
     }
 
+
+
+
 # =====================================================
 # EDITAR PRODUCTO COMPLETO
 # =====================================================
-import json
-import random
-from typing import Optional, List, Dict
-from sqlalchemy.orm import Session
-
-import json
-import random
-from typing import Optional, List, Dict
-from sqlalchemy.orm import Session
-from app.models.producto_model import Producto
-from app.models.variantes_model import Variante
-from app.models.stock_model import Stock
-from app.models.marcas_model import Marca
-from app.models.variante_imagen_model import Imagen
-from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
-from app.repositories.proveedores_repo import buscar_o_crear
-from app.repositories.marcas_repo import crear_marca
-import json
-import random
-from typing import Optional, List, Dict
-from sqlalchemy.orm import Session
-from app.models.producto_model import Producto
-from app.models.variantes_model import Variante
-from app.models.stock_model import Stock
-from app.models.marcas_model import Marca
-from app.models.variante_imagen_model import Imagen
-from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
-from app.repositories.proveedores_repo import buscar_o_crear
-from app.repositories.marcas_repo import crear_marca
-import json
-import random
-from typing import Optional, List, Dict
-from sqlalchemy.orm import Session
-from app.models.producto_model import Producto
-from app.models.variantes_model import Variante
-from app.models.stock_model import Stock
-from app.models.marcas_model import Marca
-from app.models.variante_imagen_model import Imagen
-from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
-from app.repositories.proveedores_repo import buscar_o_crear
-from app.repositories.marcas_repo import crear_marca
-
-import json
-import random
-from typing import Optional, List, Dict
-from sqlalchemy.orm import Session
-from app.models.producto_model import Producto
-from app.models.variantes_model import Variante
-from app.models.stock_model import Stock
-from app.models.marcas_model import Marca
-from app.models.variante_imagen_model import Imagen
-from app.services.s3_service import delete_image_from_s3, upload_image_to_s3
-from app.repositories.proveedores_repo import buscar_o_crear
-from app.repositories.marcas_repo import crear_marca
-
 def editar_producto_completo(
     db: Session, 
     producto_id: int, 
@@ -516,46 +799,178 @@ def editar_producto_completo(
 
 
 
+#from sqlalchemy.orm import Session
+# Asegúrate de importar tus modelos correctamente:
+
+# Importa tu función de S3
+# from app.utils.s3_utils import delete_image_from_s3 
+
 # =====================================================
-# ELIMINAR PRODUCTO
+# GESTIÓN DE PAPELERA Y ELIMINACIÓN
 # =====================================================
-# =====================================================
-# ELIMINAR PRODUCTO (BORRADO LÓGICO + LIMPIEZA S3)
-# =====================================================
-def eliminar_producto(db: Session, p_id: int):
-    # 1. Buscamos el producto con todas sus relaciones
+
+
+
+
+def vaciar_producto_papelera(db: Session, p_id: int):
+    """
+    2. HARD DELETE (Destrucción permanente)
+    Solo se ejecuta si el producto NO tiene historial de ventas.
+    Limpia el almacenamiento en AWS S3 y borra los registros en cascada.
+    """
     producto = db.query(Producto).filter(Producto.id == p_id).first()
-    if not producto: 
-        return False
+    if not producto:
+        return {"success": False, "mensaje": "El producto no existe."}
     
-    # 2. MARCAR COMO INACTIVO (Borrado Lógico)
-    producto.activo = False
+    # Verificamos si tiene ventas reales
+    tiene_ventas = db.query(DetalleVenta).join(
+        Stock, DetalleVenta.stock_id == Stock.id
+    ).join(
+        Variante, Stock.variante_id == Variante.id
+    ).filter(
+        Variante.producto_id == p_id
+    ).first() is not None
+
+    # Si tiene ventas, bloqueamos la destrucción para proteger la contabilidad
+    if tiene_ventas:
+        return {
+            "success": False, 
+            "mensaje": "⚠️ No puedes destruir este producto porque tiene ventas registradas. Mantenlo en la papelera."
+        }
     
-    # 3. LIMPIEZA INTELIGENTE DE ALMACENAMIENTO (S3)
-    # Recorremos cada variante para reducir su galería de fotos
+    # Si no tiene ventas, ¡Destrucción total (Física + S3)!
+    print(f"🧹 Iniciando borrado permanente del producto {p_id}...")
     for variante in producto.variantes:
-        # También marcamos la variante y sus stocks como inactivos por seguridad
-        variante.activo = False
-        for s in variante.stocks:
-            s.activo = False
-
-        # Lógica de imágenes:
-        # Si la variante tiene más de una imagen, borramos las sobrantes de S3 y DB
-        if len(variante.imagenes) > 1:
-            # Mantenemos la primera (variante.imagenes[0]) y procesamos las demás
-            imagenes_sobrantes = variante.imagenes[1:] 
-            
-            for img in imagenes_sobrantes:
-                # A) Borramos el archivo físico en Amazon S3
-                try:
-                    delete_image_from_s3(img.url)
-                    print(f"🧹 S3: Borrada imagen sobrante -> {img.url}")
-                except Exception as e:
-                    print(f"⚠️ Error al borrar de S3: {e}")
-                
-                # B) Borramos el registro de la tabla de imágenes
-                db.delete(img)
-
-    # 4. Guardamos los cambios
+        for img in getattr(variante, 'imagenes', []):
+            try: 
+                # Borramos la foto física del bucket de Amazon S3
+                delete_image_from_s3(img.url) 
+                print(f"✅ S3: Imagen borrada -> {img.url}")
+            except Exception as e: 
+                print(f"⚠️ Error S3: {e}")
+    
+    # Borrado en cascada de la BD (Producto -> Variantes -> Stocks -> Imagenes)
+    db.delete(producto)
     db.commit()
-    return True
+    
+    return {"success": True, "mensaje": "✅ Producto eliminado permanentemente."}
+
+
+
+def obtener_productos_papelera(db: Session, page: int = 1, limit: int = 10):
+    offset = (page - 1) * limit
+    
+    # ✨ CORRECCIÓN: Filtramos por activo == False (Papelera)
+    query = (
+        db.query(Producto)
+        .filter(Producto.activo == False)
+        .options(
+            joinedload(Producto.categoria),
+            joinedload(Producto.marca),
+            joinedload(Producto.variantes).joinedload(Variante.stocks),
+            joinedload(Producto.variantes).joinedload(Variante.imagenes)
+        )
+        .order_by(Producto.id.desc())
+    )
+
+    total = query.count()
+    productos = query.offset(offset).limit(limit).all()
+
+    resultados = []
+    for p in productos:
+        stock_acumulado = sum(s.cantidad for v in p.variantes for s in v.stocks)
+        precios = [s.precio_venta for v in p.variantes for s in v.stocks]
+        
+        imagen_cover = None
+        if p.variantes:
+            # Quitamos el filtro de activo para que muestre la foto en la papelera
+            variante_principal = next((v for v in p.variantes if v.imagenes), None)
+            if variante_principal:
+                imagenes_ordenadas = sorted(variante_principal.imagenes, key=lambda img: img.orden or 0)
+                if imagenes_ordenadas:
+                    imagen_cover = imagenes_ordenadas[0].url
+
+        colores_unicos = list({v.hex_identidad for v in p.variantes if v.hex_identidad})
+        
+        resultados.append({
+            "id": p.id,
+            "nombre": p.nombre,
+            "sku": p.sku,
+            "tipo": p.tipo,
+            "categoria": {"id": p.categoria.id, "nombre": p.categoria.nombre} if p.categoria else None,
+            "marca": {"id": p.marca.id, "nombre": p.marca.nombre} if p.marca else None,
+            "imagen": imagen_cover,
+            "stock_total": stock_acumulado,
+            "precio_min": min(precios) if precios else None,
+            "precio_max": max(precios) if precios else None,
+            "colores": colores_unicos,
+            "canales": {
+                "web": False, 
+                "vinted": False,
+                "wallapop": False
+            }
+        })
+
+    return {"total": total, "items": resultados}
+
+
+def mover_a_papelera(db: Session, p_id: int):
+    """
+    EL PARAGUAS SE CIERRA:
+    Solo apagamos el producto. Automáticamente sus variantes/stocks 
+    dejarán de ser accesibles desde la tienda.
+    """
+    producto = db.query(Producto).filter(Producto.id == p_id).first()
+    if not producto: return False
+    
+    # Apagamos solo al padre
+    producto.activo = False 
+    
+    db.commit()
+    return {"success": True, "mensaje": "🗑️ Producto movido a la papelera."}
+
+
+def restaurar_de_papelera(db: Session, p_id: int):
+    """
+    EL PARAGUAS SE ABRE:
+    Encendemos el producto. Las variantes que habías borrado individualmente 
+    en el pasado seguirán borradas, y las sanas volverán a verse.
+    """
+    producto = db.query(Producto).filter(Producto.id == p_id).first()
+    if not producto: return False
+    
+    # Encendemos solo al padre
+    producto.activo = True
+    
+    db.commit()
+    return {"success": True, "mensaje": "♻️ Producto restaurado con éxito."}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

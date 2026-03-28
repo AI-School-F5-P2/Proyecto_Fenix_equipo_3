@@ -1,5 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 
 class TallaCreate(BaseModel):
     talla: str
@@ -36,12 +38,52 @@ class ProductoItemList(BaseModel):
     marca: Optional[SimpleRef] = None
     imagen: Optional[str] = None
     stock_total: int
-    precio_min: Optional[float] = None
-    precio_max: Optional[float] = None
-    colores: List[str] = []
+    precio_compra: float  # ✨ CAMBIO: Antes era precio_min
+    precio_venta: float   # ✨ CAMBIO: Antes era precio_max
+    colores: List[str] = []  # <--- Al poner = [] ya no es obligatorio que el repo lo envíe
+    tallas: List[str] = []
     canales: Optional[dict] = None
 
 # El esquema final paginado
 class PaginatedProductosResponse(BaseModel):
     total: int
     items: List[ProductoItemList]
+
+
+
+
+class StockIndividualItemList(BaseModel):
+    # IDs y SKUs
+    stock_id: int
+    stock_sku: str
+    variante_id: int
+    producto_id: int
+    producto_nombre: str
+    
+    # Categoría y Marca
+    categoria: Optional[Dict[str, Any]]
+    marca: Optional[Dict[str, Any]]
+    
+    # Identidad visual (El estilo/color)
+    hex_identidad: str
+    identidad_variante: str
+    imagen_cover: Optional[str]
+    
+    # El corazón del stock (Tallas, etc)
+    etiqueta: Optional[str]
+    talla: Optional[str] # Extraído directamente de los atributos
+    atributos_extra: Dict[str, str] # Otros atributos (peso, formato, etc.)
+    
+    # Cantidades y Dinero
+    stock_disponible: int
+    precio_compra: float
+    precio_venta: float
+    descuento: float
+    
+    # Ubicación física y digital
+    ubicacion_almacen: Optional[str]
+    canales: Dict[str, bool]
+
+class PaginatedStockResponse(BaseModel):
+    total: int
+    items: List[StockIndividualItemList]
