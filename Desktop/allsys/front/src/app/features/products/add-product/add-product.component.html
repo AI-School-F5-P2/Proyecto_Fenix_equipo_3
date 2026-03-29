@@ -20,32 +20,32 @@
       </div>
       
       <div class="grid-2">
-  <div class="field">
-    <label>
-      Nombre del Producto 
-      <span class="required-web-asterisk" *ngIf="productoVaAPublicarse()" title="Requerido para publicar">*</span>
-    </label>
-    <input type="text" [(ngModel)]="nombre" name="nombre" placeholder="Ej: Camiseta Oversize" />
-  </div>
+        <div class="field">
+          <label>
+            Nombre del Producto 
+            <span class="required-web-asterisk" *ngIf="productoVaAPublicarse()" title="Requerido para publicar">*</span>
+          </label>
+          <input type="text" [(ngModel)]="nombre" name="nombre" placeholder="Ej: Camiseta Oversize" />
+        </div>
 
-  <div class="field marca-autocomplete">
-    <label>Marca <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-    <app-brand-selector 
-      [marcaInicial]="marcaSeleccionada"
-      (brandChanged)="onBrandChanged($event)">
-    </app-brand-selector>
-  </div>
+        <div class="field marca-autocomplete">
+          <label>Marca <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+          <app-brand-selector 
+            [marcaInicial]="marcaSeleccionada"
+            (brandChanged)="onBrandChanged($event)">
+          </app-brand-selector>
+        </div>
 
-  <div class="field">
-    <label>Estado del Artículo <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-    <div class="custom-select">
-      <select [(ngModel)]="estadoSeleccionado" name="estadoSeleccionado">
-        <option value="nuevo">✨ Nuevo / A estrenar</option>
-        <option value="segunda_mano">♻️ Segunda Mano / Usado</option>
-      </select>
-    </div>
-  </div>
-</div>
+        <div class="field">
+          <label>Estado del Artículo <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+          <div class="custom-select">
+            <select [(ngModel)]="estadoSeleccionado" name="estadoSeleccionado">
+              <option value="nuevo">✨ Nuevo / A estrenar</option>
+              <option value="segunda_mano">♻️ Segunda Mano / Usado</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       <div class="field full-width">
         <label>Concepto e Información General</label>
@@ -179,7 +179,7 @@
 
                 <div class="field">
                   <label>Ubicación de almacenaje <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="text" [(ngModel)]="v.ubicacion" [name]="'ubicacion'+i" placeholder="Pasillo..." />
+                  <input type="text" [(ngModel)]="s.ubicacion" [name]="'ubicacion'+i+j" placeholder="Pasillo A, Caja 2..." />
                 </div>
 
                 <div class="field">

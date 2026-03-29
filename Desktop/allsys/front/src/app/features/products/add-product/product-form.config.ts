@@ -18,12 +18,12 @@ export interface StockBackend {
   proveedor?: { id: number; nombre_proveedor: string };
   etiqueta?: string | null; descuento?: number; publicar_web: boolean;
   publicar_vinted: boolean; publicar_wallapop: boolean; atributos: AtributoBackend[];
-  orden?: number;
+  orden?: number; ubicacion: string;
 }
 
 export interface VarianteBackend {
   id: number; sku: string; identidad_variante: string; hex_identidad: string;
-  ubicacion: string; descripcion: string; imagenes: string[]; stocks: StockBackend[];
+  descripcion: string; imagenes: string[]; stocks: StockBackend[];
   orden?: number;
 }
 
@@ -38,7 +38,7 @@ export interface StockVariante {
   precio_compra: number; precio_venta: number; descuento: number;
   proveedor: string; proveedor_id?: number | null; fecha_compra: string;
   publicar_vinted: boolean; publicar_wallapop: boolean; publicar_web: boolean;
-  etiqueta?: string;
+  etiqueta?: string; ubicacion: string; 
 }
 
 export interface Marca { id?: number; nombre: string; isNew?: boolean; }
@@ -46,7 +46,7 @@ export interface Marca { id?: number; nombre: string; isNew?: boolean; }
 export interface Variante {
   id?: number; temp_id: string; identidad_variante: string; hex_identidad: string;
   stocks: StockVariante[]; imagenes: string[]; imagenesFiles: (File | null)[];
-  ubicacion: string; descripcion: string;
+  descripcion: string;
 }
 
 // --- CONSTANTES ---

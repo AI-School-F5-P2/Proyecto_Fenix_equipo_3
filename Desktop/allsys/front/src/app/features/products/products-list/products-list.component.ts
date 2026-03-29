@@ -92,16 +92,29 @@ export class ProductsListComponent implements OnInit {
     if (this.cargando || this.sinMasResultados) return;
     this.cargando = true;
 
+    // 🕵️ Opcional: Log para ver qué parámetros estás enviando al backend
+    console.log('Enviando petición con página:', this.pagina, 'y filtros:', this.filtros);
+
     if (this.vistaActual === 'inventario') {
       this.productsService.obtenerInventarioIndividual(this.pagina, this.limite, this.filtros)
         .subscribe({
-          next: (res: any) => this.procesarRespuesta(res.items, res.total, this.stocks),
+          next: (res: any) => {
+            // ✨ AQUÍ ESTÁ EL LOG PARA INVENTARIO
+            console.log('📥 Respuesta Backend (Inventario):', res); 
+            
+            this.procesarRespuesta(res.items, res.total, this.stocks);
+          },
           error: (err) => { console.error(err); this.cargando = false; }
         });
     } else {
       this.productsService.obtenerProductos(this.pagina, this.limite, this.filtros)
         .subscribe({
-          next: (res: any) => this.procesarRespuesta(res.items, res.total, this.productosPadre),
+          next: (res: any) => {
+            // ✨ AQUÍ ESTÁ EL LOG PARA CATÁLOGO (Padre)
+            console.log('📥 Respuesta Backend (Productos Padre):', res); 
+            
+            this.procesarRespuesta(res.items, res.total, this.productosPadre);
+          },
           error: (err) => { console.error(err); this.cargando = false; }
         });
     }

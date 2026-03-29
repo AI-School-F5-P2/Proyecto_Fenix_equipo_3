@@ -12,4 +12,5 @@ import { RouterLink } from '@angular/router';
 export class InventoryTableComponent {
   // ✨ Aquí recibe los datos del padre
   @Input() stocks: any[] = []; 
+  
 }

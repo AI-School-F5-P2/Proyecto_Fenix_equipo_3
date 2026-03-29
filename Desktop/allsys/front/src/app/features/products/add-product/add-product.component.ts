@@ -81,7 +81,6 @@ export class AddProductComponent implements OnInit {
           identidad_variante: vDB.identidad_variante,
           hex_identidad: vDB.hex_identidad,
           descripcion: vDB.descripcion,
-          ubicacion: vDB.ubicacion,
           imagenes: vDB.imagenes ? [...vDB.imagenes] : [],
           imagenesFiles: vDB.imagenes ? vDB.imagenes.map(() => null) : [],
           stocks: vDB.stocks.sort((a,b) => (a.orden || 0) - (b.orden || 0)).map(sDB => ({
@@ -98,6 +97,7 @@ export class AddProductComponent implements OnInit {
             publicar_vinted: sDB.publicar_vinted,
             publicar_wallapop: sDB.publicar_wallapop,
             etiqueta: sDB.etiqueta || '',
+            ubicacion: sDB.ubicacion || '', // ✨ Añadimos "|| ''" para evitar nulls
             atributos: this.hidratarAtributos(sDB.atributos)
           }))
         }));
@@ -184,20 +184,56 @@ private capitalizar(s: string): string {
   nuevaVariante(): Variante {
     return { 
         temp_id: generarTempId(), hex_identidad: '#FFFFFF', identidad_variante: '', 
-        stocks: [this.nuevoStock()], imagenes: [], imagenesFiles: [], ubicacion: '', descripcion: '' 
+        stocks: [this.nuevoStock()], imagenes: [], imagenesFiles: [], descripcion: '' 
     };
   }
 
   nuevoStock(): StockVariante {
     return { 
-        sku: '', atributos: this.getAtributosVacios(), stock: 0, precio_compra: 0, 
+        sku: '', atributos: this.getAtributosVacios(), stock: 0, precio_compra: 0, ubicacion: '',
         precio_venta: 0, descuento: 0, proveedor: '', proveedor_id: null, 
         fecha_compra: '', publicar_vinted: false, publicar_wallapop: false, publicar_web: false 
     };
   }
 
   agregarVariante(): void { this.variantes.push(this.nuevaVariante()); }
-  agregarStock(i: number): void { this.variantes[i].stocks.push(this.nuevoStock()); }
+  
+ agregarStock(i: number): void { 
+    const nuevoStock = this.nuevoStock();
+    const variante = this.variantes[i];
+
+    if (variante.stocks.length > 0) {
+      const ultimoStock = variante.stocks[variante.stocks.length - 1]; 
+
+      // 1. Copiar TODOS los atributos compartidos (Color, Material, Peso...), menos la Talla
+      nuevoStock.atributos = nuevoStock.atributos.map(nuevoAttr => {
+        const attrHermano = ultimoStock.atributos.find(a => a.nombre === nuevoAttr.nombre);
+        if (attrHermano) {
+          // Lista de atributos que NO se deben copiar porque definen el tamaño de la variante
+          const ignorar = ['talla', 'numero', 'capacidad_ml', 'talla_anillo', 'cantidad_ml_g', 'talla_guantes'];
+          
+          if (!ignorar.includes(nuevoAttr.nombre)) {
+            nuevoAttr.valor = attrHermano.valor;
+          }
+        }
+        return nuevoAttr;
+      });
+
+      // 2. Copiar Datos Logísticos (Con protección contra vacíos)
+      nuevoStock.proveedor = ultimoStock.proveedor || '';
+      nuevoStock.proveedor_id = ultimoStock.proveedor_id || null;
+      nuevoStock.precio_compra = ultimoStock.precio_compra || 0;
+      nuevoStock.precio_venta = ultimoStock.precio_venta || 0;
+      nuevoStock.fecha_compra = ultimoStock.fecha_compra || '';
+      
+      // 3. Copiar Ubicación
+      nuevoStock.ubicacion = ultimoStock.ubicacion || ''; 
+    }
+
+    variante.stocks.push(nuevoStock); 
+  }
+
+
   eliminarStock(i: number, j: number): void { this.variantes[i].stocks.splice(j, 1); }
   eliminarVariante(index: number): void { this.variantes.splice(index, 1); }
 
@@ -286,12 +322,11 @@ private validarFormulario(): boolean {
     // 2. INVENTARIO (Obligatorio para guardar)
     if (!v.identidad_variante) return this.lanzarError(`Variante ${nV}: El campo ${maestro} es obligatorio.`);
     if (!v.descripcion?.trim()) return this.lanzarError(`Variante ${nV}: Falta la descripción.`);
-    if (!v.ubicacion?.trim()) return this.lanzarError(`Variante ${nV}: Falta la ubicación en almacén.`);
 
     for (let j = 0; j < v.stocks.length; j++) {
       const s = v.stocks[j];
       const nS = j + 1;
-
+      if (!s.ubicacion?.trim()) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta la ubicación en almacén.`);
       if (s.stock <= 0) return this.lanzarError(`Var ${nV}, Talla ${nS}: Stock debe ser > 0.`);
       if (s.precio_compra <= 0) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta precio compra.`);
       if (!s.proveedor_id && !s.proveedor) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta proveedor.`);
@@ -449,10 +484,10 @@ private getMensajeErrorAtributo(tipo: string): string {
 
     const cleanV = this.variantes.map((v, idxV) => ({
       id: v.id || null, temp_id: v.temp_id, identidad_variante: v.identidad_variante, 
-      hex_identidad: v.hex_identidad, ubicacion: v.ubicacion, descripcion: v.descripcion, orden: idxV,
+      hex_identidad: v.hex_identidad, descripcion: v.descripcion, orden: idxV, // ❌ Sin ubicacion
       imagenes: v.imagenes.map((img, idxI) => img.startsWith('http') ? img : `NUEVA_${idxI}`),
       stocks: v.stocks.map((s, idxS) => ({ 
-        ...s, cantidad: s.stock, orden: idxS, atributos: s.atributos.filter(a => a.valor !== null) 
+        ...s, cantidad: s.stock, orden: idxS, ubicacion: s.ubicacion, atributos: s.atributos.filter(a => a.valor !== null) 
       }))
     }));
 
