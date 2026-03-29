@@ -12,7 +12,7 @@ class Variante(Base):
     activo = Column(Boolean, default=True)
     identidad_variante = Column(String(100))  # "Rojo", "Titanio", "Eau de Parfum", "Floral"
     hex_identidad = Column(String(50))     # El color para el Front (si aplica)
-    ubicacion = Column(String(200))           # Estante, pasillo, etc.
+    # ubicacion = Column(String(200))           # Estante, pasillo, etc.
     descripcion = Column(String(500))
     orden = Column(Integer, default=0)
     stocks = relationship("Stock", back_populates="variante", cascade="all, delete-orphan")

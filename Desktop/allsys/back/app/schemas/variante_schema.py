@@ -26,7 +26,7 @@ class VarianteSchema(BaseModel):
     # Reglas estrictas:
     identidad_variante: str = Field(..., min_length=1, description="El color o material es obligatorio")
     hex_identidad: str = Field(..., min_length=1)
-    ubicacion: str = Field(..., min_length=1, description="La ubicación es obligatoria")
+    
     descripcion: str
     imagenes: List[str] = []
     orden: Optional[int] = 0

@@ -26,7 +26,7 @@ class Stock(Base):
     publicar_wallapop = Column(Boolean, default=False)
     fecha_registro = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     fecha_actualizacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
+    ubicacion = Column(String(200))
     # --- RELACIONES ---
     # Relación directa con los valores de los atributos (EAV)
     valores = relationship("ValorAtributo", back_populates="stock", cascade="all, delete-orphan")

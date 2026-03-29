@@ -20,3 +20,4 @@ class StockSchema(BaseModel):
     proveedor_nombre_nuevo: Optional[str] = None
     atributos: List[AtributoSchema] = []
     orden: Optional[int] = 0
+    ubicacion: str = Field(..., min_length=1, description="La ubicación en el almacén es obligatoria")

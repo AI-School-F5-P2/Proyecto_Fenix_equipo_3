@@ -108,7 +108,6 @@ def crear_producto(
             sku="TEMP",
             hex_identidad=v_data.hex_identidad,           
             identidad_variante=v_data.identidad_variante, 
-            ubicacion=v_data.ubicacion,
             descripcion=v_data.descripcion.strip() # ✨ Guardamos la desc de la variante
         )
         db.add(nueva_variante)
@@ -129,6 +128,7 @@ def crear_producto(
             stock_obj = Stock(
                 variante_id=nueva_variante.id,
                 proveedor_id=p_id,
+                ubicacion=s_data.ubicacion,
                 etiqueta=s_data.etiqueta,
                 cantidad=s_data.stock, # Mapeamos 'stock' del JSON a 'cantidad' en DB
                 precio_compra=s_data.precio_compra,
@@ -508,7 +508,7 @@ def obtener_stocks_individuales_paginados(
             "precio_compra": float(s.precio_compra),
             "precio_venta": float(s.precio_venta),
             "descuento": float(s.descuento or 0),
-            "ubicacion_almacen": v.ubicacion,
+            "ubicacion_almacen": s.ubicacion, # ✨ AQUÍ ESTÁ EL CAMBIO (de 'v' a 's')
             "canales": {
                 "web": s.publicar_web,
                 "vinted": s.publicar_vinted,
@@ -593,26 +593,28 @@ def obtener_producto_completo(db: Session, p_id: int):
         "variantes": [
             {
                 "id": v.id,
-                "hex_identidad": v.hex_identidad,           # ✨ Actualizado
-                "identidad_variante": v.identidad_variante, # ✨ Actualizado
-                "ubicacion": v.ubicacion,
-                "descripcion":v.descripcion,
+                "hex_identidad": v.hex_identidad,
+                "identidad_variante": v.identidad_variante,
+                "descripcion": v.descripcion,
                 "imagenes": [img.url for img in sorted(v.imagenes, key=lambda x: x.orden or 0)],
                 "stocks": [
                     {
-                        
                         "id": s.id,
                         "sku": s.sku,
                         "etiqueta": s.etiqueta,
+                        "ubicacion": s.ubicacion, 
                         "cantidad": s.cantidad,
                         "precio_compra": s.precio_compra,
                         "precio_venta": s.precio_venta,
-                        "descuento":s.descuento,
+                        "descuento": s.descuento,
                         "proveedor_id": s.proveedor_id,
+
+                        # ✨ AÑADE ESTA LÍNEA PARA EL PROVEEDOR
+                        "proveedor": {"id": s.proveedor.id, "nombre_proveedor": s.proveedor.nombre_proveedor} if s.proveedor else None,
+
                         "publicar_web": s.publicar_web,
                         "publicar_vinted": s.publicar_vinted,
                         "publicar_wallapop": s.publicar_wallapop,
-                        # ✨ Aseguramos que se envía al front en formato string para que el input type="date" lo lea
                         "fecha_compra": s.fecha_compra.isoformat() if s.fecha_compra else None,
                         "atributos": [{"nombre": val.atributo.nombre, "valor": val.valor} for val in s.valores]
                     } for s in v.stocks if s.activo
@@ -696,7 +698,6 @@ def editar_producto_completo(
                 sku="TEMP",
                 hex_identidad=v_data.get("hex_identidad"),
                 identidad_variante=v_data.get("identidad_variante"),
-                ubicacion=v_data.get("ubicacion"),
                 descripcion=v_data.get("descripcion"),
                 orden=indice_v  # ✨ Orden para nueva variante
             )
@@ -760,6 +761,7 @@ def editar_producto_completo(
                 so = db.query(Stock).filter(Stock.id == s_id).first()
                 if so:
                     so.etiqueta = s_data.get("etiqueta")
+                    so.ubicacion = s_data.get("ubicacion")
                     so.cantidad = s_data.get("cantidad", 0) or s_data.get("stock", 0)
                     so.precio_compra = s_data.get("precio_compra", 0)
                     so.precio_venta = s_data.get("precio_venta", 0)
