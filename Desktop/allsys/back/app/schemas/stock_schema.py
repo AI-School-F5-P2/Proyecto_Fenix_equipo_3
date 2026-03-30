@@ -6,6 +6,7 @@ from app.schemas.atributo_schema import AtributoSchema
 
 class StockSchema(BaseModel):
     # Reglas estrictas:
+    id_manual: Optional[int] = None
     stock: int = Field(..., ge=0, description="Las unidades no pueden ser negativas")
     precio_compra: float = Field(..., ge=0, description="El precio de compra no puede ser negativo")
     proveedor: str = Field(..., min_length=1, description="El proveedor es obligatorio")
