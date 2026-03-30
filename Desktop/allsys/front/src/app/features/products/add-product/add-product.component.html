@@ -68,7 +68,7 @@
       </app-category-selector>
     </section>
 
-    <div class="variants-container" *ngIf="categoriaSeleccionadaFinal" cdkDropList (cdkDropListDropped)="onVariantDrop($event)">
+    <div class="variants-container" *ngIf="categoriaSeleccionadaFinal" cdkDropList [cdkDropListData]="variantes" (cdkDropListDropped)="onVariantDrop($event)">
       
       <div class="variant-card" *ngFor="let v of variantes; let i=index" cdkDrag>
         <div class="example-custom-placeholder" *cdkDragPlaceholder></div>
@@ -99,13 +99,13 @@
 
         <div class="field full-width">
           <label>Descripción específica de este estilo ({{ v.identidad_variante }})</label>
-          <textarea [(ngModel)]="v.descripcion" [name]="'desc_var' + v.temp_id" rows="2" placeholder="Ej: estilo, color..."></textarea>
+          <textarea [(ngModel)]="v.descripcion" [name]="'desc_var_' + v.temp_id" rows="2" placeholder="Ej: estilo, color..."></textarea>
         </div>
 
         <div class="stock-section">
           <h4 class="stock-title">Unidades en Inventario</h4>
           
-          <div class="stock-list" cdkDropList (cdkDropListDropped)="onStockDrop($event, i)">
+          <div class="stock-list" cdkDropList [cdkDropListData]="v.stocks" (cdkDropListDropped)="onStockDrop($event, i)">
             <div class="stock-item" *ngFor="let s of v.stocks; let j=index" cdkDrag>
               
               <div class="stock-header" cdkDragHandle>
@@ -119,11 +119,8 @@
                     {{ formatLabel(attr.nombre) }}
                     
                     <span class="identity-star" *ngIf="attr.nombre === mapeoIdentidadPorCategoria" title="Define la identidad de la variante">⭐</span>
-                    
                     <span class="required-asterisk" *ngIf="attr.nombre === mapeoIdentidadPorCategoria" title="Requerido para inventario">*</span>
-                    
                     <span class="required-asterisk" *ngIf="attr.nombre === 'talla'" title="Requerido para inventario">*</span>
-                    
                     <span class="required-web-asterisk" *ngIf="(s.publicar_web || s.publicar_vinted || s.publicar_wallapop) && attr.nombre === 'peso_kg'" title="Requerido para envíos">*</span>
                   </label>
 
@@ -138,11 +135,11 @@
                     [type]="attr.tipo" 
                     [(ngModel)]="attr.valor" 
                     (ngModelChange)="sincronizarIdentidadVariante(v)" 
-                    [name]="'attr'+i+j+k" 
+                    [name]="'attr_' + s.temp_id + '_' + attr.nombre" 
                     [placeholder]="getPlaceholder(attr.nombre)" />
 
                   <div class="custom-select" *ngIf="attr.tipo === 'select'">
-                    <select [(ngModel)]="attr.valor" (ngModelChange)="sincronizarIdentidadVariante(v)" [name]="'attr'+i+j+k">
+                    <select [(ngModel)]="attr.valor" (ngModelChange)="sincronizarIdentidadVariante(v)" [name]="'attr_' + s.temp_id + '_' + attr.nombre">
                       <option [ngValue]="null" disabled selected>Selecciona...</option>
                       <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
                     </select>
@@ -151,12 +148,12 @@
 
                 <div class="field">
                   <label>Unidades / stocks <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="number" [(ngModel)]="s.stock" [name]="'stock'+i+j" />
+                  <input type="number" [(ngModel)]="s.stock" [name]="'stock_' + s.temp_id" />
                 </div>
 
                 <div class="field">
                   <label>Precio Compra <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc'+i+j" />
+                  <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc_' + s.temp_id" />
                 </div>
 
                 <div class="field proveedor-autocomplete">
@@ -166,7 +163,7 @@
 
                 <div class="field">
                   <label>Fecha de Compra <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="date" [(ngModel)]="s.fecha_compra" [name]="'fecha_compra'+i+j" />
+                  <input type="date" [(ngModel)]="s.fecha_compra" [name]="'fecha_compra_' + s.temp_id" />
                 </div>
 
                 <div class="field">
@@ -174,24 +171,29 @@
                     Precio Venta 
                     <span class="required-web-asterisk" *ngIf="s.publicar_web || s.publicar_vinted || s.publicar_wallapop" title="Requerido para publicar">*</span>
                   </label>
-                  <input type="number" step="0.01" [(ngModel)]="s.precio_venta" [name]="'pv'+i+j" />
+                  <input type="number" step="0.01" [(ngModel)]="s.precio_venta" [name]="'pv_' + s.temp_id" />
                 </div>
 
                 <div class="field">
                   <label>Ubicación de almacenaje <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="text" [(ngModel)]="s.ubicacion" [name]="'ubicacion'+i+j" placeholder="Pasillo A, Caja 2..." />
+                  <input type="text" [(ngModel)]="s.ubicacion" [name]="'ubicacion_' + s.temp_id" placeholder="Pasillo A, Caja 2..." />
+                </div>
+
+                <div class="field advanced-id-field" *ngIf="!isEditMode">
+                  <label style="color: #e74c3c; font-size: 0.8rem;">⚠️ ID Manual (Solo Excel)</label>
+                  <input type="number" [(ngModel)]="s.id_manual" [name]="'id_manual_' + s.temp_id" placeholder="Dejar vacío por defecto" style="border-color: #fceceb; background-color: #fceceb; font-size: 0.8rem;" />
                 </div>
 
                 <div class="field">
                   <label>Descuento %</label>
-                  <input type="number" [(ngModel)]="s.descuento" [name]="'desc'+i+j" />
+                  <input type="number" [(ngModel)]="s.descuento" [name]="'desc_' + s.temp_id" />
                 </div>
               </div>
 
               <div class="stock-footer">
                 <div class="publish-options">
                   <label class="toggle-switch">
-                    <input type="checkbox" [(ngModel)]="s.publicar_web" [name]="'w'+i+j" />
+                    <input type="checkbox" [(ngModel)]="s.publicar_web" [name]="'w_' + s.temp_id" />
                     <span class="slider"></span>
                     <span class="toggle-label">Publicar en Web</span>
                   </label>

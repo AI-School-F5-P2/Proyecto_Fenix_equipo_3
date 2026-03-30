@@ -63,6 +63,7 @@
           <table class="saas-table">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>SKU</th>
                 <th>Opción / Atributos</th>
                 <th>Stock</th>
@@ -72,6 +73,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let s of v.stocks">
+                <td class="text-muted">{{ s.id || 'Sin ID' }}</td>
                 <td class="text-muted"><small>{{ s.sku || 'Sin SKU' }}</small></td>
                 
                 <td>

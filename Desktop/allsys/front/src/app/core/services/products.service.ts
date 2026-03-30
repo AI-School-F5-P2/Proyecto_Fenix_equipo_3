@@ -179,10 +179,24 @@ getSubcategorias(parentId: number): Categoria[] {
   }
 
   // ---------------- EDITAR PRODUCTO (JSON) ----------------
-  editarProducto(id: number, formData: FormData) {
-  return this.http.put(`${this.apiUrl}/productos/${id}`, formData);
-}
+ editarProducto(id: number, formData: FormData) {
+    // ✨ LOG ESPÍA DEL SERVICE ✨
+    console.log(`=== ENVIANDO AL BACKEND (PUT /productos/${id}) ===`);
+    
+    // Recorremos el FormData para imprimir cada llave y su valor
+    formData.forEach((value, key) => {
+      // Si la llave es 'variantes', la convertimos de texto a JSON para leerla mejor
+      if (key === 'variantes') {
+        console.log(`📦 ${key}:`, JSON.parse(value as string));
+      } else {
+        console.log(`🔑 ${key}:`, value);
+      }
+    });
+    
+    console.log(`====================================================`);
 
+    return this.http.put(`${this.apiUrl}/productos/${id}`, formData);
+  }
   // ---------------- IMÁGENES ----------------
   agregarImagenesVariante(varianteId: number, formData: FormData): Observable<any> {
     return this.http.post(`${this.apiUrl}/variantes/${varianteId}/imagenes`, formData);

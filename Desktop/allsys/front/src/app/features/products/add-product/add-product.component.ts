@@ -85,6 +85,7 @@ export class AddProductComponent implements OnInit {
           imagenesFiles: vDB.imagenes ? vDB.imagenes.map(() => null) : [],
           stocks: vDB.stocks.sort((a,b) => (a.orden || 0) - (b.orden || 0)).map(sDB => ({
             id: sDB.id,
+            temp_id: generarTempId(),
             sku: sDB.sku,
             stock: sDB.cantidad,
             precio_compra: sDB.precio_compra,
@@ -190,9 +191,9 @@ private capitalizar(s: string): string {
 
   nuevoStock(): StockVariante {
     return { 
-        sku: '', atributos: this.getAtributosVacios(), stock: 0, precio_compra: 0, ubicacion: '',
+        id_manual: null, sku: '', atributos: this.getAtributosVacios(), stock: 0, precio_compra: 0, ubicacion: '',
         precio_venta: 0, descuento: 0, proveedor: '', proveedor_id: null, 
-        fecha_compra: '', publicar_vinted: false, publicar_wallapop: false, publicar_web: false 
+        fecha_compra: '', publicar_vinted: false, publicar_wallapop: false, publicar_web: false, temp_id: generarTempId(),
     };
   }
 
@@ -431,6 +432,10 @@ private getMensajeErrorAtributo(tipo: string): string {
   return mensajes[tipo] || 'Falta el atributo principal de la variante.';
 }
 
+
+
+
+
   onSubmit(): void {
   if (!this.validarFormulario()) return;
   this.isSubmitting = true;
@@ -487,7 +492,7 @@ private getMensajeErrorAtributo(tipo: string): string {
       hex_identidad: v.hex_identidad, descripcion: v.descripcion, orden: idxV, // ❌ Sin ubicacion
       imagenes: v.imagenes.map((img, idxI) => img.startsWith('http') ? img : `NUEVA_${idxI}`),
       stocks: v.stocks.map((s, idxS) => ({ 
-        ...s, cantidad: s.stock, orden: idxS, ubicacion: s.ubicacion, atributos: s.atributos.filter(a => a.valor !== null) 
+        ...s, id_manual: s.id_manual, cantidad: s.stock, orden: idxS, ubicacion: s.ubicacion, atributos: s.atributos.filter(a => a.valor !== null) 
       }))
     }));
 
