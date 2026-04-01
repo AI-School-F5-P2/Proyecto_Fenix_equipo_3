@@ -555,6 +555,134 @@ def obtener_producto_completo(db: Session, p_id: int):
         ]
     }
 
+
+
+
+
+
+
+
+
+
+
+
+# Asegúrate de importar esto arriba si no lo tienes para cargar el proveedor
+from sqlalchemy.orm import selectinload
+
+# =====================================================
+# OBTENER DETALLE DE UN STOCK INDIVIDUAL
+# =====================================================
+def obtener_stock_detalle(db: Session, stock_id: int):
+    # Hacemos la consulta con Eager Loading para traer las relaciones sin hacer múltiples queries
+    s = (
+        db.query(Stock)
+        .options(
+            selectinload(Stock.variante).selectinload(Variante.producto).selectinload(Producto.categoria),
+            selectinload(Stock.variante).selectinload(Variante.producto).selectinload(Producto.marca),
+            selectinload(Stock.variante).selectinload(Variante.imagenes),
+            selectinload(Stock.valores).selectinload(ValorAtributo.atributo),
+            selectinload(Stock.proveedor) # ✨ NUEVO: Le pedimos a la BD que traiga los datos del proveedor
+        )
+        .filter(Stock.id == stock_id)
+        .first()
+    )
+
+    if not s:
+        return None
+
+    # Extraemos las entidades jerárquicas
+    v = s.variante
+    p = v.producto
+    
+    # Procesamiento de atributos (Separar talla del resto)
+    talla_val = None
+    atributos_extra = {}
+    
+    for val in s.valores:
+        if val.atributo:
+            nombre_attr = val.atributo.nombre.lower()
+            if nombre_attr in ['talla', 'size', 'medida', 'numero']:
+                talla_val = val.valor
+            else:
+                atributos_extra[nombre_attr] = val.valor
+
+    # Buscar la imagen de portada de la variante
+    img_url = None
+    if v.imagenes:
+        img_sorted = sorted(v.imagenes, key=lambda x: x.orden or 0)
+        if img_sorted:
+            img_url = img_sorted[0].url
+
+    # Retornamos el diccionario aplanado que espera tu nuevo componente de Angular
+    return {
+        "stock_id": s.id,
+        "stock_sku": s.sku,
+        "variante_id": v.id,
+        "producto_id": p.id,
+        "producto_nombre": p.nombre,
+        "categoria": {"id": p.categoria.id, "nombre": p.categoria.nombre} if p.categoria else None,
+        "marca": {"id": p.marca.id, "nombre": p.marca.nombre} if p.marca else None,
+        "hex_identidad": v.hex_identidad,
+        "identidad_variante": v.identidad_variante,
+        "imagen_cover": img_url,
+        "etiqueta": s.etiqueta,
+        "talla": talla_val,
+        "atributos_extra": atributos_extra,
+        "stock_disponible": s.cantidad,
+        "precio_compra": float(s.precio_compra),
+        "precio_venta": float(s.precio_venta),
+        "descuento": float(s.descuento or 0),
+        "ubicacion_almacen": s.ubicacion,
+        
+        # ✨ LOS DATOS FALTANTES QUE AHORA SÍ LLEGARÁN AL FORMULARIO:
+        # Forzamos el formato YYYY-MM-DD para que Angular/HTML lo entienda
+        "fecha_compra": s.fecha_compra.strftime("%Y-%m-%d") if s.fecha_compra else None,
+        "proveedor_id": s.proveedor_id,
+        "proveedor_nombre": s.proveedor.nombre_proveedor if s.proveedor else None,
+        
+        "canales": {
+            "web": s.publicar_web,
+            "vinted": s.publicar_vinted,
+            "wallapop": s.publicar_wallapop
+        }
+    }
+
+
+
+def actualizar_stock_individual(db: Session, stock_id: int, datos_nuevos: dict):
+    stock = db.query(Stock).filter(Stock.id == stock_id).first()
+    if not stock: return None
+
+    # Actualizamos campos directos
+    if "cantidad" in datos_nuevos: stock.cantidad = datos_nuevos["cantidad"]
+    if "precio_compra" in datos_nuevos: stock.precio_compra = datos_nuevos["precio_compra"]
+    if "precio_venta" in datos_nuevos: stock.precio_venta = datos_nuevos["precio_venta"]
+    if "descuento" in datos_nuevos: stock.descuento = datos_nuevos["descuento"]
+    if "ubicacion" in datos_nuevos: stock.ubicacion = datos_nuevos["ubicacion"]
+    if "fecha_compra" in datos_nuevos and datos_nuevos["fecha_compra"]: 
+        stock.fecha_compra = datos_nuevos["fecha_compra"]
+    
+    # Switches de publicación
+    if "publicar_web" in datos_nuevos: stock.publicar_web = datos_nuevos["publicar_web"]
+    if "publicar_vinted" in datos_nuevos: stock.publicar_vinted = datos_nuevos["publicar_vinted"]
+    if "publicar_wallapop" in datos_nuevos: stock.publicar_wallapop = datos_nuevos["publicar_wallapop"]
+    
+    # Manejo de proveedor
+    p_id = datos_nuevos.get("proveedor_id")
+    if p_id:
+        stock.proveedor_id = p_id
+    elif datos_nuevos.get("proveedor_nombre_nuevo"):
+        nuevo_p = buscar_o_crear(db, datos_nuevos["proveedor_nombre_nuevo"])
+        stock.proveedor_id = nuevo_p.id
+
+    db.commit()
+    db.refresh(stock)
+    return stock
+
+
+
+
+
 # =====================================================
 # EDITAR PRODUCTO COMPLETO
 # =====================================================
@@ -692,7 +820,18 @@ def editar_producto_completo(
                     so.orden = indice_s 
                     so.activo = True
             else:
+                # ✨ NUEVA LÓGICA DE ID MANUAL PARA STOCKS NUEVOS EN EDICIÓN
+                raw_id_manual = s_data.get("id_manual")
+                id_forzado = int(raw_id_manual) if (raw_id_manual and str(raw_id_manual).isdigit() and int(raw_id_manual) > 0) else None
+                
+                # Verificamos que el ID no esté ocupado
+                if id_forzado:
+                    stock_existente = db.query(Stock).filter(Stock.id == id_forzado).first()
+                    if stock_existente:
+                        raise HTTPException(status_code=400, detail=f"El ID manual {id_forzado} ya está en uso.")
+
                 so = Stock(
+                    id=id_forzado, # ✨ INYECTAMOS EL ID (Si es None, usa Auto-Increment)
                     variante_id=nv.id, 
                     proveedor_id=p_id,
                     etiqueta=s_data.get("etiqueta", "Única"),
@@ -827,6 +966,11 @@ def restaurar_de_papelera(db: Session, p_id: int):
     
     db.commit()
     return {"success": True, "mensaje": "♻️ Producto restaurado con éxito."}
+
+
+
+
+
 
 
 

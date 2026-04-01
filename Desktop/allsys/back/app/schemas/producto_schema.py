@@ -87,3 +87,17 @@ class StockIndividualItemList(BaseModel):
 class PaginatedStockResponse(BaseModel):
     total: int
     items: List[StockIndividualItemList]
+
+
+class StockEditPayload(BaseModel):
+    cantidad: int
+    precio_compra: float
+    precio_venta: float
+    descuento: float = 0
+    ubicacion: Optional[str] = ""
+    fecha_compra: Optional[str] = None  # Agregamos este por si también lo editan
+    proveedor_id: Optional[int] = None
+    proveedor_nombre_nuevo: Optional[str] = None
+    publicar_web: bool = False
+    publicar_vinted: bool = False
+    publicar_wallapop: bool = False

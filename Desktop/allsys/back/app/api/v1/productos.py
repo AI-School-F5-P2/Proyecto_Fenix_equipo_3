@@ -22,10 +22,16 @@ from app.repositories.producto_repo import (
     obtener_producto_completo,
     obtener_productos_paginados,
     obtener_productos_papelera,
+    obtener_stock_detalle,
     obtener_stocks_individuales_paginados,
     vaciar_producto_papelera
 )
-from app.schemas.producto_schema import PaginatedProductosResponse, PaginatedStockResponse
+
+from app.schemas.producto_schema import (
+    PaginatedProductosResponse, 
+    PaginatedStockResponse,
+    StockEditPayload  # ✨ AGREGAMOS ESTA LÍNEA
+)
 
 producto_routers = APIRouter(
     prefix="/productos",
@@ -226,6 +232,75 @@ async def editar_producto_endpoint(producto_id: int, request: Request, db: Sessi
         imagenes=archivos_dict
     )
     return {"mensaje": "Actualizado", "producto_id": producto.id}
+
+
+
+
+
+
+# =====================================================
+# OBTENER DETALLE DE UN STOCK ESPECÍFICO (¡Va antes del /{producto_id}!)
+# =====================================================
+@producto_routers.get("/stock/{stock_id}")
+def obtener_stock_endpoint(
+    stock_id: int,
+    db: Session = Depends(get_session)
+):
+    stock_data = obtener_stock_detalle(db, stock_id)
+    if not stock_data:
+        raise HTTPException(status_code=404, detail="Stock no encontrado")
+    return stock_data
+
+
+from pydantic import BaseModel
+
+class StockEditPayload(BaseModel):
+    cantidad: int
+    precio_compra: float
+    precio_venta: float
+    descuento: float = 0
+    ubicacion: Optional[str] = ""
+    proveedor_id: Optional[int] = None
+    proveedor_nombre_nuevo: Optional[str] = None
+    publicar_web: bool = False
+    publicar_vinted: bool = False
+    publicar_wallapop: bool = False
+
+@producto_routers.put("/stock/{stock_id}")
+def editar_stock_endpoint(
+    stock_id: int, 
+    payload: StockEditPayload, 
+    db: Session = Depends(get_session)
+):
+    from app.repositories.producto_repo import actualizar_stock_individual
+    actualizado = actualizar_stock_individual(db, stock_id, payload.dict())
+    if not actualizado:
+        raise HTTPException(status_code=404, detail="Stock no encontrado")
+    return {"mensaje": "Stock actualizado"}
+
+
+
+
+# =====================================================
+# EDITAR STOCK INDIVIDUAL (Inventario Rápido)
+# =====================================================
+@producto_routers.put("/stock/{stock_id}")
+def editar_stock_endpoint(
+    stock_id: int, 
+    payload: StockEditPayload, # ✨ Usa el esquema importado
+    db: Session = Depends(get_session)
+):
+    from app.repositories.producto_repo import actualizar_stock_individual
+    
+    # Pasamos los datos validados como diccionario al repo
+    actualizado = actualizar_stock_individual(db, stock_id, payload.model_dump()) 
+    # NOTA: Usa .dict() si estás en Pydantic v1, o .model_dump() si estás en Pydantic v2
+    
+    if not actualizado:
+        raise HTTPException(status_code=404, detail="Stock no encontrado")
+        
+    return {"mensaje": "Stock actualizado correctamente"}
+
 
 
 
