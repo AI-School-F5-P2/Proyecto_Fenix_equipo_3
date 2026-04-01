@@ -1,0 +1,119 @@
+<div class="page-container" *ngIf="!cargando && stock; else loading">
+  
+  <div class="page-header">
+    <div class="header-content">
+      <div class="breadcrumbs">
+        <span class="text-muted" (click)="volver()" style="cursor: pointer;">← Volver al inventario</span>
+      </div>
+      <h1 class="title mt-2">{{ stock.producto_nombre | titlecase }}</h1>
+      <p class="subtitle">
+        Variante: <strong>{{ stock.identidad_variante }}</strong> | 
+        Medida/Talla: <strong>{{ stock.talla || stock.etiqueta }}</strong>
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-outline-primary" (click)="editarProductoPadre()">
+        ✏️ Editar Producto Padre
+      </button>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="left-col">
+      <section class="card-section text-center" *ngIf="stock.imagen_cover">
+        <img [src]="stock.imagen_cover" alt="Imagen del stock" class="stock-main-img" style="max-width: 100%; border-radius: 8px;">
+      </section>
+
+      <section class="card-section info-card">
+        <h3 class="section-title">Especificaciones</h3>
+        <div class="meta-grid">
+          <div class="meta-item" *ngIf="stock.marca?.nombre">
+            <span class="meta-label">Marca</span>
+            <span class="meta-value">{{ stock.marca?.nombre }}</span>
+          </div>
+          <div class="meta-item" *ngIf="stock.categoria?.nombre">
+            <span class="meta-label">Categoría</span>
+            <span class="meta-value badge-neutral">{{ stock.categoria?.nombre }}</span>
+          </div>
+          <div class="meta-item" *ngIf="stock.hex_identidad">
+            <span class="meta-label">Color Base</span>
+            <span class="meta-value">
+              <span class="color-dot" [style.background]="stock.hex_identidad" style="display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:5px; border:1px solid #ccc;"></span>
+              {{ stock.identidad_variante }}
+            </span>
+          </div>
+        </div>
+
+        <div class="atributos-extra mt-3" *ngIf="stock.atributos_extra && (stock.atributos_extra | keyvalue).length > 0">
+          <hr style="border-top: 1px solid #eee; margin: 15px 0;">
+          <h4 style="font-size: 0.9rem; color: #7f8c8d; margin-bottom: 10px;">Otros Atributos</h4>
+          <div class="meta-grid">
+            <div class="meta-item" *ngFor="let attr of stock.atributos_extra | keyvalue">
+              <span class="meta-label">{{ attr.key + '' | titlecase }}</span>
+              <span class="meta-value">{{ attr.value }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="right-col">
+      <section class="card-section info-card">
+        <h3 class="section-title">Datos Logísticos</h3>
+        <div class="meta-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="meta-item">
+            <span class="meta-label">ID de Sistema</span>
+            <span class="meta-value text-muted">#{{ stock.stock_id }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">SKU</span>
+            <span class="meta-value" style="font-family: monospace; background: #f4f6f8; padding: 2px 6px; border-radius: 4px;">{{ stock.stock_sku }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Ubicación en Almacén</span>
+            <span class="meta-value badge-location" style="display: inline-block;">📍 {{ stock.ubicacion_almacen || 'Sin asignar' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Unidades Disponibles</span>
+            <span class="meta-value stock-status" [class.out-of-stock]="stock.stock_disponible === 0" style="font-size: 1.2rem; font-weight: bold;">
+              {{ stock.stock_disponible }}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card-section info-card">
+        <h3 class="section-title">Precios y Canales</h3>
+        <div class="meta-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="meta-item">
+            <span class="meta-label">Precio Compra</span>
+            <span class="meta-value text-danger">${{ stock.precio_compra | number:'1.2-2' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Precio Venta</span>
+            <span class="meta-value text-success" style="font-size: 1.2rem; font-weight: bold;">${{ stock.precio_venta | number:'1.2-2' }}</span>
+          </div>
+        </div>
+        
+        <div class="canales-section mt-3">
+          <span class="meta-label d-block mb-2">Publicado en:</span>
+          <div class="canales-badges">
+            <span class="badge badge-inventory" *ngIf="!stock.canales?.web && !stock.canales?.vinted && !stock.canales?.wallapop">
+              📦 Solo Inventario (No publicado)
+            </span>
+            <span class="badge badge-web" *ngIf="stock.canales?.web">🌐 Web</span>
+            <span class="badge badge-vinted" *ngIf="stock.canales?.vinted">👗 Vinted</span>
+            <span class="badge badge-wallapop" *ngIf="stock.canales?.wallapop">🏷️ Wallapop</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="page-container loading-container">
+    <div class="spinner"></div>
+    <p>Cargando información del stock...</p>
+  </div>
+</ng-template>

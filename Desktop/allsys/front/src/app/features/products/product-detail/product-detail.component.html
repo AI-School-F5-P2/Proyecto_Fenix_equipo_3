@@ -69,6 +69,7 @@
                 <th>Stock</th>
                 <th>Precio Venta</th>
                 <th>Canales Activos</th>
+                <th class="text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -103,6 +104,11 @@
                     <span class="badge badge-wallapop" *ngIf="s.publicar_wallapop">🏷️ Wallapop</span>
                   </div>
                 </td>
+                <td class="text-center actions-cell">
+                   <button class="btn-icon-edit" [routerLink]="['/edit-stock', s.id]" title="Editar Stock">
+                       ✏️ Editar
+                    </button>
+                   </td>
               </tr>
             </tbody>
           </table>

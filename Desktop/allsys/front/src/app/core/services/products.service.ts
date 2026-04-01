@@ -178,6 +178,23 @@ getSubcategorias(parentId: number): Categoria[] {
     return this.http.put(`${this.apiUrl}/variantes/${varianteId}`, data);
   }
 
+
+
+
+// En tu products.service.ts
+obtenerStock(id: number): Observable<any> {
+  return this.http.get<any>(`${this.apiUrl}/productos/stock/${id}`);
+}
+
+
+// En tu products.service.ts
+  actualizarStockIndividual(id: number, payload: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock/${id}`, payload);
+  }
+
+
+
+
   // ---------------- EDITAR PRODUCTO (JSON) ----------------
  editarProducto(id: number, formData: FormData) {
     // ✨ LOG ESPÍA DEL SERVICE ✨

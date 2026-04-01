@@ -1,0 +1,162 @@
+<div class="page-container" *ngIf="!cargandoDatos; else loadingTemplate">
+  
+  <header class="form-header header-top">
+    <div class="header-info-wrapper">
+      <div class="variant-thumbnail" *ngIf="contexto.imagen_cover">
+        <img [src]="contexto.imagen_cover" alt="Foto de la variante" />
+      </div>
+
+      <div class="title-group">
+        <span class="text-muted" (click)="volver()" style="cursor: pointer;">← Volver al detalle</span>
+        <h2 class="title mt-1">Editar Inventario Rápido</h2>
+        <p class="subtitle">
+          <strong>{{ contexto.producto_nombre }}</strong> | SKU: {{ contexto.sku }}
+        </p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-outline-primary" (click)="verProductoPadre()">
+        👁️ Ver Producto Padre
+      </button>
+    </div>
+  </header>
+
+  <div class="alert-box-info mb-4">
+    <div class="alert-content">
+      <span class="icon">🛠️</span>
+      <div class="text">
+        <h4>Gestión de Variante</h4>
+        <p>Las fotos, descripciones y nuevas medidas/tallas se gestionan en el formulario maestro.</p>
+      </div>
+    </div>
+    <button type="button" class="vinted-btn-primary" (click)="irAGestionarVariante()">
+      Ir a Gestionar Variante
+    </button>
+  </div>
+
+  <form class="product-form" (ngSubmit)="onSubmit()">
+    
+    <section class="card-section identity-bg">
+      <div class="section-header">
+        <h3>Identificación del Artículo</h3>
+      </div>
+      <div class="grid-4">
+        <div class="field">
+          <label>Color / Estilo</label>
+          <div class="display-pill readonly-field">
+            <span class="color-circle" [style.background]="contexto.hex_identidad"></span>
+            <span class="value-text">{{ contexto.identidad_variante }}</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Talla / Medida Base</label>
+          <div class="display-pill readonly-field highlight-talla">
+            <span class="value-text">{{ contexto.talla || contexto.etiqueta }}</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tipo</label>
+          <div class="display-pill readonly-field">
+            <span class="value-text">{{ tipoProducto | titlecase }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-section">
+      <div class="section-header">
+        <h3>Inventario y Precios</h3>
+      </div>
+      <div class="grid-4">
+        <div class="field">
+          <label>Unidades en Stock <span class="required-asterisk">*</span></label>
+          <input type="number" [(ngModel)]="stockData.cantidad" name="cantidad" required />
+        </div>
+
+        <div class="field">
+          <label>Precio Compra ($)</label>
+          <input type="number" step="0.01" [(ngModel)]="stockData.precio_compra" name="precio_compra" />
+        </div>
+
+        <div class="field">
+          <label>Precio Venta ($) <span class="required-asterisk">*</span></label>
+          <input type="number" step="0.01" [(ngModel)]="stockData.precio_venta" name="precio_venta" required />
+        </div>
+
+        <div class="field">
+          <label>Ubicación Almacén</label>
+          <input type="text" [(ngModel)]="stockData.ubicacion" name="ubicacion" placeholder="Ej: Pasillo A-12" />
+        </div>
+
+        <div class="field proveedor-autocomplete">
+          <label>Proveedor</label>
+          <app-supplier-selector 
+            [proveedorInicialId]="stockData.proveedor_id" 
+            (supplierChanged)="onSupplierChanged($event)">
+          </app-supplier-selector>
+        </div>
+
+        <div class="field">
+          <label>Fecha de Compra</label>
+          <input type="date" [(ngModel)]="stockData.fecha_compra" name="fecha_compra" />
+        </div>
+      </div>
+    </section>
+
+    <section class="card-section" *ngIf="stockData.atributos && stockData.atributos.length > 0">
+      <div class="section-header">
+        <h3>Medidas y Proporciones</h3>
+      </div>
+      <div class="grid-4">
+        <div class="field" *ngFor="let attr of stockData.atributos; let k=index">
+          <label>
+            {{ formatLabel(attr.nombre) }}
+            <span class="required-web-asterisk" *ngIf="attr.nombre === 'peso_kg' && stockData.publicar_web">*</span>
+          </label>
+
+          <input 
+            *ngIf="attr.tipo !== 'select'"
+            [type]="attr.tipo || 'text'" 
+            [(ngModel)]="attr.valor" 
+            [name]="'attr_' + k" 
+            [placeholder]="getPlaceholder(attr.nombre)" />
+
+          <div class="custom-select" *ngIf="attr.tipo === 'select'">
+            <select [(ngModel)]="attr.valor" [name]="'attr_' + k">
+              <option [ngValue]="null">Selecciona...</option>
+              <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-section">
+      <div class="section-header">
+        <h3>Canales de Publicación</h3>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" [(ngModel)]="stockData.publicar_web" name="publicar_web" />
+        <span class="slider"></span>
+        <span class="toggle-label">🌐 Publicar en Tienda Online</span>
+      </label>
+    </section>
+
+    <div class="form-actions">
+      <button type="button" class="btn-outline-primary" (click)="volver()">Cancelar</button>
+      <button type="submit" class="btn-primary main-submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? '⏳ Guardando...' : '💾 Guardar Cambios' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<ng-template #loadingTemplate>
+  <div class="page-container loading-container">
+    <div class="spinner"></div>
+    <p>Cargando información del inventario...</p>
+  </div>
+</ng-template>

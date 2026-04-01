@@ -30,6 +30,9 @@
         </div>
 
         <div class="card-footer">
+          <button class="vinted-btn-primary" [routerLink]="['/detail-product', prod.id]">
+              Ver 👁️
+            </button>
           <span class="price-sale">${{ prod.precio_venta | number:'1.2-2' }}</span>
           <button class="vinted-btn-outline" [routerLink]="['/edit', prod.id]">Editar ✏️</button>
         </div>

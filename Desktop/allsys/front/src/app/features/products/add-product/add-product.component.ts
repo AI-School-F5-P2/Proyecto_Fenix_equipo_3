@@ -34,7 +34,7 @@ export class AddProductComponent implements OnInit {
   isEditMode = false;
   cargandoDatos = false;
   isSubmitting = false;
-
+  stockAEnfocar: number | null = null;
   nombre = '';
   descripcion = '';
   listaPublicos = ['Mujer', 'Hombre', 'Unisex', 'Niña', 'Niño', 'Bebé'];
@@ -43,13 +43,20 @@ export class AddProductComponent implements OnInit {
   categoriaSeleccionadaFinal: number | null = null;
   marcaSeleccionada: Marca | null = null;
   tipoProductoBase: string = 'ropa_superior';
-
+  fragmentAEnfocar: string | null = null;
   variantes: Variante[] = [];
   colores = COLORES_PALETA;
 
   constructor(private productsService: ProductsService, private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+
+    this.route.fragment.subscribe(fragment => {
+      if (fragment) {
+        this.fragmentAEnfocar = fragment;
+      }
+    });
+
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
@@ -103,9 +110,46 @@ export class AddProductComponent implements OnInit {
           }))
         }));
         this.cargandoDatos = false;
+        // ✨ LÓGICA DE SCROLL REFORZADA
+        if (this.fragmentAEnfocar) {
+          this.ejecutarScrollInteligente(this.fragmentAEnfocar);
+        }
       }
     });
   }
+
+
+  private ejecutarScrollInteligente(fragment: string, intentos = 0) {
+  // Le damos un pequeño margen para que Angular renderice el *ngFor
+  setTimeout(() => {
+    const elemento = document.getElementById(fragment);
+
+    if (elemento) {
+      // 1. Calculamos la posición
+      const yOffset = -100; // Margen para que no quede pegado al header
+      const y = elemento.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+      // 2. Intentamos scroll en la ventana
+      window.scrollTo({ top: y, behavior: 'smooth' });
+
+      // 3. Si tienes un contenedor interno que hace scroll, intentamos también:
+      elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // 4. Efecto visual para confirmar que llegamos
+      elemento.classList.add('highlight-pulse');
+      setTimeout(() => elemento.classList.remove('highlight-pulse'), 2500);
+
+      // Limpiamos el fragmento para que no scrollee de nuevo al azar
+      this.fragmentAEnfocar = null;
+
+    } else if (intentos < 10) {
+      // Si no lo encuentra, reintenta (útil si las fotos tardan en cargar y empujar el layout)
+      this.ejecutarScrollInteligente(fragment, intentos + 1);
+    }
+  }, 150); 
+}
+
+  
 
   private hidratarAtributos(atributosDB: AtributoBackend[]): any[] {
     const molde = this.getAtributosVacios();

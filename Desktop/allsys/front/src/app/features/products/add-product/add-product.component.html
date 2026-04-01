@@ -68,9 +68,9 @@
       </app-category-selector>
     </section>
 
-    <div class="variants-container" *ngIf="categoriaSeleccionadaFinal" cdkDropList [cdkDropListData]="variantes" (cdkDropListDropped)="onVariantDrop($event)">
+    <div class="variants-container"  *ngIf="categoriaSeleccionadaFinal" cdkDropList [cdkDropListData]="variantes" (cdkDropListDropped)="onVariantDrop($event)">
       
-      <div class="variant-card" *ngFor="let v of variantes; let i=index" cdkDrag>
+      <div class="variant-card" [id]="'variante-' + v.id" *ngFor="let v of variantes; let i=index" cdkDrag>
         <div class="example-custom-placeholder" *cdkDragPlaceholder></div>
         
         <div class="variant-header" cdkDragHandle> 
@@ -179,7 +179,7 @@
                   <input type="text" [(ngModel)]="s.ubicacion" [name]="'ubicacion_' + s.temp_id" placeholder="Pasillo A, Caja 2..." />
                 </div>
 
-                <div class="field advanced-id-field" *ngIf="!isEditMode">
+                <div class="field advanced-id-field" *ngIf="!s.id">
                   <label style="color: #e74c3c; font-size: 0.8rem;">⚠️ ID Manual (Solo Excel)</label>
                   <input type="number" [(ngModel)]="s.id_manual" [name]="'id_manual_' + s.temp_id" placeholder="Dejar vacío por defecto" style="border-color: #fceceb; background-color: #fceceb; font-size: 0.8rem;" />
                 </div>

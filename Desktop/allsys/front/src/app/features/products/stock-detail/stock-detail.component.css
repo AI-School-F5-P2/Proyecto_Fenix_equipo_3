@@ -1,0 +1,223 @@
+/* =======================================================
+   CONTENEDOR PRINCIPAL Y CABECERA
+======================================================= */
+.page-container {
+  max-width: 1000px; /* Un poco más contenido que la tabla completa */
+  margin: 0 auto;
+  padding: 20px;
+  background-color: var(--bg-body, #f4f6f8);
+  min-height: 100vh;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.breadcrumbs span {
+  font-size: 0.9rem;
+  color: var(--text-muted, #7f8c8d);
+  transition: color 0.2s ease;
+}
+
+.breadcrumbs span:hover {
+  color: var(--primary, #007782);
+  text-decoration: underline;
+}
+
+.title {
+  font-size: 1.8rem;
+  color: var(--text-main, #2c3e50);
+  margin: 8px 0 4px;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--text-muted, #7f8c8d);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* =======================================================
+   ESTRUCTURA Y TARJETAS
+======================================================= */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr; /* Ligeramente asimétrico para dar peso a los datos */
+  gap: 24px;
+  align-items: start;
+}
+
+.card-section {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e0e6ed);
+  border-radius: var(--ap-radius-lg, 12px);
+  padding: 24px;
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  color: var(--text-main, #2c3e50);
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color, #e0e6ed);
+}
+
+/* =======================================================
+   FOTOS DEL STOCK
+======================================================= */
+.stock-main-img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain; /* Para que la foto no se recorte y mantenga proporción */
+  border-radius: var(--ap-radius-md, 8px);
+  border: 1px solid var(--border-color, #e0e6ed);
+  background-color: #fafbfc; /* Fondo sutil por si la imagen tiene fondo transparente */
+}
+
+/* =======================================================
+   GRID DE METADATOS (Atributos, Logística, Precios)
+======================================================= */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px 20px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted, #7f8c8d);
+  font-weight: 600;
+}
+
+.meta-value {
+  font-size: 0.95rem;
+  color: var(--text-main, #2c3e50);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+/* Utilidades de texto */
+.text-muted { color: var(--text-muted, #7f8c8d); }
+.text-danger { color: var(--ap-color-danger, #e74c3c); }
+.text-success { color: var(--ap-color-success, #27ae60); }
+
+/* =======================================================
+   BADGES Y ESTADOS
+======================================================= */
+.badge-neutral {
+  background-color: var(--bg-body, #f4f6f8);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border-color, #e0e6ed);
+}
+
+.badge-location {
+  background-color: #e6f2f3; /* Variante suave de tu primary */
+  color: var(--primary, #007782);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.stock-status {
+  color: var(--ap-color-success, #27ae60);
+}
+
+.stock-status.out-of-stock {
+  color: var(--ap-color-danger, #e74c3c);
+}
+
+/* Canales de Venta */
+.canales-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-inventory { background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.badge-web { background-color: #e0e7ff; color: #4338ca; }
+.badge-vinted { background-color: #dcfce7; color: #166534; }
+.badge-wallapop { background-color: #ffedd5; color: #c2410c; }
+
+/* =======================================================
+   ESTADOS DE CARGA Y BOTONES EXTRA
+======================================================= */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  color: var(--text-muted, #7f8c8d);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border-color, #e0e6ed);
+  border-top: 4px solid var(--primary, #007782);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* =======================================================
+   RESPONSIVO (Pantallas pequeñas y Móviles)
+======================================================= */
+@media (max-width: 768px) {
+  .grid-2 {
+    grid-template-columns: 1fr; /* Colapsa a una sola columna */
+  }
+  
+  .header-actions {
+    width: 100%;
+    flex-direction: column; /* Botones apilados en móvil */
+  }
+
+  .header-actions button {
+    width: 100%;
+  }
+
+  .meta-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columnas en lugar de flexibles para ahorrar espacio */
+  }
+}

@@ -368,3 +368,27 @@
 }
 .cdk-drag-placeholder { opacity: 0; }
 .cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
+
+/* Efecto para indicar al usuario a qué variante saltó */
+.highlight-pulse {
+  animation: pulse-border 2s ease-out;
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0 rgba(0, 119, 130, 0.4); border-color: var(--ap-color-primary, #007782); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 119, 130, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 119, 130, 0); }
+}
+
+/* Esto hace que la tarjeta "brille" al llegar */
+.variant-card.highlight-pulse {
+  border: 2px solid var(--vinted-teal, #007782) !important;
+  box-shadow: 0 0 15px rgba(0, 119, 130, 0.3);
+  transition: all 0.5s ease;
+}
+
+/* Opcional: Si el scroll sigue sin moverse, intenta forzar el scroll global */
+:host {
+  display: block;
+  height: 100%;
+}

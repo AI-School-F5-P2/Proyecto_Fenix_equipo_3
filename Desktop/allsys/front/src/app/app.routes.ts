@@ -7,6 +7,8 @@ import { AddProductComponent } from './features/products/add-product/add-product
 import { ProductsListComponent } from './features/products/products-list/products-list.component';
 import { ProductDetailComponent } from './features/products/product-detail/product-detail.component';
 import { VentaCreateComponent } from './features/ventas/venta-create/venta-create.component';
+import { StockDetailComponent } from './features/products/stock-detail/stock-detail.component';
+import { EditStockComponent } from './features/products/edit-stock/edit-stock.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -25,7 +27,9 @@ export const routes: Routes = [
       { path: 'view-products', component: ProductsListComponent },
       { path: 'detail-product/:id', component: ProductDetailComponent },
       { path: 'venta-create', component: VentaCreateComponent },
-      { path: 'venta-create/:id', component: VentaCreateComponent }
+      { path: 'venta-create/:id', component: VentaCreateComponent },
+      { path: 'stock-detail/:id', component: StockDetailComponent },
+      { path: 'edit-stock/:id', component: EditStockComponent },
     ],
   },
 
