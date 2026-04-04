@@ -7,13 +7,15 @@
         class="tab-btn" 
         [class.active]="vistaActual === 'inventario'" 
         (click)="cambiarVista('inventario')">
-        📦 Inventario
+        📦 Inventario 
+        <span class="tab-count" *ngIf="totalInventario > 0">{{ totalInventario }}</span>
       </button>
       <button 
         class="tab-btn" 
         [class.active]="vistaActual === 'catalogo'" 
         (click)="cambiarVista('catalogo')">
-        🏷️ Catálogo
+        🏷️ Catálogo 
+        <span class="tab-count" *ngIf="totalCatalogo > 0">{{ totalCatalogo }}</span>
       </button>
     </div>
 
@@ -73,6 +75,30 @@
           </select>
         </div>
 
+        <div class="filter-item">
+          <label class="filter-label">Disponibilidad</label>
+          <div class="segmented-control">
+            <button 
+              type="button" 
+              [class.active]="filtros.disponibilidad === 'todos'"
+              (click)="filtros.disponibilidad = 'todos'; aplicarFiltros()">
+              Todos
+            </button>
+            <button 
+              type="button" 
+              [class.active]="filtros.disponibilidad === 'en_stock'"
+              (click)="filtros.disponibilidad = 'en_stock'; aplicarFiltros()">
+              En Stock ✅
+            </button>
+            <button 
+              type="button" 
+              [class.active]="filtros.disponibilidad === 'agotado'"
+              (click)="filtros.disponibilidad = 'agotado'; aplicarFiltros()">
+              Agotados 🚫
+            </button>
+          </div>
+        </div>
+
         <button class="btn-clear-all" *ngIf="filtrosActivos.length > 0" (click)="limpiarFiltros()">
           Borrar filtros
         </button>
@@ -98,6 +124,11 @@
     <div class="empty-icon">🏷️</div>
     <h3 class="empty-title">Sin resultados en Catálogo</h3>
     <p class="empty-text">No hay productos que coincidan con tu búsqueda.</p>
+  </div>
+
+  <div *ngIf="cargando && (stocks.length === 0 && productosPadre.length === 0)" class="loading-state">
+    <div class="spinner"></div>
+    <p>Buscando en {{ vistaActual }}...</p>
   </div>
 
   <app-inventory-table 

@@ -49,9 +49,9 @@ export class StockDetailComponent implements OnInit {
   }
 
   // Si quieres permitir edición rápida, puedes enviarlo al form de edición del producto padre
-  editarProductoPadre() {
+  editarStock() {
     if (this.stock?.producto_id) {
-      this.router.navigate(['/edit', this.stock.producto_id]);
+      this.router.navigate(['/edit-stock', this.stock.producto_id]);
     }
   }
 }

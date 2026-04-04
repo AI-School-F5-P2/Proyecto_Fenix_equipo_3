@@ -34,7 +34,7 @@ export interface ProductoBackend {
 }
 
 export interface StockVariante {
-  id?: number; sku: string; atributos: any[]; stock: number;
+  id?: number; sku: string; atributos: any[]; stock: number; talla?: string | null | any;
   precio_compra: number; precio_venta: number; descuento: number;
   proveedor: string; proveedor_id?: number | null; fecha_compra: string;
   publicar_vinted: boolean; publicar_wallapop: boolean; publicar_web: boolean;

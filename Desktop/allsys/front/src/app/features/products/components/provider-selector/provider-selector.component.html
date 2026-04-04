@@ -17,7 +17,7 @@
           [checked]="seleccionados.includes(prov.id)"
           (change)="toggleProveedor(prov.id)"
         >
-        <span class="prov-name">{{ prov.nombre }}</span>
+        <span class="prov-name">{{ prov.nombre_proveedor }}</span>
       </label>
 
       <div class="empty-msg" *ngIf="proveedores.length === 0">

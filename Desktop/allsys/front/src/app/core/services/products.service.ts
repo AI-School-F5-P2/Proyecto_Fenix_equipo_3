@@ -26,6 +26,37 @@ export class ProductsService {
 
   constructor(private http: HttpClient) {}
 
+
+  private cleanParams(params: HttpParams, filtros: any): HttpParams {
+  const llaves = [
+    'search', 'tipo_busqueda', 'categoria_id', 'marca_id', 
+    'estado', 'precio_min', 'precio_max', 'ordenar_por', 
+    'color', 'talla', 'fecha_inicio', 'fecha_fin'
+  ];
+
+  llaves.forEach(key => {
+    const valor = filtros[key];
+    // Solo agregamos si el valor no es nulo, no es la palabra "null" y no es un string vacío
+    if (valor !== null && valor !== undefined && valor !== '' && valor !== 'null') {
+      params = params.set(key, valor.toString());
+    }
+    
+    if (key === 'disponibilidad' && valor !== 'todos') {
+      params = params.set('disponibilidad', valor);
+    }
+  });
+
+  // Manejo especial de proveedores (arrays)
+  if (filtros.proveedores_ids?.length > 0) {
+    filtros.proveedores_ids.forEach((id: number) => {
+      params = params.append('proveedores_ids', id.toString());
+    });
+  }
+  
+
+  return params;
+}
+
   // ---------------- CATEGORÍAS ----------------
 cargarCategorias(): Observable<Categoria[]> { // ✨ Cambiado any[] por Categoria[]
   if (this.categoriasCache.length > 0) {
@@ -82,66 +113,33 @@ getSubcategorias(parentId: number): Categoria[] {
   return this.http.get<ProductoBackend>(`${this.apiUrl}/productos/${id}`);
 }
 
- obtenerProductos(pagina: number, limite: number, filtros: MisFiltros) {
-    let params = new HttpParams()
-      .set('page', pagina.toString())
-      .set('limit', limite.toString());
 
-    if (filtros.search?.trim()) {
-      params = params.set('search', filtros.search.trim());
-      if (filtros.tipo_busqueda) params = params.set('tipo_busqueda', filtros.tipo_busqueda);
-    }
-    
-    if (filtros.categoria_id) params = params.set('categoria_id', filtros.categoria_id.toString());
-    if (filtros.marca_id) params = params.set('marca_id', filtros.marca_id.toString());
-    if (filtros.estado) params = params.set('estado', filtros.estado);
-    if (filtros.precio_min !== null) params = params.set('precio_min', filtros.precio_min.toString());
-    if (filtros.precio_max !== null) params = params.set('precio_max', filtros.precio_max.toString());
-    if (filtros.ordenar_por) params = params.set('ordenar_por', filtros.ordenar_por);
-    if (filtros.color) params = params.set('color', filtros.color);
-    if (filtros.talla) params = params.set('talla', filtros.talla);
-    if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
-    if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
 
-    if (filtros.proveedores_ids && filtros.proveedores_ids.length > 0) {
-      filtros.proveedores_ids.forEach((id: number) => {
-        params = params.append('proveedores_ids', id.toString());
-      });
-    }
+obtenerProductos(pagina: number, limite: number, filtros: MisFiltros) {
+  let params = new HttpParams()
+    .set('page', pagina.toString())
+    .set('limit', limite.toString());
 
-    return this.http.get<PaginatedResponse>(`${this.apiUrl}/productos/`, { params });
+  if (filtros.disponibilidad && filtros.disponibilidad !== 'todos') {
+    params = params.set('disponibilidad', filtros.disponibilidad);
   }
 
-  obtenerInventarioIndividual(pagina: number, limite: number, filtros: any): Observable<PaginatedResponse> {
-  
-    let params = new HttpParams()
-      .set('page', pagina.toString())
-      .set('limit', limite.toString());
+  params = this.cleanParams(params, filtros);
+  return this.http.get<PaginatedResponse>(`${this.apiUrl}/productos/`, { params });
+}
 
-    if (filtros.search?.trim()) {
-      params = params.set('search', filtros.search.trim());
-      if (filtros.tipo_busqueda) params = params.set('tipo_busqueda', filtros.tipo_busqueda);
-    }
-    
-    if (filtros.categoria_id) params = params.set('categoria_id', filtros.categoria_id.toString());
-    if (filtros.marca_id) params = params.set('marca_id', filtros.marca_id.toString());
-    if (filtros.color) params = params.set('color', filtros.color);
-    if (filtros.talla) params = params.set('talla', filtros.talla);
-    if (filtros.estado) params = params.set('estado', filtros.estado);
-    if (filtros.precio_min !== null && filtros.precio_min !== undefined) params = params.set('precio_min', filtros.precio_min.toString());
-    if (filtros.precio_max !== null && filtros.precio_max !== undefined) params = params.set('precio_max', filtros.precio_max.toString());
-    if (filtros.ordenar_por) params = params.set('ordenar_por', filtros.ordenar_por);
-    if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
-    if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
+obtenerInventarioIndividual(pagina: number, limite: number, filtros: any) {
+  let params = new HttpParams()
+    .set('page', pagina.toString())
+    .set('limit', limite.toString());
 
-    if (filtros.proveedores_ids && filtros.proveedores_ids.length > 0) {
-      filtros.proveedores_ids.forEach((id: number) => {
-        params = params.append('proveedores_ids', id.toString());
-      });
-    }
-
-    return this.http.get<PaginatedResponse>(`${this.apiUrl}/productos/inventario-individual`, { params });
+  if (filtros.disponibilidad && filtros.disponibilidad !== 'todos') {
+    params = params.set('disponibilidad', filtros.disponibilidad);
   }
+
+  params = this.cleanParams(params, filtros);
+  return this.http.get<PaginatedResponse>(`${this.apiUrl}/productos/inventario-individual`, { params });
+}
   
 
   // ---------------- ACTUALIZAR PRODUCTO ----------------
@@ -149,20 +147,6 @@ getSubcategorias(parentId: number): Categoria[] {
     return this.http.put(`${this.apiUrl}/productos/${productoId}`, formData);
   }
 
-
- // ---------------- GESTIÓN DE PAPELERA ----------------
-  
-  // 1. Envía el producto a la papelera (Soft Delete)
-  moverProductoPapelera(productoId: number): Observable<any> {
-    // Fíjate que ahora es un PUT y la URL incluye "/papelera"
-    return this.http.put(`${this.apiUrl}/productos/${productoId}/papelera`, {});
-  }
-
-  // 2. Destruye el producto permanentemente (Hard Delete)
-  destruirProducto(productoId: number): Observable<any> {
-    // Esta ruta la usarás más adelante cuando construyas la vista de la "Papelera"
-    return this.http.delete(`${this.apiUrl}/productos/papelera/${productoId}`);
-  }
 
   // ---------------- VARIANTES ----------------
   editarVariante(
@@ -222,4 +206,59 @@ obtenerStock(id: number): Observable<any> {
   eliminarImagenVariante(imagenId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/imagenes/${imagenId}`);
   }
+
+
+
+
+  // ========================================================
+  // 🗑️ GESTIÓN DE PAPELERA (PRODUCTOS, VARIANTES Y STOCKS)
+  // ========================================================
+
+  // --- 1. OBTENER LISTADO DE PAPELERA ---
+  obtenerPapelera(pagina: number = 1, limite: number = 10): Observable<PaginatedResponse> {
+    const params = new HttpParams()
+      .set('page', pagina.toString())
+      .set('limit', limite.toString());
+    return this.http.get<PaginatedResponse>(`${this.apiUrl}/productos/papelera`, { params });
+  }
+
+  // --- 2. MOVER A PAPELERA (SOFT DELETE) ---
+  moverProductoPapelera(productoId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/${productoId}/papelera`, {});
+  }
+
+  moverVariantePapelera(varianteId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/variante/${varianteId}/papelera`, {});
+  }
+
+  moverStockPapelera(stockId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock/${stockId}/papelera`, {});
+  }
+
+  // --- 3. RESTAURAR DE PAPELERA ---
+  restaurarProducto(productoId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/${productoId}/restaurar`, {});
+  }
+
+  restaurarVariante(varianteId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/variante/${varianteId}/restaurar`, {});
+  }
+
+  restaurarStock(stockId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock/${stockId}/restaurar`, {});
+  }
+
+  // --- 4. DESTRUCCIÓN TOTAL (HARD DELETE) ---
+  destruirProducto(productoId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/productos/papelera/${productoId}`);
+  }
+
+  destruirVariante(varianteId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/productos/papelera/variante/${varianteId}`);
+  }
+
+  destruirStock(stockId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/productos/papelera/stock/${stockId}`);
+  }
+  // ========================================================
 }

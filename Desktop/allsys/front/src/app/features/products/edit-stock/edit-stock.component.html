@@ -71,28 +71,44 @@
         <h3>Inventario y Precios</h3>
       </div>
       <div class="grid-4">
+        
         <div class="field">
-          <label>Unidades en Stock <span class="required-asterisk">*</span></label>
-          <input type="number" [(ngModel)]="stockData.cantidad" name="cantidad" required />
+          <label>
+            Unidades en Stock 
+            <span class="required-web-asterisk" title="Requerido para publicar en web">*</span>
+          </label>
+          <input type="number" [(ngModel)]="stockData.cantidad" name="cantidad" />
         </div>
 
         <div class="field">
-          <label>Precio Compra ($)</label>
+          <label>
+            Precio Compra ($) 
+            <span class="required-asterisk" title="Requerido para inventario">*</span>
+          </label>
           <input type="number" step="0.01" [(ngModel)]="stockData.precio_compra" name="precio_compra" />
         </div>
 
         <div class="field">
-          <label>Precio Venta ($) <span class="required-asterisk">*</span></label>
-          <input type="number" step="0.01" [(ngModel)]="stockData.precio_venta" name="precio_venta" required />
+          <label>
+            Precio Venta ($) 
+            <span class="required-asterisk" *ngIf="stockData.publicar_web" title="Requerido para inventario">*</span>
+          </label>
+          <input type="number" step="0.01" [(ngModel)]="stockData.precio_venta" name="precio_venta" />
         </div>
 
         <div class="field">
-          <label>Ubicación Almacén</label>
+          <label>
+            Ubicación Almacén
+            <span class="required-asterisk" title="Requerido para inventario">*</span>
+          </label>
           <input type="text" [(ngModel)]="stockData.ubicacion" name="ubicacion" placeholder="Ej: Pasillo A-12" />
         </div>
 
         <div class="field proveedor-autocomplete">
-          <label>Proveedor</label>
+          <label>
+            Proveedor
+            <span class="required-asterisk" title="Requerido para inventario">*</span>
+          </label>
           <app-supplier-selector 
             [proveedorInicialId]="stockData.proveedor_id" 
             (supplierChanged)="onSupplierChanged($event)">
@@ -100,7 +116,10 @@
         </div>
 
         <div class="field">
-          <label>Fecha de Compra</label>
+          <label>
+            Fecha de Compra
+            <span class="required-asterisk" title="Requerido para inventario">*</span>
+          </label>
           <input type="date" [(ngModel)]="stockData.fecha_compra" name="fecha_compra" />
         </div>
       </div>
@@ -114,7 +133,7 @@
         <div class="field" *ngFor="let attr of stockData.atributos; let k=index">
           <label>
             {{ formatLabel(attr.nombre) }}
-            <span class="required-web-asterisk" *ngIf="attr.nombre === 'peso_kg' && stockData.publicar_web">*</span>
+            <span class="required-web-asterisk" *ngIf="attr.nombre === 'peso_kg' && stockData.publicar_web" title="Requerido para publicar en web">*</span>
           </label>
 
           <input 

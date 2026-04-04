@@ -90,24 +90,31 @@ export class AddProductComponent implements OnInit {
           descripcion: vDB.descripcion,
           imagenes: vDB.imagenes ? [...vDB.imagenes] : [],
           imagenesFiles: vDB.imagenes ? vDB.imagenes.map(() => null) : [],
-          stocks: vDB.stocks.sort((a,b) => (a.orden || 0) - (b.orden || 0)).map(sDB => ({
-            id: sDB.id,
-            temp_id: generarTempId(),
-            sku: sDB.sku,
-            stock: sDB.cantidad,
-            precio_compra: sDB.precio_compra,
-            precio_venta: sDB.precio_venta,
-            descuento: sDB.descuento || 0,
-            fecha_compra: sDB.fecha_compra,
-            proveedor: sDB.proveedor?.nombre_proveedor || '',
-            proveedor_id: sDB.proveedor_id,
-            publicar_web: sDB.publicar_web,
-            publicar_vinted: sDB.publicar_vinted,
-            publicar_wallapop: sDB.publicar_wallapop,
-            etiqueta: sDB.etiqueta || '',
-            ubicacion: sDB.ubicacion || '', // ✨ Añadimos "|| ''" para evitar nulls
-            atributos: this.hidratarAtributos(sDB.atributos)
-          }))
+          stocks: vDB.stocks.sort((a,b) => (a.orden || 0) - (b.orden || 0)).map(sDB => {
+             // ✨ AL CARGAR: Extraemos la talla de los atributos para que el (ngModel) la vea
+             const attrTalla = sDB.atributos.find(a => ['talla', 'numero', 'capacidad_ml', 'talla_anillo'].includes(a.nombre.toLowerCase()));
+             const tallaVisual = attrTalla ? attrTalla.valor : null;
+
+             return {
+                id: sDB.id,
+                temp_id: generarTempId(),
+                sku: sDB.sku,
+                stock: sDB.cantidad,
+                precio_compra: sDB.precio_compra,
+                precio_venta: sDB.precio_venta,
+                descuento: sDB.descuento || 0,
+                fecha_compra: sDB.fecha_compra,
+                proveedor: sDB.proveedor?.nombre_proveedor || '',
+                proveedor_id: sDB.proveedor_id,
+                publicar_web: sDB.publicar_web,
+                publicar_vinted: sDB.publicar_vinted,
+                publicar_wallapop: sDB.publicar_wallapop,
+                etiqueta: sDB.etiqueta || '',
+                ubicacion: sDB.ubicacion || '', 
+                talla: tallaVisual, // ✨ Lo asignamos aquí para el binding del HTML
+                atributos: this.hidratarAtributos(sDB.atributos)
+             }
+          })
         }));
         this.cargandoDatos = false;
         // ✨ LÓGICA DE SCROLL REFORZADA
@@ -152,25 +159,40 @@ export class AddProductComponent implements OnInit {
   
 
   private hidratarAtributos(atributosDB: AtributoBackend[]): any[] {
-    const molde = this.getAtributosVacios();
-    return molde.map(attrForm => {
-      const match = atributosDB.find(a => a.nombre === attrForm.nombre);
-      if (match) attrForm.valor = match.valor;
-      return attrForm;
+  const molde = this.getAtributosVacios();
+  const sinonimosTalla = ['talla', 'numero', 'talla_anillo', 'capacidad_ml'];
+
+  return molde.map(attrForm => {
+    const nombreBuscado = attrForm.nombre.toLowerCase();
+    
+    // Intentamos encontrar el valor en la DB
+    const match = atributosDB.find(a => {
+      const nombreDB = a.nombre.toLowerCase();
+      
+      // Si el nombre es idéntico, es un match directo
+      if (nombreDB === nombreBuscado) return true;
+      
+      // Si ambos están en la lista de "sinónimos de tamaño", también es un match
+      if (sinonimosTalla.includes(nombreBuscado) && sinonimosTalla.includes(nombreDB)) {
+        return true;
+      }
+      
+      return false;
     });
-  }
+
+    if (match) {
+      // Importante: Forzamos a string y limpiamos espacios por si el select tiene valores exactos
+      attrForm.valor = match.valor ? String(match.valor).trim() : null;
+    }
+    
+    return attrForm;
+  });
+}
 
   // Helper para saber si alguna talla de esta variante tiene el switch activado
   varianteVaAPublicarse(v: Variante): boolean {
     return v.stocks.some(s => s.publicar_web || s.publicar_vinted || s.publicar_wallapop);
   }
-
-  // // Helper para saber si EL PRODUCTO EN GENERAL se va a publicar en algún lado
-  // productoVaAPublicarse(): boolean {
-  //   return this.variantes.some(v => 
-  //     v.stocks.some(s => s.publicar_web || s.publicar_vinted || s.publicar_wallapop)
-  //   );
-  // }
 
   // ================== EVENTOS SELECTORES ==================
   onBrandChanged(marca: Marca) { this.marcaSeleccionada = marca; }
@@ -180,8 +202,6 @@ export class AddProductComponent implements OnInit {
     stock.proveedor_id = prov.id || null;
     if (prov.isNew) (stock as any).proveedor_nombre_nuevo = prov.nombre;
   }
-
-  // En add-product.component.ts
 
 onCategorySelected(event: CategorySelectionEvent): void {
   // 1. Guardamos el estado previo para saber si cambió la categoría
@@ -238,6 +258,7 @@ private capitalizar(s: string): string {
         id_manual: null, sku: '', atributos: this.getAtributosVacios(), stock: 0, precio_compra: 0, ubicacion: '',
         precio_venta: 0, descuento: 0, proveedor: '', proveedor_id: null, 
         fecha_compra: '', publicar_vinted: false, publicar_wallapop: false, publicar_web: false, temp_id: generarTempId(),
+        talla: null // Inicializamos
     };
   }
 
@@ -257,7 +278,7 @@ private capitalizar(s: string): string {
           // Lista de atributos que NO se deben copiar porque definen el tamaño de la variante
           const ignorar = ['talla', 'numero', 'capacidad_ml', 'talla_anillo', 'cantidad_ml_g', 'talla_guantes'];
           
-          if (!ignorar.includes(nuevoAttr.nombre)) {
+          if (!ignorar.includes(nuevoAttr.nombre.toLowerCase())) {
             nuevoAttr.valor = attrHermano.valor;
           }
         }
@@ -344,57 +365,128 @@ productoVaAPublicarse(): boolean {
   );
 }
 
-// 2. La función de validación corregida
+
+
+
+
+
+
+
 private validarFormulario(): boolean {
-  // ✨ AQUÍ DEFINIMOS LA VARIABLE QUE TE DABA ERROR
+  // 1. DETERMINAR ESTADO GLOBAL DE PUBLICACIÓN
+  // Usamos esta variable para saber si el nombre es obligatorio
   const vaAPublicarGlobal = this.productoVaAPublicarse();
 
-  // 1. GLOBAL
-  // Solo exigimos el nombre si el switch de publicar está encendido en alguna talla
+  // 2. VALIDACIONES GLOBALES DEL PRODUCTO
   if (vaAPublicarGlobal && (!this.nombre || !this.nombre.trim())) {
     return this.lanzarError('El nombre del producto es obligatorio para poder publicarlo en la web.');
   }
 
-  if (!this.categoriaSeleccionadaFinal) return this.lanzarError('Selecciona una categoría.');
-  if (!this.marcaSeleccionada) return this.lanzarError('Selecciona una marca.');
+  if (!this.categoriaSeleccionadaFinal) {
+    return this.lanzarError('Selecciona una categoría para continuar.');
+  }
 
+  if (!this.marcaSeleccionada) {
+    return this.lanzarError('Debes seleccionar una marca (o crear una nueva).');
+  }
+
+  // Obtenemos el nombre del atributo maestro (Color, Material, etc.) según el tipo de producto
   const maestro = this.mapeoIdentidadPorCategoria;
 
+  // 3. RECORRIDO DE VARIANTES (Colores/Estilos)
   for (let i = 0; i < this.variantes.length; i++) {
     const v = this.variantes[i];
-    const nV = i + 1;
+    const nV = i + 1; // Número de variante para el mensaje de error
 
-    // 2. INVENTARIO (Obligatorio para guardar)
-    if (!v.identidad_variante) return this.lanzarError(`Variante ${nV}: El campo ${maestro} es obligatorio.`);
-    if (!v.descripcion?.trim()) return this.lanzarError(`Variante ${nV}: Falta la descripción.`);
+    if (!v.identidad_variante) {
+      return this.lanzarError(`Variante ${nV}: El campo "${formatLabel(maestro)}" es obligatorio.`);
+    }
 
+    if (!v.descripcion || !v.descripcion.trim()) {
+      return this.lanzarError(`Variante ${nV}: Debes añadir una descripción específica.`);
+    }
+
+    // 4. RECORRIDO DE STOCKS (Tallas/Medidas dentro de la variante)
     for (let j = 0; j < v.stocks.length; j++) {
       const s = v.stocks[j];
-      const nS = j + 1;
-      if (!s.ubicacion?.trim()) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta la ubicación en almacén.`);
-      if (s.stock <= 0) return this.lanzarError(`Var ${nV}, Talla ${nS}: Stock debe ser > 0.`);
-      if (s.precio_compra <= 0) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta precio compra.`);
-      if (!s.proveedor_id && !s.proveedor) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta proveedor.`);
-      if (!s.fecha_compra) return this.lanzarError(`Var ${nV}, Talla ${nS}: Falta fecha compra.`);
+      const nS = j + 1; // Número de stock para el mensaje de error
 
-      // 3. PUBLICACIÓN (Solo si algún canal está activo)
-      const vaAPublicar = s.publicar_web || s.publicar_vinted || s.publicar_wallapop;
+      // A. Validación de Ubicación
+      if (!s.ubicacion || !s.ubicacion.trim()) {
+        return this.lanzarError(`Var ${nV}, Talla ${nS}: Indica la ubicación en el almacén.`);
+      }
 
-      if (vaAPublicar) {
-        if (!v.imagenes || v.imagenes.length === 0) 
-          return this.lanzarError(`Variante ${nV}: Sube al menos una foto para publicar.`);
+      // B. ✨ LÓGICA DINÁMICA DE STOCK (CANTIDAD)
+      if (!this.isEditMode) {
+        // CASO: CREACIÓN NUEVA -> El stock siempre debe ser mayor a 0
+        if (s.stock <= 0) {
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: El stock inicial debe ser mayor a 0.`);
+        }
+      } else {
+        // CASO: MODO EDICIÓN
+        const esTallaNuevaEnEdicion = !s.id; // No tiene ID de base de datos aún
+
+        if (esTallaNuevaEnEdicion && s.stock <= 0) {
+          // Si el usuario agrega una talla nueva durante la edición, debe traer mercancía
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: Al añadir una nueva talla, el stock debe ser mayor a 0.`);
+        }
+
+        if (!esTallaNuevaEnEdicion && s.stock < 0) {
+          // Si la talla ya existía, permitimos 0 (agotado), pero nunca negativo
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: El stock no puede ser un número negativo.`);
+        }
+      }
+
+      // C. Validaciones Logísticas Obligatorias
+      if (s.precio_compra <= 0) {
+        return this.lanzarError(`Var ${nV}, Talla ${nS}: El precio de compra debe ser mayor a 0.`);
+      }
+
+      if (!s.proveedor_id && !s.proveedor) {
+        return this.lanzarError(`Var ${nV}, Talla ${nS}: Selecciona o escribe un proveedor.`);
+      }
+
+      if (!s.fecha_compra) {
+        return this.lanzarError(`Var ${nV}, Talla ${nS}: La fecha de compra es obligatoria.`);
+      }
+
+      // 5. VALIDACIONES DE PUBLICACIÓN (Solo si algún canal está activo en este stock)
+      const vaAPublicarEsteStock = s.publicar_web || s.publicar_vinted || s.publicar_wallapop;
+
+      if (vaAPublicarEsteStock) {
+        // Verificar imágenes en la variante padre
+        if (!v.imagenes || v.imagenes.length === 0) {
+          return this.lanzarError(`Variante ${nV}: Debes subir al menos una foto para poder publicar este artículo.`);
+        }
+
+        // Verificar precio de venta
+        if (s.precio_venta <= 0) {
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: Para publicar, el precio de venta debe ser mayor a 0.`);
+        }
+
+        // Verificar peso (esencial para envíos automáticos)
+        const pesoAttr = s.atributos.find(a => a.nombre === 'peso_kg');
+        const pesoValor = pesoAttr ? pesoAttr.valor : null;
         
-        if (s.precio_venta <= 0) 
-          return this.lanzarError(`Var ${nV}, Talla ${nS}: El precio de venta es obligatorio.`);
-        
-        const peso = s.atributos.find(a => a.nombre === 'peso_kg')?.valor;
-        if (!peso || peso <= 0) 
-          return this.lanzarError(`Var ${nV}, Talla ${nS}: El peso es obligatorio para el envío.`);
+        if (pesoValor === null || pesoValor === undefined || pesoValor <= 0) {
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: El peso es obligatorio para calcular los costos de envío.`);
+        }
       }
     }
   }
+
+  // Si llegamos hasta aquí, todo está en orden
   return true;
 }
+
+
+
+
+
+
+
+
+
   get mapeoIdentidadPorCategoria(): string {
     return MAPEO_IDENTIDAD_POR_TIPO[this.tipoProductoBase] || 'color';
   }
@@ -515,10 +607,10 @@ private getMensajeErrorAtributo(tipo: string): string {
 }
 
 
-
-
-  private construirFormData(): FormData {
+private construirFormData(): FormData {
     const fd = new FormData();
+
+    // 1. CAMPOS BÁSICOS DEL PRODUCTO
     fd.append('nombre', this.nombre);
     fd.append('descripcion', this.descripcion);
     fd.append('tipo', this.tipoProductoBase);
@@ -526,30 +618,84 @@ private getMensajeErrorAtributo(tipo: string): string {
     fd.append('categoria_id', String(this.categoriaSeleccionadaFinal));
     fd.append('publico_objetivo', this.publicoSeleccionado);
 
+    // 2. GESTIÓN DE MARCA
     if (this.marcaSeleccionada) {
-      if (this.marcaSeleccionada.isNew) fd.append('marca_nombre', this.marcaSeleccionada.nombre);
-      else fd.append('marca_id', String(this.marcaSeleccionada.id));
+      if (this.marcaSeleccionada.isNew) {
+        fd.append('marca_nombre', this.marcaSeleccionada.nombre);
+      } else {
+        fd.append('marca_id', String(this.marcaSeleccionada.id));
+      }
     }
 
-    const cleanV = this.variantes.map((v, idxV) => ({
-      id: v.id || null, temp_id: v.temp_id, identidad_variante: v.identidad_variante, 
-      hex_identidad: v.hex_identidad, descripcion: v.descripcion, orden: idxV, // ❌ Sin ubicacion
-      imagenes: v.imagenes.map((img, idxI) => img.startsWith('http') ? img : `NUEVA_${idxI}`),
-      stocks: v.stocks.map((s, idxS) => ({ 
-        ...s, id_manual: s.id_manual, cantidad: s.stock, orden: idxS, ubicacion: s.ubicacion, atributos: s.atributos.filter(a => a.valor !== null) 
-      }))
-    }));
+    // 3. PROCESAMIENTO DE VARIANTES Y STOCKS
+    const cleanV = this.variantes.map((v, idxV) => {
+      const identidadPadre = v.identidad_variante || 'ÚNICA';
+
+      return {
+        id: v.id || null,
+        temp_id: v.temp_id,
+        identidad_variante: identidadPadre,
+        hex_identidad: v.hex_identidad,
+        descripcion: v.descripcion,
+        orden: idxV,
+        imagenes: v.imagenes.map((img, idxI) => 
+          img.startsWith('http') ? img : `NUEVA_${idxI}`
+        ),
+        stocks: v.stocks.map((s, idxS) => {
+          
+          // ✨ 1. EL GRAN CAMBIO: Buscamos lo que realmente escribiste en el input dinámico del HTML
+          const attrTallaEditado = s.atributos.find(a => 
+            ['talla', 'numero', 'talla_anillo', 'capacidad_ml'].includes(a.nombre.toLowerCase())
+          );
+
+          // Tomamos el valor de ese input dinámico (Si no hay, usamos s.talla por si acaso, y si no 'UNICA')
+          const valorFinalTalla = attrTallaEditado?.valor || s.talla || 'UNICA';
+
+          // ✨ 2. Construimos la etiqueta visual (Ej: "ROJO / S")
+          const etiquetaCompuesta = `${identidadPadre} / ${valorFinalTalla}`.trim().toUpperCase();
+
+          // ✨ 3. BARRIDO: Limpiamos el array viejo para no enviar tallas duplicadas
+          let atributosBlindados = s.atributos.filter(a => 
+            !['talla', 'numero', 'talla_anillo', 'capacidad_ml'].includes(a.nombre.toLowerCase()) &&
+            a.valor !== null && a.valor !== ''
+          );
+
+          // ✨ 4. INYECCIÓN: Agregamos la talla nueva que capturamos del HTML
+          atributosBlindados.push({ nombre: 'talla', valor: valorFinalTalla });
+
+          return { 
+            ...s, 
+            id_manual: s.id_manual,
+            cantidad: s.stock,
+            orden: idxS, 
+            ubicacion: s.ubicacion,
+            etiqueta: etiquetaCompuesta,
+            atributos: atributosBlindados 
+          };
+        })
+      };
+    });
+
+    // 🔍 ✨ ¡AQUÍ ESTÁ EL LOG ESPÍA! ✨ 🔍
+    console.log('🚀 ========================================== 🚀');
+    console.log('DATOS DE VARIANTES QUE SE ENVIARÁN AL BACKEND:');
+    console.log(JSON.stringify(cleanV, null, 2));
+    console.log('🚀 ========================================== 🚀');
 
     fd.append('variantes', JSON.stringify(cleanV));
 
+    // 4. ADJUNCIÓN DE ARCHIVOS BINARIOS (IMÁGENES NUEVAS)
     this.variantes.forEach(v => {
       v.imagenes.forEach((img, idx) => {
         if (!img.startsWith('http')) {
-          const f = v.imagenesFiles[idx];
-          if (f) fd.append(`file_${v.temp_id}_NUEVA_${idx}`, f);
+          const file = v.imagenesFiles[idx];
+          if (file) {
+            fd.append(`file_${v.temp_id}_NUEVA_${idx}`, file);
+          }
         }
       });
     });
+
     return fd;
   }
 
@@ -585,5 +731,3 @@ private getMensajeErrorAtributo(tipo: string): string {
 
   
 }
-
-

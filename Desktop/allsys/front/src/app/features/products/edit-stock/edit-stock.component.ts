@@ -144,8 +144,87 @@ export class EditStockComponent implements OnInit {
     }
   }
 
+ private validarFormulario(): boolean {
+    // 🔍 LOG ESPÍA: Mira en la consola (F12) qué valores está leyendo Angular
+    console.log('--- DATOS A VALIDAR ---');
+    console.log('Cantidad:', this.stockData.cantidad);
+    console.log('Precio Compra:', this.stockData.precio_compra);
+    console.log('Precio Venta:', this.stockData.precio_venta);
+    console.log('Publicar Web:', this.stockData.publicar_web);
+
+    // Forzamos conversión matemática estricta
+    const cantidad = Number(this.stockData.cantidad);
+    const precioCompra = Number(this.stockData.precio_compra);
+    const precioVenta = Number(this.stockData.precio_venta);
+
+    // =======================================================
+    // 1. VALIDACIONES GENERALES (OBLIGATORIAS SIEMPRE)
+    // =======================================================
+    
+    if (isNaN(precioCompra) || precioCompra <= 0) {
+      alert('El precio de compra es obligatorio y debe ser mayor a 0.');
+      return false;
+    }
+    
+    // ✨ MOVIDO AQUÍ: El precio de venta ahora es obligatorio SIEMPRE
+    // if (isNaN(precioVenta) || precioVenta <= 0) {
+    //   alert('El precio de venta es obligatorio y debe ser mayor a 0.');
+    //   return false;
+    // }
+
+    if (!this.stockData.fecha_compra || this.stockData.fecha_compra.trim() === '') {
+      alert('La fecha de compra es obligatoria.');
+      return false;
+    }
+    
+    if (!this.stockData.ubicacion || this.stockData.ubicacion.trim() === '') {
+      alert('La ubicación en el almacén es obligatoria.');
+      return false;
+    }
+    
+    if (!this.stockData.proveedor_id) {
+      alert('Debes seleccionar un proveedor válido.');
+      return false;
+    }
+
+    // =======================================================
+    // 2. VALIDACIONES ESTRICTAS (SOLO SI SE PUBLICA EN WEB)
+    // =======================================================
+    const vaAWeb = this.stockData.publicar_web === true || String(this.stockData.publicar_web) === 'true';
+    
+    if (vaAWeb) {
+      // Si va a la web, no permitimos que el stock sea 0
+      if (isNaN(cantidad) || cantidad <= 0) {
+        alert('⚠️ Para publicar en la web, debes tener al menos 1 unidad en stock.');
+        return false;
+      }
+      // ✨ NUEVA VALIDACIÓN: Peso obligatorio para envíos
+      const pesoAttr = this.stockData.atributos.find((a: any) => a.nombre === 'peso_kg');
+      const pesoValor = pesoAttr && pesoAttr.valor !== null && pesoAttr.valor !== '' ? Number(pesoAttr.valor) : null;
+      
+      if (pesoValor === null || isNaN(pesoValor) || pesoValor <= 0) {
+        alert('⚠️ Para publicar en la web, el peso (kg) es obligatorio para calcular los costos de envío.');
+        return false;
+      }
+    } else {
+      // Si NO va a la web (control interno), sí permitimos stock en 0 (agotado)
+      // pero NUNCA negativo.
+      if (isNaN(cantidad) || cantidad < 0) {
+        alert('El stock no puede ser un número negativo.');
+        return false;
+      }
+    }
+
+    // Si llega hasta aquí, todo está perfecto
+    return true;
+  }
+
   onSubmit(): void {
-    if (this.stockData.cantidad < 0) return alert('El stock no puede ser negativo.');
+    // Llamamos a la función separada. Si devuelve false, cortamos la ejecución.
+    if (!this.validarFormulario()) {
+      return; 
+    }
+
     this.isSubmitting = true;
 
     const dataParaEnviar = {
@@ -160,12 +239,13 @@ export class EditStockComponent implements OnInit {
 
     this.productsService.actualizarStockIndividual(this.stockId!, dataParaEnviar).subscribe({
       next: () => {
-        alert('Inventario actualizado.');
+        alert('✅ Inventario actualizado correctamente.');
         this.volver();
       },
       error: (err) => {
         this.isSubmitting = false;
-        alert('Error al guardar.');
+        console.error(err);
+        alert('❌ Error al guardar. Revisa tu conexión o contacta a soporte.');
       }
     });
   }

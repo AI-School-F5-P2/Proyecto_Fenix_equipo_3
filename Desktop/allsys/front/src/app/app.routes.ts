@@ -9,6 +9,7 @@ import { ProductDetailComponent } from './features/products/product-detail/produ
 import { VentaCreateComponent } from './features/ventas/venta-create/venta-create.component';
 import { StockDetailComponent } from './features/products/stock-detail/stock-detail.component';
 import { EditStockComponent } from './features/products/edit-stock/edit-stock.component';
+import { PapeleraComponent } from './features/products/papelera/papelera.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -30,6 +31,7 @@ export const routes: Routes = [
       { path: 'venta-create/:id', component: VentaCreateComponent },
       { path: 'stock-detail/:id', component: StockDetailComponent },
       { path: 'edit-stock/:id', component: EditStockComponent },
+      { path: 'papelera', component: PapeleraComponent },
     ],
   },
 
