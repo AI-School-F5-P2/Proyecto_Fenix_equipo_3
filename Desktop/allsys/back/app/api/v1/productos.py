@@ -17,13 +17,21 @@ from app.db.database import get_session
 from app.api.deps import get_current_admin
 from app.repositories.producto_repo import (
     crear_producto,
+    destruir_producto_total,
+    destruir_stock_total,
+    destruir_variante_total,
     editar_producto_completo,
-    mover_a_papelera,
+    mover_producto_papelera,
+    mover_stock_papelera,
+    mover_variante_papelera,
     obtener_producto_completo,
     obtener_productos_paginados,
     obtener_productos_papelera,
     obtener_stock_detalle,
     obtener_stocks_individuales_paginados,
+    restaurar_producto_papelera,
+    restaurar_stock_papelera,
+    restaurar_variante_papelera,
     vaciar_producto_papelera
 )
 
@@ -58,7 +66,17 @@ producto_routers = APIRouter(
 
 
 
-
+@producto_routers.get("/papelera")
+def listar_papelera_endpoint(
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_session),
+    current_admin=Depends(get_current_admin)
+):
+    """
+    Devuelve los productos que han sido movidos a la papelera (Soft Delete).
+    """
+    return obtener_productos_papelera(db, page=page, limit=limit)
 
 
 
@@ -83,6 +101,7 @@ def listar_inventario_individual_endpoint(
     proveedores_ids: List[int] = Query(default=[]),
     fecha_inicio: Optional[str] = Query(None), # ✨ NUEVO
     fecha_fin: Optional[str] = Query(None),
+    disponibilidad: Optional[str] = Query("todos"),
     db: Session = Depends(get_session)
 ):
     return obtener_stocks_individuales_paginados(
@@ -103,6 +122,7 @@ def listar_inventario_individual_endpoint(
         proveedores_ids=proveedores_ids,
         fecha_inicio = fecha_inicio, # ✨ NUEVO
         fecha_fin = fecha_fin,
+        disponibilidad=disponibilidad,
     )
 
 # =====================================================
@@ -127,6 +147,7 @@ def listar_productos_endpoint(
     proveedores_ids: List[int] = Query(default=[]),
     fecha_inicio: Optional[str] = Query(None), # ✨ NUEVO
     fecha_fin: Optional[str] = Query(None),
+    disponibilidad: Optional[str] = Query("todos"),
     db: Session = Depends(get_session)
 ):
     return obtener_productos_paginados(
@@ -147,6 +168,7 @@ def listar_productos_endpoint(
         ordenar_por=ordenar_por,
         proveedores_ids=proveedores_ids,
         fecha_inicio = fecha_inicio, # ✨ NUEVO
+        disponibilidad=disponibilidad,
         fecha_fin = fecha_fin,
     )
 
@@ -407,57 +429,74 @@ async def editar_producto_endpoint( # ✨ 2. DEBE SER 'async def' para poder lee
         print(f"❌ ERROR GENERAL: {str(e)}")
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
-
-# =====================================================
-# ELIMINAR PRODUCTO
-# =====================================================
-# 1. RUTA PARA ENVIAR A LA PAPELERA (Actualización de estado)
-@producto_routers.put("/{producto_id}/papelera")
-def enviar_producto_a_papelera_endpoint(
-    producto_id: int,
-    db: Session = Depends(get_session),
-    current_admin=Depends(get_current_admin)
-):
-    resultado = mover_a_papelera(db, producto_id)
-    if not resultado:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-        
-    return resultado # Devuelve el dict: {"success": True, "mensaje": "..."}
-
-# 2. RUTA PARA VACIAR/DESTRUIR DE LA PAPELERA (Borrado real)
-@producto_routers.delete("/papelera/{producto_id}")
-def destruir_producto_endpoint(
-    producto_id: int,
-    db: Session = Depends(get_session),
-    current_admin=Depends(get_current_admin)
-):
-    resultado = vaciar_producto_papelera(db, producto_id)
     
-    if not resultado:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-        
-    # Si la función vaciar_producto_papelera devuelve success=False (porque tiene ventas)
-    # lanzamos un error 400 (Bad Request) para que Angular lo atrape en el bloque "error"
-    if not resultado.get("success"):
-        raise HTTPException(status_code=400, detail=resultado.get("mensaje"))
 
-    return resultado
+
+
+
+
+
 
 
 # ==========================================
 # RUTA: CONSULTAR PAPELERA
 # ==========================================
-@producto_routers.get("/papelera")
-def listar_papelera_endpoint(
-    page: int = 1,
-    limit: int = 10,
-    db: Session = Depends(get_session),
-    current_admin=Depends(get_current_admin)
-):
-    """
-    Devuelve los productos que han sido movidos a la papelera (Soft Delete).
-    """
-    return obtener_productos_papelera(db, page=page, limit=limit)
+
+
+
+# No olvides importar las nuevas funciones del repo arriba:
+# from app.repositories.producto_repo import mover_variante_papelera, mover_stock_papelera, restaurar_producto_papelera, restaurar_variante_papelera, restaurar_stock_papelera, destruir_producto_total, destruir_variante_total, destruir_stock_total
+
+# ==========================================
+# 🗑️ MOVER A PAPELERA (SOFT DELETE)
+# ==========================================
+@producto_routers.put("/{producto_id}/papelera")
+def enviar_producto_a_papelera(producto_id: int, db: Session = Depends(get_session)):
+    return mover_producto_papelera(db, producto_id)
+
+@producto_routers.put("/variante/{variante_id}/papelera")
+def enviar_variante_a_papelera(variante_id: int, db: Session = Depends(get_session)):
+    return mover_variante_papelera(db, variante_id)
+
+@producto_routers.put("/stock/{stock_id}/papelera")
+def enviar_stock_a_papelera(stock_id: int, db: Session = Depends(get_session)):
+    return mover_stock_papelera(db, stock_id)
+
+# ==========================================
+# ♻️ RESTAURAR DE PAPELERA
+# ==========================================
+@producto_routers.put("/{producto_id}/restaurar")
+def restaurar_producto(producto_id: int, db: Session = Depends(get_session)):
+    return restaurar_producto_papelera(db, producto_id)
+
+@producto_routers.put("/variante/{variante_id}/restaurar")
+def restaurar_variante(variante_id: int, db: Session = Depends(get_session)):
+    return restaurar_variante_papelera(db, variante_id)
+
+@producto_routers.put("/stock/{stock_id}/restaurar")
+def restaurar_stock(stock_id: int, db: Session = Depends(get_session)):
+    return restaurar_stock_papelera(db, stock_id)
+
+# ==========================================
+# 💥 DESTRUCCIÓN TOTAL (HARD DELETE)
+# ==========================================
+@producto_routers.delete("/papelera/{producto_id}")
+def destruir_producto(producto_id: int, db: Session = Depends(get_session)):
+    res = destruir_producto_total(db, producto_id)
+    if not res.get("success"): raise HTTPException(status_code=400, detail=res.get("mensaje"))
+    return res
+
+@producto_routers.delete("/papelera/variante/{variante_id}")
+def destruir_variante(variante_id: int, db: Session = Depends(get_session)):
+    res = destruir_variante_total(db, variante_id)
+    if not res.get("success"): raise HTTPException(status_code=400, detail=res.get("mensaje"))
+    return res
+
+@producto_routers.delete("/papelera/stock/{stock_id}")
+def destruir_stock(stock_id: int, db: Session = Depends(get_session)):
+    res = destruir_stock_total(db, stock_id)
+    if not res.get("success"): raise HTTPException(status_code=400, detail=res.get("mensaje"))
+    return res
 
 
 
