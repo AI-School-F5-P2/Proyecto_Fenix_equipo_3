@@ -16,12 +16,20 @@ def verificar_password(password: str, hashed: str) -> bool:
     return pwd_context.verify(sha, hashed)
 
 # 🎫 Crear token JWT
+# def crear_token_acceso(data: dict, expires_delta: timedelta | None = None):
+#     to_encode = data.copy()
+#     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+#     to_encode.update({"exp": expire})
+#     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+#     return encoded_jwt
+
+
 def crear_token_acceso(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
+    # Si no viene delta, usamos el de los settings (ej: 30 min)
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 # 🔍 Verificar token
 def verificar_token(token: str):

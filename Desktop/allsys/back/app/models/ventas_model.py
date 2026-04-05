@@ -7,49 +7,42 @@ class Venta(Base):
     __tablename__ = "ventas"
 
     id = Column(Integer, primary_key=True)
-    # Identificador único visual para el cliente (Ej: VEN-10293)
     codigo_venta = Column(String(50), unique=True, nullable=False) 
     fecha = Column(DateTime, default=datetime.utcnow)
     
-    # ---------------- 1. DATOS FINANCIEROS ----------------
-    subtotal = Column(Float, nullable=False, default=0.0) # Suma de productos sin envío ni descuentos
-    descuento_aplicado = Column(Float, default=0.0)
+    # --- FINANZAS DETALLADAS ---
+    subtotal = Column(Float, nullable=False)
+    iva_monto = Column(Float, default=0.0) # Para contabilidad
+    descuento_total = Column(Float, default=0.0)
     costo_envio = Column(Float, default=0.0)
-    total = Column(Float, nullable=False) # Lo que el cliente pagó realmente
-    
-    # efectivo, tarjeta, bizum, stripe, saldo_vinted, wallapay
-    metodo_pago = Column(String(50), nullable=False) 
-    # pendiente, pagado, cancelado, reembolsado
-    estado_pago = Column(String(50), default="pagado") 
+    total = Column(Float, nullable=False)
+    moneda = Column(String(10), default="EUR") # Por si acaso vendes en otras monedas
 
-    # ---------------- 2. ORIGEN DE LA VENTA ----------------
-    # web, tienda_fisica, vinted, wallapop, instagram
-    canal = Column(String(50), nullable=False) 
-    # yenny, maikol, paola, sistema_web
+    # --- PAGOS Y SEGURIDAD ---
+    metodo_pago = Column(String(50), nullable=False) 
+    estado_pago = Column(String(50), default="pagado") 
+    # Clave para Stripe, PayPal o ID de pedido de Vinted/Wallapop
+    transaccion_id_externo = Column(String(100), nullable=True)
+
+    # --- FLUJO DE TRABAJO ---
+    # procesando, enviada, completada, cancelada, devuelta
+    estado_venta = Column(String(50), default="completada") 
+    canal = Column(String(50), nullable=False) # web, tienda, vinted, etc.
     vendedor = Column(String(50), nullable=False) 
 
-    # ---------------- 3. DATOS DEL COMPRADOR ----------------
-    # Si el que compra es un usuario registrado en tu web
+    # --- CLIENTE ---
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True) 
-    
-    # Datos en texto por si es una venta rápida en tienda o viene de Vinted (no tienen cuenta en tu web)
     nombre_cliente = Column(String(100), nullable=True)
     email_cliente = Column(String(100), nullable=True)
-    telefono_cliente = Column(String(50), nullable=True)
+    notas_internas = Column(Text, nullable=True) # Para Yenny/Maikol
 
-    # ---------------- 4. DATOS DE LOGÍSTICA / ENVÍO ----------------
-    # pendiente_envio, enviado, entregado, recogido_en_tienda
-    estado_envio = Column(String(50), default="pendiente_envio") 
+    # --- LOGÍSTICA ---
+    estado_envio = Column(String(50), default="entregado") 
     direccion_envio = Column(Text, nullable=True)
-    
-    # Ej: Correos, InPost, Seur...
     empresa_transporte = Column(String(50), nullable=True) 
     numero_seguimiento = Column(String(100), nullable=True)
-    url_etiqueta = Column(String(255), nullable=True) # Por si generas el PDF de envío en tu web
 
-    # Relaciones
     detalles = relationship("DetalleVenta", back_populates="venta", cascade="all, delete-orphan")
-    # usuario = relationship("Usuario", back_populates="compras") # Descomenta si tienes tabla usuarios
 
 
 class DetalleVenta(Base):
@@ -57,16 +50,15 @@ class DetalleVenta(Base):
     
     id = Column(Integer, primary_key=True)
     venta_id = Column(Integer, ForeignKey("ventas.id", ondelete="CASCADE"))
-    stock_id = Column(Integer, ForeignKey("stocks.id")) 
+    stock_id = Column(Integer, ForeignKey("stocks.id"), nullable=True) # Nullable por si borras el stock
     
     cantidad = Column(Integer, nullable=False)
-    # Congelamos el precio al que se vendió en ESE momento (por si luego cambias el precio en el inventario)
-    precio_unitario = Column(Float, nullable=False) 
+    precio_unitario_en_venta = Column(Float, nullable=False) # El precio del momento
     
-    # Histórico visual para no perder el dato si el stock se borra un día
-    nombre_producto_historico = Column(String(200), nullable=True) 
-    talla_historica = Column(String(50), nullable=True)
+    # 🛡️ SEGURO DE DATOS: Si borras el stock, la factura sigue teniendo info
+    nombre_producto_snapshot = Column(String(200)) 
+    talla_snapshot = Column(String(50))
+    color_snapshot = Column(String(50))
 
-    # Relaciones
     venta = relationship("Venta", back_populates="detalles")
     stock = relationship("Stock")

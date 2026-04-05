@@ -1,62 +1,75 @@
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.db.database import get_session
-from app.repositories.ventas_repo import registrar_venta
+from app.schemas.ventas_schema import VentaCreate
+from app.repositories import ventas_repo
 
 venta_router = APIRouter(
     prefix="/ventas",
     tags=["Ventas"]
 )
 
-# =========================
-# REGISTRAR VENTA
-# =========================
+# =====================================================
+# 💰 REGISTRAR VENTA (OMNICANAL)
+# =====================================================
 @venta_router.post("/")
 def crear_venta(
-    db: Session = Depends(get_session),
-
-    stock_variante_id: int = Form(...),
-    cantidad: int = Form(...),
-
-    canal: str = Form(...),        # wallapop | vinted | web
-    vendedor: str = Form(...),     # maikol | paola | yenny
-    comprador: str | None = Form(None),
-):
-    try:
-        venta = registrar_venta(
-            db=db,
-            stock_variante_id=stock_variante_id,
-            cantidad=cantidad,
-            canal=canal,
-            vendedor=vendedor,
-            comprador=comprador
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    return {
-        "mensaje": "Venta registrada correctamente",
-        "venta_id": venta.id,
-        "total": venta.total
-    }
-
-
-
-
-
-@venta_router.get("/producto/{stock_variante_id}")
-def consultar_producto(
-    stock_variante_id: int,
+    data: VentaCreate, 
     db: Session = Depends(get_session)
 ):
-    from app.repositories.ventas_repo import obtener_producto_por_stock
+    """
+    Registra una venta nueva, resta stock de los artículos 
+    y genera snapshots históricos de los productos vendidos.
+    """
+    try:
+        # El repositorio ahora se encarga de toda la lógica pesada
+        venta = ventas_repo.registrar_venta(db, data)
+        
+        return {
+            "success": True,
+            "mensaje": "Venta registrada correctamente",
+            "venta_id": venta.id,
+            "codigo": venta.codigo_venta,
+            "total": venta.total
+        }
+    except HTTPException as e:
+        # Re-lanzamos errores de stock insuficiente o no encontrado
+        raise e
+    except Exception as e:
+        # Error genérico del servidor
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-    producto = obtener_producto_por_stock(db, stock_variante_id)
+
+# =====================================================
+# 🔍 CONSULTAR STOCK PARA VENTA
+# =====================================================
+@venta_router.get("/producto/{stock_id}")
+def consultar_producto_para_venta(
+    stock_id: int,
+    db: Session = Depends(get_session)
+):
+    """
+    Endpoint rápido para que Yenny o Maikol escaneen un ID 
+    y vean si hay stock antes de añadirlo al carrito.
+    """
+    # Reutilizamos tu lógica de obtener detalle de stock
+    from app.repositories.producto_repo import obtener_stock_detalle
+    
+    producto = obtener_stock_detalle(db, stock_id)
+    
     if not producto:
         raise HTTPException(
             status_code=404,
-            detail="Producto no encontrado para ese stock"
+            detail="El artículo no existe en el inventario"
         )
+
+    # Verificamos si tiene stock disponible
+    if producto["stock_disponible"] <= 0:
+        return {
+            "alerta": "⚠️ ARTÍCULO AGOTADO",
+            "producto": producto
+        }
 
     return producto
