@@ -6,10 +6,12 @@ import { authGuard } from './core/guards/auth.guard';
 import { AddProductComponent } from './features/products/add-product/add-product.component';
 import { ProductsListComponent } from './features/products/products-list/products-list.component';
 import { ProductDetailComponent } from './features/products/product-detail/product-detail.component';
-import { VentaCreateComponent } from './features/ventas/venta-create/venta-create.component';
 import { StockDetailComponent } from './features/products/stock-detail/stock-detail.component';
 import { EditStockComponent } from './features/products/edit-stock/edit-stock.component';
 import { PapeleraComponent } from './features/products/papelera/papelera.component';
+
+// 👇 Importa el nuevo componente (ajusta la ruta según dónde lo hayas generado)
+import { PosComponent } from './features/pos/pos.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -27,11 +29,12 @@ export const routes: Routes = [
       { path: 'edit/:id', component: AddProductComponent },
       { path: 'view-products', component: ProductsListComponent },
       { path: 'detail-product/:id', component: ProductDetailComponent },
-      { path: 'venta-create', component: VentaCreateComponent },
-      { path: 'venta-create/:id', component: VentaCreateComponent },
       { path: 'stock-detail/:id', component: StockDetailComponent },
       { path: 'edit-stock/:id', component: EditStockComponent },
       { path: 'papelera', component: PapeleraComponent },
+      
+      // ✨ NUEVA RUTA PARA EL PUNTO DE VENTA (TPV / CAJA)
+      { path: 'pos', component: PosComponent },
     ],
   },
 

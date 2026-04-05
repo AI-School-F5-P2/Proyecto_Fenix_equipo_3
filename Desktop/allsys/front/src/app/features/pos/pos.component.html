@@ -1,0 +1,132 @@
+<div class="pos-container">
+  
+  <div class="cart-section">
+    
+    <div class="search-bar">
+      <div class="input-wrapper">
+        <span class="icon">🔍</span>
+        <input 
+          type="text" 
+          placeholder="Escanea el código de barras o teclea el ID del Stock y presiona Enter..." 
+          [(ngModel)]="codigoBusqueda"
+          (keyup.enter)="buscarYAgregarProducto()"
+          autofocus>
+      </div>
+      <button class="btn-primary" (click)="buscarYAgregarProducto()">Añadir</button>
+    </div>
+
+    <div class="cart-items">
+      <div class="empty-cart" *ngIf="carrito.length === 0">
+        <span class="empty-icon">🛒</span>
+        <p>El carrito está vacío. Escanea un producto para empezar.</p>
+      </div>
+
+      <div class="cart-item-card" *ngFor="let item of carrito; let i = index">
+        <img [src]="item.imagen_cover || 'assets/no-image.png'" alt="Producto" class="item-img">
+        
+        <div class="item-details">
+          <h4>{{ item.producto_nombre }}</h4>
+          <p class="text-muted">
+            Talla: <strong>{{ item.talla || item.etiqueta }}</strong> | 
+            Color: <span class="color-dot" [style.background]="item.hex_identidad"></span>
+          </p>
+        </div>
+
+        <div class="item-quantity">
+          <button (click)="cambiarCantidad(i, -1)">-</button>
+          <span>{{ item.cantidad_venta }}</span>
+          <button (click)="cambiarCantidad(i, 1)">+</button>
+        </div>
+
+        <div class="item-price">
+          <input type="number" [(ngModel)]="item.precio_unitario" (ngModelChange)="calcularTotales()">
+          <span class="currency">€</span>
+        </div>
+
+        <button class="btn-delete" (click)="eliminarDelCarrito(i)" title="Quitar">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="checkout-section">
+    
+    <div class="checkout-card">
+      <div class="field mb-2" style="margin-bottom: 12px;">
+        <label>Fecha de Venta</label>
+        <input type="date" [(ngModel)]="datosVenta.fecha">
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Vendedor</label>
+          <select [(ngModel)]="datosVenta.vendedor">
+            <option value="Yenny">Yenny</option>
+            <option value="Maikol">Maikol</option>
+            <option value="Paola">Paola</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Canal</label>
+          <select [(ngModel)]="datosVenta.canal">
+            <option value="tienda_fisica">🏪 Tienda Física</option>
+            <option value="web">🌐 Web Propia</option>
+            <option value="vinted">👗 Vinted</option>
+            <option value="wallapop">📦 Wallapop</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field mt-1">
+        <label>Cliente (Opcional)</label>
+        <input type="text" [(ngModel)]="datosVenta.nombre_cliente" placeholder="Nombre o email para el ticket...">
+      </div>
+    </div>
+
+    <div class="checkout-card totals-card">
+      <div class="tot-row">
+        <span>Subtotal</span>
+        <span>{{ subtotal | number:'1.2-2' }} €</span>
+      </div>
+      
+      <div class="tot-row">
+        <span>Descuento Manual</span>
+        <div class="discount-input">
+          <span>-</span>
+          <input type="number" [(ngModel)]="datosVenta.descuento_total" (ngModelChange)="calcularTotales()" placeholder="0.00">
+          <span>€</span>
+        </div>
+      </div>
+
+      <div class="tot-row" *ngIf="datosVenta.canal !== 'tienda_fisica'">
+        <span>Costos de Envío</span>
+        <div class="discount-input">
+          <span>+</span>
+          <input type="number" [(ngModel)]="datosVenta.costo_envio" (ngModelChange)="calcularTotales()" placeholder="0.00">
+          <span>€</span>
+        </div>
+      </div>
+
+      <div class="tot-row total-row">
+        <span>TOTAL A COBRAR</span>
+        <span class="total-amount">{{ total | number:'1.2-2' }} €</span>
+      </div>
+    </div>
+
+    <div class="checkout-card methods-card">
+      <label>Método de Pago</label>
+      <div class="payment-grid">
+        <button [class.active]="datosVenta.metodo_pago === 'efectivo'" (click)="datosVenta.metodo_pago = 'efectivo'">💵 Efectivo</button>
+        <button [class.active]="datosVenta.metodo_pago === 'tarjeta'" (click)="datosVenta.metodo_pago = 'tarjeta'">💳 Tarjeta</button>
+        <button [class.active]="datosVenta.metodo_pago === 'bizum'" (click)="datosVenta.metodo_pago = 'bizum'">📱 Bizum</button>
+        <button [class.active]="datosVenta.metodo_pago === 'plataforma'" *ngIf="datosVenta.canal !== 'tienda_fisica'" (click)="datosVenta.metodo_pago = 'plataforma'">🌐 App/Web</button>
+      </div>
+    </div>
+
+    <button 
+      class="btn-checkout" 
+      [disabled]="carrito.length === 0 || procesando"
+      (click)="completarVenta()">
+      {{ procesando ? '⏳ Procesando...' : '💰 COMPLETAR VENTA' }}
+    </button>
+
+  </div>
+</div>
