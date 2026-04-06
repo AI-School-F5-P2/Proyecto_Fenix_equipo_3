@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { VentasService, VentaData } from '../../core/services/ventas.service'; // Ajusta la ruta
+import { VentasService, VentaData } from '../../../core/services/ventas.service'; // Ajusta la ruta
 
 @Component({
   selector: 'app-pos',
@@ -23,9 +23,9 @@ export class PosComponent {
   // Datos del formulario de venta
   datosVenta: VentaData = {
     fecha: new Date().toISOString().split('T')[0], // 👈 Inicia con la fecha de hoy (YYYY-MM-DD)
-    canal: 'tienda_fisica',
-    vendedor: 'Yenny', 
-    metodo_pago: 'efectivo',
+    canal: 'vinted',
+    vendedor: 'Maikol', 
+    metodo_pago: 'tarjeta',
     nombre_cliente: '',
     descuento_total: 0,
     costo_envio: 0,

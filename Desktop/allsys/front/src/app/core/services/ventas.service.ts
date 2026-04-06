@@ -53,7 +53,36 @@ export class VentasService {
   /**
    * 📄 Obtener historial de ventas (Opcional, para el futuro)
    */
-  listarVentas(page: number = 1, limit: number = 10): Observable<any> {
-    return this.http.get<any>(`${this.API_URL}/?page=${page}&limit=${limit}`);
+  // listarVentas(page: number = 1, limit: number = 10): Observable<any> {
+  //   return this.http.get<any>(`${this.API_URL}/?page=${page}&limit=${limit}`);
+  // }
+
+
+  // 📄 Obtener historial de ventas con filtros
+  listarVentas(
+    page: number, limit: number, search?: string, 
+    estado?: string, canal?: string, fechaInicio?: string, 
+    fechaFin?: string, vendedor?: string, comprador?: string // 👈 Agregados
+  ): Observable<any> {
+    let params = `?page=${page}&limit=${limit}`;
+    if (search) params += `&search=${search}`;
+    if (estado) params += `&estado=${estado}`;
+    if (canal) params += `&canal=${canal}`;
+    if (fechaInicio) params += `&fecha_inicio=${fechaInicio}`; // 👈 NUEVO
+    if (fechaFin) params += `&fecha_fin=${fechaFin}`;
+    if (vendedor) params += `&vendedor=${vendedor}`;    // 👈
+    if (comprador) params += `&comprador=${comprador}`;
+
+    return this.http.get<any>(`${this.API_URL}/${params}`);
+  }
+
+  // 📄 Obtener detalle de una venta
+  obtenerVenta(ventaId: number): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/detalle/${ventaId}`);
+  }
+
+  // 📝 Editar venta
+  editarVenta(ventaId: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.API_URL}/${ventaId}`, data);
   }
 }

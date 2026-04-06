@@ -11,7 +11,9 @@ import { EditStockComponent } from './features/products/edit-stock/edit-stock.co
 import { PapeleraComponent } from './features/products/papelera/papelera.component';
 
 // 👇 Importa el nuevo componente (ajusta la ruta según dónde lo hayas generado)
-import { PosComponent } from './features/pos/pos.component';
+import { PosComponent } from './features/pos/pos-create/pos.component';
+import { EditSaleComponent } from './features/pos/edit-sale/edit-sale.component';
+import { SalesListComponent } from './features/pos/sales-list/sales-list.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -32,9 +34,10 @@ export const routes: Routes = [
       { path: 'stock-detail/:id', component: StockDetailComponent },
       { path: 'edit-stock/:id', component: EditStockComponent },
       { path: 'papelera', component: PapeleraComponent },
-      
-      // ✨ NUEVA RUTA PARA EL PUNTO DE VENTA (TPV / CAJA)
+      // { path: 'edit-sale', component: EditSaleComponent },
+      { path: 'edit-sale/:id', component: EditSaleComponent },
       { path: 'pos', component: PosComponent },
+      { path: 'sales-list', component: SalesListComponent }
     ],
   },
 

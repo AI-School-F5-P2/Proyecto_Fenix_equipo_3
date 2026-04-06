@@ -1,0 +1,123 @@
+.page-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+.header-section { margin-bottom: 24px; }
+.header-section h2 { margin: 0 0 4px 0; color: var(--text-main); font-size: 1.8rem; }
+.header-section p { margin: 0; color: var(--text-muted); }
+
+/* --- Filtros --- */
+.filters-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: var(--card-bg);
+  padding: 16px;
+  border-radius: var(--ap-radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: var(--ap-bg-variant);
+  border: 1px solid var(--ap-border-base);
+  border-radius: var(--ap-radius-md);
+  padding: 8px 16px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-box input {
+  border: none; background: transparent; outline: none; width: 100%; padding: 4px 8px; color: var(--text-main);
+}
+
+.filter-group {
+  display: flex; gap: 12px; align-items: center;
+}
+
+.filter-group select {
+  padding: 10px; border: 1px solid var(--ap-border-base); border-radius: var(--ap-radius-md); background: var(--ap-bg-main); color: var(--text-main); outline: none;
+}
+
+.btn-clear {
+  background: transparent; border: none; color: var(--text-muted); cursor: pointer; text-decoration: underline; font-weight: 600;
+}
+
+/* --- Tabla --- */
+.table-container {
+  background: var(--card-bg); border-radius: var(--ap-radius-lg); box-shadow: var(--shadow-sm); overflow-x: auto;
+}
+
+.ap-table {
+  width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap;
+}
+
+.ap-table th {
+  background: var(--ap-bg-variant); color: var(--text-muted); font-weight: 600; padding: 16px; font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--ap-border-base);
+}
+
+.ap-table td {
+  padding: 16px; border-bottom: 1px solid var(--ap-border-light); color: var(--text-main); vertical-align: middle;
+}
+
+.ap-table tr:hover { background: var(--vinted-teal-light); }
+
+/* --- Badges --- */
+.channel-info { display: flex; flex-direction: column; gap: 4px; }
+.badge-canal { font-size: 0.75rem; font-weight: bold; background: var(--ap-border-light); padding: 4px 8px; border-radius: 4px; display: inline-block; width: max-content; }
+
+.status-badge {
+  font-size: 0.75rem; font-weight: 700; padding: 6px 10px; border-radius: 20px;
+}
+
+/* Colores Dinámicos de Estado */
+.status-badge.completada { background: var(--ap-color-success-bg); color: var(--ap-color-success); }
+.status-badge.procesando { background: #fff3cd; color: #856404; }
+.status-badge.enviada { background: #cce5ff; color: #004085; }
+.status-badge.cancelada { background: var(--danger-light); color: var(--danger); }
+.status-badge.devuelta { background: #e2e3e5; color: #383d41; }
+
+.price-cell { font-weight: 800; font-size: 1.1rem; color: var(--primary); }
+
+.btn-icon { background: var(--ap-bg-variant); border: 1px solid var(--ap-border-base); padding: 8px 12px; border-radius: var(--ap-radius-md); cursor: pointer; transition: var(--transition); }
+.btn-icon:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* --- Varios --- */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); background: var(--card-bg); border-radius: var(--ap-radius-lg); }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 24px; padding-bottom: 24px; }
+.pagination button { padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--ap-border-base); border-radius: var(--ap-radius-md); cursor: pointer; font-weight: 600; }
+.pagination button:hover:not([disabled]) { background: var(--vinted-teal-light); color: var(--primary); border-color: var(--primary); }
+.pagination button[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+
+.search-box.small {
+  min-width: 180px;
+  background: var(--ap-bg-main); /* Un poco más claro que el fondo variant */
+  border-color: var(--ap-border-base);
+  height: 38px; /* Altura igual a los select */
+  padding: 0 12px;
+}
+
+.search-box.small input {
+  font-size: 0.9rem;
+}
+
+.search-box.small .icon {
+  font-size: 0.9rem;
+  color: var(--vinted-teal); /* Usamos el teal para destacar el icono */
+}
+
+/* Alineación de la fila de filtros */
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
