@@ -1,0 +1,78 @@
+<div class="stats-container">
+  
+  <div class="stats-header shadow-sm">
+    <div class="title-area">
+      <h1>Inteligencia de Negocio</h1>
+      <p>Análisis de rentabilidad y rendimiento de ventas</p>
+    </div>
+    <div class="filter-area">
+      <input type="date" [(ngModel)]="fechaInicio" (change)="cargarEstadisticas()">
+      <input type="date" [(ngModel)]="fechaFin" (change)="cargarEstadisticas()">
+      <button class="btn-refresh" (click)="cargarEstadisticas()">🔄</button>
+    </div>
+  </div>
+
+  <div *ngIf="cargando" class="loading-overlay">Analizando datos...</div>
+
+  <div *ngIf="stats && !cargando" class="stats-content">
+    
+    <div class="kpi-row">
+      <div class="kpi-card highlight">
+        <span class="kpi-label">ROI del Periodo</span>
+        <span class="kpi-value">{{ stats.resumen.roi_periodo }}</span>
+        <span class="kpi-hint">Retorno de inversión</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Ticket Promedio</span>
+        <span class="kpi-value">{{ stats.resumen.ticket_promedio | currency:'EUR' }}</span>
+        <span class="kpi-hint">Gasto medio por cliente</span>
+      </div>
+      <div class="kpi-card success">
+        <span class="kpi-label">Beneficio Neto</span>
+        <span class="kpi-value">{{ stats.resumen.beneficio_neto | currency:'EUR' }}</span>
+        <span class="kpi-hint">Ventas - Costos</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Nº Operaciones</span>
+        <span class="kpi-value">{{ stats.resumen.total_ventas }}</span>
+        <span class="kpi-hint">Ventas totales realizadas</span>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h3>Ranking de Vendedores</h3>
+        <div class="canvas-wrapper">
+          <canvas #chartVendedores></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <h3>Ventas por Canal</h3>
+        <div class="canvas-wrapper">
+          <canvas #chartCanales></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-products shadow-sm">
+      <h3>🏆 Top 5 Productos más Vendidos</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Total Recaudado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of stats.top_productos">
+            <td>{{ p.producto }}</td>
+            <td><strong>{{ p.cantidad }}</strong></td>
+            <td>{{ p.total | currency:'EUR' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

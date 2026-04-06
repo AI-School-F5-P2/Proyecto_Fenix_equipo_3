@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SuppliersService } from '../../../../../core/services/proveedores.service'; // Ajusta la ruta
+import { SuppliersService, TipoProveedor } from '../../../../../core/services/proveedores.service';
 
 export interface Proveedor {
   id?: number;
@@ -17,6 +17,9 @@ export interface Proveedor {
   styleUrls: ['./supplier-selector.component.css']
 })
 export class SupplierSelectorComponent implements OnInit {
+  // ✨ NUEVO: Define qué tipo de proveedores cargar. Por defecto 'inventario'.
+  @Input() tipoProveedor: TipoProveedor = 'inventario'; 
+
   proveedores: Proveedor[] = [];
   proveedorInput: string = '';
   dropdownOpen: boolean = false;
@@ -24,11 +27,10 @@ export class SupplierSelectorComponent implements OnInit {
   cargandoProveedores = false;
   private idInicialPendiente: number | null = null;
 
-  // ✨ ESCUCHA EL DATO QUE VIENE DE LA BASE DE DATOS
-@Input() set proveedorInicialId(id: number | null | undefined) {
+  @Input() set proveedorInicialId(id: number | null | undefined) {
     if (id) {
       this.idInicialPendiente = id;
-      this.vincularProveedor(); // Intentamos vincularlo inmediatamente
+      this.vincularProveedor();
     } else {
       this.proveedorSeleccionado = null;
       this.proveedorInput = '';
@@ -45,7 +47,9 @@ export class SupplierSelectorComponent implements OnInit {
 
   cargarProveedores(): void {
     this.cargandoProveedores = true;
-    this.suppliersService.getProveedores().subscribe({
+    
+    // ✨ ACTUALIZADO: Pasamos el tipoProveedor al servicio
+    this.suppliersService.getProveedores(this.tipoProveedor).subscribe({
       next: (data: any[]) => {
         this.proveedores = data.map(p => ({ 
           id: p.id, 
@@ -53,15 +57,12 @@ export class SupplierSelectorComponent implements OnInit {
         })).sort((a, b) => a.nombre.localeCompare(b.nombre));
         
         this.cargandoProveedores = false;
-
-        // ✨ 2. CUANDO LLEGAN LOS DATOS, BUSCAMOS EL ID PENDIENTE
         this.vincularProveedor();
       },
       error: () => this.cargandoProveedores = false
     });
   }
 
-  // ✨ 3. FUNCIÓN QUE UNE EL ID CON EL NOMBRE
   private vincularProveedor(): void {
     if (this.idInicialPendiente && this.proveedores.length > 0) {
       const provEncontrado = this.proveedores.find(p => p.id === this.idInicialPendiente);
@@ -69,8 +70,6 @@ export class SupplierSelectorComponent implements OnInit {
         this.proveedorSeleccionado = provEncontrado;
         this.proveedorInput = provEncontrado.nombre; 
         this.idInicialPendiente = null; 
-
-        // ✨ LA PIEZA FALTANTE: ¡Avisarle al padre del nombre que acabamos de descubrir!
         this.supplierChanged.emit(provEncontrado);
       }
     }
@@ -85,6 +84,7 @@ export class SupplierSelectorComponent implements OnInit {
       filtrados.unshift(this.proveedorSeleccionado);
     }
     
+    // Si el usuario escribe algo que no existe, ofrece crearlo
     if (input && !this.proveedores.some(p => p.nombre.toLowerCase() === input)) {
       filtrados.unshift({ nombre: this.proveedorInput, isNew: true });
     }
@@ -95,7 +95,6 @@ export class SupplierSelectorComponent implements OnInit {
     this.dropdownOpen = false;
     this.proveedorSeleccionado = proveedor;
     this.proveedorInput = proveedor.nombre;
-    // ✨ AVISAMOS AL PADRE (a la fila de stock correspondiente)
     this.supplierChanged.emit(proveedor);
   }
 
@@ -104,15 +103,17 @@ export class SupplierSelectorComponent implements OnInit {
       this.dropdownOpen = false;
       if (this.proveedorSeleccionado) {
         this.proveedorInput = this.proveedorSeleccionado.nombre;
-      } else {
+      } else if (!this.proveedorInput.trim()) {
         this.proveedorInput = '';
       }
+      // Nota: Si es nuevo (isNew), no lo borramos para permitir que el padre lo cree al hacer submit
     }, 200);
   }
 
   onInputChange(): void { 
     this.dropdownOpen = true; 
     this.proveedorSeleccionado = null;
+    // Emitimos que es un proveedor nuevo para que el formulario padre sepa que debe crearlo
     this.supplierChanged.emit({ nombre: this.proveedorInput, isNew: true });
   }
 

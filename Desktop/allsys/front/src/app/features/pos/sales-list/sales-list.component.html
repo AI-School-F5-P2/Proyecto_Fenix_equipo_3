@@ -5,6 +5,17 @@
     <p>Gestiona los tickets, devoluciones y envíos de tu negocio.</p>
   </div>
 
+  <div class="summary-stats" *ngIf="!cargando">
+    <div class="stat-card recaudado">
+      <div class="stat-label">Total Recaudado (Filtro)</div>
+      <div class="stat-value">{{ totalRecaudado | currency:'EUR' }}</div>
+    </div>
+    <div class="stat-card beneficio">
+      <div class="stat-label">Beneficio Real (Filtro)</div>
+      <div class="stat-value">{{ totalBeneficio | currency:'EUR' }}</div>
+    </div>
+  </div>
+
   <div class="filters-card">
     <div class="search-box">
       <span class="icon">🔍</span>
@@ -61,6 +72,7 @@
       <thead>
         <tr>
           <th>Código</th>
+          <th>Artículos</th> 
           <th>Fecha</th>
           <th>Cliente</th>
           <th>Canal / Pago</th>
@@ -72,6 +84,16 @@
       <tbody>
         <tr *ngFor="let venta of ventas">
           <td><strong>{{ venta.codigo_venta }}</strong></td>
+          
+          <td>
+            <div class="product-info-cell">
+              <img [src]="venta.imagen_cover || 'assets/no-image.png'" alt="Prenda" class="mini-thumb">
+              <span class="text-resumen" [title]="venta.resumen_productos">
+                {{ venta.resumen_productos }}
+              </span>
+            </div>
+          </td>
+
           <td>{{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>
             <span *ngIf="venta.nombre_cliente">{{ venta.nombre_cliente }}</span>

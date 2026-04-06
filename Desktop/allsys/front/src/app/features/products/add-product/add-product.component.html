@@ -158,7 +158,7 @@
 
                 <div class="field proveedor-autocomplete">
                   <label>Proveedor <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <app-supplier-selector [proveedorInicialId]="s.proveedor_id" (supplierChanged)="onSupplierChanged($event, s)"></app-supplier-selector>
+                  <app-supplier-selector tipoProveedor="inventario" [proveedorInicialId]="s.proveedor_id" (supplierChanged)="onSupplierChanged($event, s)"></app-supplier-selector>
                 </div>
 
                 <div class="field">

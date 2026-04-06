@@ -1,1 +1,112 @@
-<p>dashboard works!</p>
+<div class="dashboard-wrapper">
+  
+  <div class="filter-toolbar shadow-sm">
+    <div class="toolbar-left">
+      <h2>Dashboard Financiero</h2>
+      <div class="period-badge">
+        <span class="dot"></span>
+        {{ filtros.fecha_inicio | date:'dd MMM yyyy' }} — {{ filtros.fecha_fin | date:'dd MMM yyyy' }}
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <div class="quick-filters">
+        <button 
+          (click)="setFiltroRapido('hoy')" 
+          [class.active]="filtros.fecha_inicio === getFechaHoy()">
+          Hoy
+        </button>
+        <button 
+          (click)="setFiltroRapido('mes')" 
+          [class.active]="filtros.fecha_inicio === getPrimerDiaMes()">
+          Este Mes
+        </button>
+        <button (click)="setFiltroRapido('año')">Año</button>
+      </div>
+
+      <div class="date-inputs">
+        <div class="input-wrapper">
+          <label>Desde</label>
+          <input type="date" [(ngModel)]="filtros.fecha_inicio" (change)="cargarTodo()">
+        </div>
+        <div class="input-wrapper">
+          <label>Hasta</label>
+          <input type="date" [(ngModel)]="filtros.fecha_fin" (change)="cargarTodo()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    
+    <div class="kpi-card shadow-sm border-left-primary">
+      <div class="kpi-content">
+        <div class="kpi-label">Saldo Teórico en Banco</div>
+        <div class="kpi-value">{{ resumen.saldo_teorico_banco | currency:'EUR' }}</div>
+        <div class="kpi-subtext">Liquidez (Ventas - Todo lo pagado)</div>
+      </div>
+      <div class="kpi-icon">🏦</div>
+    </div>
+
+    <div class="kpi-card shadow-sm border-left-success">
+      <div class="kpi-content">
+        <div class="kpi-label">Beneficio Real</div>
+        <div class="kpi-value text-success">{{ resumen.ganancia_real | currency:'EUR' }}</div>
+        <div class="kpi-subtext">Rentabilidad (Ventas - Costos - Gastos)</div>
+      </div>
+      <div class="kpi-icon">📈</div>
+    </div>
+
+    <div class="kpi-card shadow-sm border-left-info">
+      <div class="kpi-content">
+        <div class="kpi-label">Inversión en Stock</div>
+        <div class="kpi-value text-info">{{ resumen.inversion_en_stock | currency:'EUR' }}</div>
+        <div class="kpi-subtext">Capital actual en mercadería</div>
+      </div>
+      <div class="kpi-icon">📦</div>
+    </div>
+
+    <div class="kpi-card shadow-sm border-left-danger">
+      <div class="kpi-content">
+        <div class="kpi-label">Gastos Operativos</div>
+        <div class="kpi-value text-danger">{{ resumen.gastos_operativos | currency:'EUR' }}</div>
+        <div class="kpi-subtext">Luz, Alquiler, Sueldos, etc.</div>
+      </div>
+      <div class="kpi-icon">💸</div>
+    </div>
+
+  </div>
+
+  <div class="dashboard-lower-grid">
+    
+    <div class="chart-container shadow-sm">
+      <div class="chart-header">
+        <h4>Comparativa Mensual: Ventas vs Gastos</h4>
+        <div *ngIf="cargando" class="loader-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+      
+      <div class="canvas-wrapper">
+        <canvas #canvasGrafica></canvas>
+      </div>
+    </div>
+
+    <div class="info-card shadow-sm">
+      <h4>💡 Guía de Análisis</h4>
+      <div class="info-item">
+        <strong>¿Tengo dinero real?</strong>
+        <p>El <b>Saldo en Banco</b> muestra tu efectivo disponible tras restar compras de stock y gastos operativos en el periodo.</p>
+      </div>
+      <div class="info-item">
+        <strong>¿Soy rentable?</strong>
+        <p>El <b>Beneficio Real</b> es tu ganancia neta. Si es positivo, tus márgenes cubren tus costos de operación.</p>
+      </div>
+      <div class="info-item">
+        <strong>Interpretación de Stock</strong>
+        <p>Si el saldo es bajo pero la <b>Inversión</b> es alta, tu dinero está "trabajando" en el inventario.</p>
+      </div>
+    </div>
+
+  </div>
+</div>

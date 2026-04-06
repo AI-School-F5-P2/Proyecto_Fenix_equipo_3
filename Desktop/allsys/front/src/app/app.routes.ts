@@ -14,6 +14,9 @@ import { PapeleraComponent } from './features/products/papelera/papelera.compone
 import { PosComponent } from './features/pos/pos-create/pos.component';
 import { EditSaleComponent } from './features/pos/edit-sale/edit-sale.component';
 import { SalesListComponent } from './features/pos/sales-list/sales-list.component';
+import { GastosListComponent } from './features/gastos/gastos-list/gastos-list.component';
+import { GastosCreateComponent } from './features/gastos/gastos-create/gastos-create.component';
+import { StatisticsComponent } from './features/statistics/statistics.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -34,10 +37,13 @@ export const routes: Routes = [
       { path: 'stock-detail/:id', component: StockDetailComponent },
       { path: 'edit-stock/:id', component: EditStockComponent },
       { path: 'papelera', component: PapeleraComponent },
-      // { path: 'edit-sale', component: EditSaleComponent },
+      { path: 'gastos', component: GastosListComponent },
+      { path: 'gastos/nuevo', component: GastosCreateComponent },
       { path: 'edit-sale/:id', component: EditSaleComponent },
       { path: 'pos', component: PosComponent },
-      { path: 'sales-list', component: SalesListComponent }
+      { path: 'sales-list', component: SalesListComponent },
+      { path: 'statistics', component: StatisticsComponent },
+
     ],
   },
 

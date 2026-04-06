@@ -31,11 +31,20 @@
        Ver todas las ventas
     </a>
 
-    <a routerLink="/edit-sale" routerLinkActive="active-link" class="nav-item">
+    <a routerLink="/gastos" routerLinkActive="active-link" class="nav-item">
       <!-- <span class="icon">➕</span> -->
-       Editar una venta
+       Ver gastos
     </a>
-  </div>
+    <a routerLink="/gastos/nuevo" routerLinkActive="active-link" class="nav-item">
+      <!-- <span class="icon">➕</span> -->
+       agregar un nuevo gasto
+    </a>
+    <a routerLink="/statistics" routerLinkActive="active-link" class="nav-item">
+      <!-- <span class="icon">➕</span> -->
+       ver estadisticas
+    </a>
+    
+  </div>s
 
   <div class="nav-footer">
     <button (click)="logout()" class="nav-item logout-item">

@@ -27,6 +27,8 @@ export class SalesListComponent implements OnInit {
   fechaFin: string | null = null;
   filtroVendedor: string = '';
   filtroComprador: string = '';
+  totalRecaudado = 0; // ✨ Nuevo
+  totalBeneficio = 0;
 
   constructor(private ventasService: VentasService, private router: Router) {}
 
@@ -36,21 +38,28 @@ export class SalesListComponent implements OnInit {
 
   cargarVentas() {
     this.cargando = true;
-    this.ventasService.listarVentas(this.page, this.limit, this.searchQuery, this.filtroEstado, this.filtroCanal, this.fechaInicio || undefined, this.fechaFin || undefined, this.filtroVendedor, this.filtroComprador )
-      .subscribe({
-        next: (res) => {
-          this.ventas = res.items;
-          this.totalItems = res.total;
-          this.cargando = false;
-          
-        },
-        error: (err) => {
-          console.error(err);
-          this.cargando = false;
-        }
-      });
+    this.ventasService.listarVentas(
+      this.page, this.limit, this.searchQuery, 
+      this.filtroEstado, this.filtroCanal, 
+      this.fechaInicio || undefined, this.fechaFin || undefined, 
+      this.filtroVendedor, this.filtroComprador
+    ).subscribe({
+      next: (res) => {
+        this.ventas = res.items;
+        this.totalItems = res.total;
+        
+        // ✨ Guardamos los totales filtrados
+        this.totalRecaudado = res.suma_recaudado;
+        this.totalBeneficio = res.suma_beneficio;
+        
+        this.cargando = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.cargando = false;
+      }
+    });
   }
-
   // 👇 3. FUNCIÓN PARA RECIBIR LAS FECHAS DEL COMPONENTE
   onFechasCambiadas(rango: DateRange) {
     this.fechaInicio = rango.inicio;
