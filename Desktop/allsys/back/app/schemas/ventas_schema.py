@@ -27,3 +27,24 @@ class VentaCreate(BaseModel):
     numero_seguimiento: Optional[str] = None
     
     detalles: List[DetalleVentaCreate]
+
+
+
+
+
+class VentaUpdate(BaseModel):
+    # Estados
+    estado_venta: Optional[str] = None # procesando, enviada, completada, cancelada, devuelta
+    estado_pago: Optional[str] = None # pendiente, pagado, reembolsado
+    metodo_pago: Optional[str] = None
+    
+    # Cliente
+    nombre_cliente: Optional[str] = None
+    email_cliente: Optional[str] = None
+    notas_internas: Optional[str] = None
+    
+    # Logística
+    estado_envio: Optional[str] = None
+    direccion_envio: Optional[str] = None
+    empresa_transporte: Optional[str] = None
+    numero_seguimiento: Optional[str] = None
