@@ -9,25 +9,21 @@ def obtener_por_id(db: Session, proveedor_id: int):
     """Busca un proveedor específico."""
     return db.query(Proveedor).filter(Proveedor.id == proveedor_id).first()
 
-def buscar_o_crear(db: Session, nombre: str):
-    """
-    Lógica de oro: Si el proveedor existe lo devuelve, 
-    si no, lo crea. Ideal para el flujo de productos.
-    """
-    if not nombre or not nombre.strip():
-        return None
-        
+def buscar_o_crear(db: Session, nombre: str, contexto: str = "inventario"):
     nombre_clean = nombre.strip()
-    # Buscamos ignorando mayúsculas/minúsculas
-    proveedor = db.query(Proveedor).filter(
-        Proveedor.nombre_proveedor.ilike(nombre_clean)
-    ).first()
+    proveedor = db.query(Proveedor).filter(Proveedor.nombre_proveedor.ilike(nombre_clean)).first()
     
     if not proveedor:
         proveedor = Proveedor(nombre_proveedor=nombre_clean)
         db.add(proveedor)
-        db.flush() # Para tener el ID disponible de inmediato
+    
+    # 🧠 Lógica inteligente: Si ya existía, simplemente le activamos la bandera extra
+    if contexto == "inventario":
+        proveedor.es_inventario = True
+    elif contexto == "gasto":
+        proveedor.es_gasto = True
         
+    db.commit()
     return proveedor
 
 def actualizar_proveedor(db: Session, proveedor_id: int, nuevo_nombre: str):

@@ -7,5 +7,9 @@ class Proveedor(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre_proveedor = Column(String(250), nullable=False)
+    
+    # ✨ Banderas independientes
+    es_inventario = Column(Boolean, default=False) # Para ropa, neveras, perfumes, etc.
+    es_gasto = Column(Boolean, default=False)      # Para luz, alquiler, bolsas, etc.lse)
 
     stocks = relationship("Stock", back_populates="proveedor")

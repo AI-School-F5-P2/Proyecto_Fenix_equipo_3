@@ -105,6 +105,19 @@ def guardar_valores_stock(db: Session, stock_obj: Stock, atributos_data: list):
         print(f"❌ Error crítico en atributos EAV: {e}")
         raise HTTPException(status_code=500, detail=f"Error al guardar atributos: {e}")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # =====================================================
 # CREAR PRODUCTO COMPLETO
 # =====================================================
@@ -166,7 +179,7 @@ def crear_producto(
             p_id = s_data.proveedor_id
             if not p_id:
                 nombre_p = s_data.proveedor_nombre_nuevo or s_data.proveedor
-                proveedor_obj = buscar_o_crear(db, nombre_p)
+                proveedor_obj = buscar_o_crear(db, nombre_p, contexto="inventario")
                 p_id = proveedor_obj.id if proveedor_obj else None
 
             id_forzado = s_data.id_manual if hasattr(s_data, 'id_manual') and s_data.id_manual else None

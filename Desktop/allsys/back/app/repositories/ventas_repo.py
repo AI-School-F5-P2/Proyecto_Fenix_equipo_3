@@ -2,6 +2,7 @@ from datetime import datetime
 import random
 import string
 from sqlalchemy.orm import Session
+from app.models.variantes_model import Variante
 from app.models.ventas_model import Venta, DetalleVenta
 from app.models.stock_model import Stock
 from fastapi import HTTPException
@@ -192,6 +193,12 @@ def actualizar_venta(db: Session, venta_id: int, datos: dict):
 from sqlalchemy import desc, or_, cast, String
 from sqlalchemy.orm import selectinload
 
+from sqlalchemy import desc, or_, cast, String, func
+from sqlalchemy.orm import Session, selectinload
+from app.models.ventas_model import Venta, DetalleVenta
+from app.models.stock_model import Stock
+from app.models.variantes_model import Variante
+
 def obtener_ventas_paginadas(
     db: Session,
     page: int = 1,
@@ -199,17 +206,17 @@ def obtener_ventas_paginadas(
     search: str = None,
     estado_venta: str = None,
     canal: str = None,
-    fecha_inicio: str = None, # 👈 NUEVO
+    fecha_inicio: str = None,
     fecha_fin: str = None,
-    vendedor: str = None,  # 👈 NUEVO
+    vendedor: str = None,
     comprador: str = None
 ):
     offset = (page - 1) * limit
     
-    # 1. Iniciamos la consulta
+    # 1. Iniciamos la consulta base
     query = db.query(Venta)
 
-    # 2. Aplicamos filtros si existen
+    # --- APLICACIÓN DE FILTROS ---
     if search and search.strip():
         term = f"%{search.strip()}%"
         query = query.filter(
@@ -220,38 +227,98 @@ def obtener_ventas_paginadas(
                 cast(Venta.id, String).ilike(term)
             )
         )
-
-    if estado_venta:
+    
+    if estado_venta: 
         query = query.filter(Venta.estado_venta == estado_venta)
-        
-    if canal:
+    
+    if canal: 
         query = query.filter(Venta.canal == canal)
-
+    
+    if vendedor: 
+        query = query.filter(Venta.vendedor == vendedor)
+    
+    if comprador: 
+        query = query.filter(Venta.nombre_cliente.ilike(f"%{comprador}%"))
+    
     if fecha_inicio: 
-        # Desde las 00:00:00 del día de inicio
         query = query.filter(Venta.fecha >= fecha_inicio)
-        
+    
     if fecha_fin: 
-        # Hasta las 23:59:59 del día de fin para incluir todo el día
         query = query.filter(Venta.fecha <= f"{fecha_fin} 23:59:59")
 
-    if vendedor:
-        query = query.filter(Venta.vendedor == vendedor)
+    # 2. CÁLCULO DE TOTALES FILTRADOS (Antes de paginar)
+    # Total Recaudado: Suma de la columna 'total' de todas las ventas filtradas
+    total_recaudado = query.with_entities(func.sum(Venta.total)).scalar() or 0
 
-    # 🤝 Filtro por Comprador (Búsqueda parcial en el nombre)
-    if comprador:
-        query = query.filter(Venta.nombre_cliente.ilike(f"%{comprador}%"))
+    # Total Beneficio: Suma de (Total Venta - Costo de productos)
+    # Unimos con DetalleVenta y Stock para obtener el precio_compra de cada artículo
+    total_costo = (
+        db.query(func.sum(DetalleVenta.cantidad * Stock.precio_compra))
+        .join(Venta, DetalleVenta.venta_id == Venta.id)
+        .join(Stock, DetalleVenta.stock_id == Stock.id)
+        # IMPORTANTE: Aplicamos los mismos filtros de la query original
+        .filter(Venta.id.in_(query.with_entities(Venta.id)))
+        .scalar() or 0
+    )
+    
+    total_beneficio = float(total_recaudado) - float(total_costo)
 
-    # 3. Contamos el total para la paginación de Angular
-    total = query.count()
-
-    # 4. Traemos los datos con las relaciones cargadas
-    ventas = (
-        query.options(selectinload(Venta.detalles))
-        .order_by(desc(Venta.fecha)) # Las más recientes primero
+    # 3. PAGINACIÓN Y CARGA DE DATOS (Eager Loading)
+    total_count = query.count()
+    ventas_db = (
+        query.options(
+            selectinload(Venta.detalles)
+            .selectinload(DetalleVenta.stock)
+            .selectinload(Stock.variante)
+            .selectinload(Variante.imagenes)
+        )
+        .order_by(desc(Venta.fecha))
         .offset(offset)
         .limit(limit)
         .all()
     )
 
-    return {"total": total, "items": ventas}
+    # 4. APLANADO DE DATOS PARA ANGULAR
+    resultados = []
+    for venta in ventas_db:
+        imagen_cover = None
+        nombres_productos = []
+
+        for detalle in venta.detalles:
+            nombres_productos.append(detalle.nombre_producto_snapshot)
+            
+            # Buscar la primera imagen disponible del primer stock
+            if not imagen_cover and detalle.stock and detalle.stock.variante and detalle.stock.variante.imagenes:
+                imgs = sorted(detalle.stock.variante.imagenes, key=lambda x: x.orden or 0)
+                if imgs:
+                    imagen_cover = imgs[0].url
+
+        # Resumen de productos bonito
+        if len(nombres_productos) > 1:
+            resumen = f"{nombres_productos[0]} y {len(nombres_productos) - 1} más"
+        elif len(nombres_productos) == 1:
+            resumen = nombres_productos[0]
+        else:
+            resumen = "Sin productos"
+
+        resultados.append({
+            "id": venta.id,
+            "codigo_venta": venta.codigo_venta,
+            "fecha": venta.fecha.isoformat() if venta.fecha else None,
+            "nombre_cliente": venta.nombre_cliente,
+            "canal": venta.canal,
+            "vendedor": venta.vendedor,
+            "metodo_pago": venta.metodo_pago,
+            "estado_venta": venta.estado_venta,
+            "total": float(venta.total),
+            "imagen_cover": imagen_cover,
+            "resumen_productos": resumen
+        })
+
+    # 5. RETORNO FINAL
+    return {
+        "total": total_count,
+        "items": resultados,
+        "suma_recaudado": float(total_recaudado),
+        "suma_beneficio": float(total_beneficio)
+    }
