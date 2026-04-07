@@ -13,14 +13,15 @@ from app.api.v1.categorias import categorias_routers
 from app.api.v1.marcas import marcas_router
 from app.api.v1.ventas import venta_router
 from app.api.v1.proveedores import proveedores_router
-from app.api.v1.analilytics import analytics_router
+# from app.api.v1.analilytics import analytics_router
 from app.api.v1.gastos import gastos_router
 from app.api.v1.dashboard import dashboard_router
-from app.api.v1.analilytics import analytics_router
+# from app.api.v1.analilytics import analytics_router
+from app.api.v1.statistics import router_statistics
 
 
-from app.api.v1.analilytics import analytics_router  # Corregido el nombre
-from app.api.v1.statistics import router as stats_router
+# from app.api.v1.analilytics import analytics_router  # Corregido el nombre
+# from app.api.v1.statistics import router as stats_router
 
 # =========================
 # MODELS (Nomenclatura Limpia)
@@ -78,17 +79,20 @@ app.include_router(categorias_routers, prefix="/api/v1")
 app.include_router(marcas_router, prefix="/api/v1")
 app.include_router(venta_router, prefix="/api/v1")
 app.include_router(proveedores_router, prefix="/api/v1")
-# app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(gastos_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
+app.include_router(router_statistics, prefix="/api/v1")
+
+
 # app.include_router(analytics_router, prefix="/api/v1")
 
+# app.include_router(analytics_router, prefix="/api/v1")
 # ✨ AGREGAMOS EL ROUTER DE ESTADÍSTICAS
 # Con este prefijo, la ruta será: /api/v1/stats/dashboard-completo
-app.include_router(stats_router, prefix="/api/v1/stats") 
+# app.include_router(stats_router, prefix="/api/v1/stats") 
 
 # El de analytics lo dejamos solo con /api/v1 para que sea /api/v1/financiero
-app.include_router(analytics_router, prefix="/api/v1")
+# app.include_router(analytics_router, prefix="/api/v1")
 
 # =========================
 # HEALTH CHECK
