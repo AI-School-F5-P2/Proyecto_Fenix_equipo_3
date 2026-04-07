@@ -1,78 +1,229 @@
-<div class="stats-container">
+<div class="stats-wrapper">
   
   <div class="stats-header shadow-sm">
     <div class="title-area">
-      <h1>Inteligencia de Negocio</h1>
-      <p>Análisis de rentabilidad y rendimiento de ventas</p>
+      <h1>📊 Inteligencia de Negocio</h1>
+      <p>Analiza el rendimiento real y la rentabilidad de tu empresa</p>
     </div>
+    
     <div class="filter-area">
-      <input type="date" [(ngModel)]="fechaInicio" (change)="cargarEstadisticas()">
-      <input type="date" [(ngModel)]="fechaFin" (change)="cargarEstadisticas()">
-      <button class="btn-refresh" (click)="cargarEstadisticas()">🔄</button>
+      <div class="date-inputs">
+        <div class="input-field">
+          <label>Desde</label>
+          <input type="date" [(ngModel)]="fechaInicio" (change)="cargarDatos()">
+        </div>
+        <div class="input-field">
+          <label>Hasta</label>
+          <input type="date" [(ngModel)]="fechaFin" (change)="cargarDatos()">
+        </div>
+      </div>
+      <button class="btn-refresh" (click)="cargarDatos()" title="Actualizar datos">
+        <span>🔄</span> Actualizar
+      </button>
     </div>
   </div>
 
-  <div *ngIf="cargando" class="loading-overlay">Analizando datos...</div>
+  <div class="tabs-container">
+    <button class="tab-btn" [class.active]="activeTab === 'financiero'" (click)="cambiarPestana('financiero')">
+      💰 Flujo de Caja (Ventas)
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'inversion'" (click)="cambiarPestana('inversion')">
+      📦 Rendimiento de Compras
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'proveedores'" (click)="cambiarPestana('proveedores')">
+      🤝 Ranking Proveedores
+    </button>
+  </div>
 
-  <div *ngIf="stats && !cargando" class="stats-content">
+  <div *ngIf="cargando" class="loader-container">
+    <div class="spinner"></div>
+    <p>Procesando datos financieros...</p>
+  </div>
+
+  <div *ngIf="activeTab === 'financiero' && stats && !cargando" class="stats-content">
     
-    <div class="kpi-row">
-      <div class="kpi-card highlight">
-        <span class="kpi-label">ROI del Periodo</span>
-        <span class="kpi-value">{{ stats.resumen.roi_periodo }}</span>
-        <span class="kpi-hint">Retorno de inversión</span>
+    <div class="kpi-grid">
+      <div class="kpi-card border-roi">
+        <div class="kpi-top">
+          <span class="label">ROI (Retorno de Inversión)</span>
+        </div>
+        <strong class="value">{{ stats.global.roi }}</strong>
+        <p class="explanation">Indica la <b>eficiencia</b>: ¿Qué tanto ganaste por cada euro invertido en mercadería?</p>
       </div>
+
       <div class="kpi-card">
-        <span class="kpi-label">Ticket Promedio</span>
-        <span class="kpi-value">{{ stats.resumen.ticket_promedio | currency:'EUR' }}</span>
-        <span class="kpi-hint">Gasto medio por cliente</span>
+        <div class="kpi-top">
+          <span class="label">Ticket Promedio</span>
+        </div>
+        <strong class="value">{{ stats.global.ticket_medio | currency:'EUR' }}</strong>
+        <p class="explanation">Gasto promedio por cliente.</p>
       </div>
-      <div class="kpi-card success">
-        <span class="kpi-label">Beneficio Neto</span>
-        <span class="kpi-value">{{ stats.resumen.beneficio_neto | currency:'EUR' }}</span>
-        <span class="kpi-hint">Ventas - Costos</span>
+
+      <div class="kpi-card border-profit">
+        <div class="kpi-top">
+          <span class="label">Beneficio Real</span>
+        </div>
+        <strong class="value text-success">{{ stats.global.beneficio | currency:'EUR' }}</strong>
+        <p class="explanation">Tu <b>ganancia limpia</b> tras pagar facturas y la ropa vendida.</p>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Nº Operaciones</span>
-        <span class="kpi-value">{{ stats.resumen.total_ventas }}</span>
-        <span class="kpi-hint">Ventas totales realizadas</span>
+
+      <div class="kpi-card border-warning">
+        <div class="kpi-top">
+          <span class="label">Inventario Remanente (Mes)</span>
+        </div>
+        <div class="dual-value">
+          <strong class="value">{{ stats.global.stock_remanente_mes | currency:'EUR' }}</strong>
+          <span class="sub-value">{{ stats.global.articulos_remanentes }} <small>prendas</small></span>
+        </div>
+        <p class="explanation">Mercadería que entró este mes y sigue sin venderse.</p>
       </div>
     </div>
 
-    <div class="charts-grid">
-      <div class="chart-box">
-        <h3>Ranking de Vendedores</h3>
-        <div class="canvas-wrapper">
-          <canvas #chartVendedores></canvas>
+    <div class="charts-layout">
+      <div class="chart-box shadow-sm">
+        <div class="chart-header">
+          <h3>🏆 Rendimiento por Vendedor</h3>
+        </div>
+        <div class="canvas-container">
+          <canvas #vendedoresCanvas></canvas>
         </div>
       </div>
-      <div class="chart-box">
-        <h3>Ventas por Canal</h3>
-        <div class="canvas-wrapper">
-          <canvas #chartCanales></canvas>
+      
+      <div class="chart-box shadow-sm">
+        <div class="chart-header">
+          <h3>🌍 Distribución por Canal</h3>
+        </div>
+        <div class="canvas-container">
+          <canvas #canalesCanvas></canvas>
         </div>
       </div>
     </div>
 
-    <div class="top-products shadow-sm">
-      <h3>🏆 Top 5 Productos más Vendidos</h3>
-      <table>
+    <div class="table-section shadow-sm">
+      <div class="table-header">
+        <h3>⭐ Categorías más Rentables</h3>
+      </div>
+      <table class="minimal-table">
         <thead>
           <tr>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th>Total Recaudado</th>
+            <th>Posición</th>
+            <th>Tipo de Prenda / Estilo</th>
+            <th class="text-center">Total Vendido</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let p of stats.top_productos">
-            <td>{{ p.producto }}</td>
-            <td><strong>{{ p.cantidad }}</strong></td>
-            <td>{{ p.total | currency:'EUR' }}</td>
+          <tr *ngFor="let cat of stats.top_categorias; let i = index">
+            <td class="rank-col"><span class="rank-badge">#{{ i + 1 }}</span></td>
+            <td><strong>{{ cat.nombre }}</strong></td>
+            <td class="text-center">{{ cat.cantidad }} unidades</td>
           </tr>
         </tbody>
       </table>
     </div>
 
   </div>
+
+  <div *ngIf="activeTab === 'inversion' && statsInversion && !cargando" class="stats-content">
+    
+    <div class="info-banner mb-4">
+      💡 <b>Análisis de Lote:</b> Estás evaluando el éxito de la ropa que fue <u>comprada/registrada</u> en las fechas seleccionadas, sin importar cuándo se vendió.
+    </div>
+
+    <div class="kpi-grid">
+      
+      <div class="kpi-card border-roi">
+        <div class="kpi-top"><span class="label">Inversión Realizada</span></div>
+        <div class="dual-value">
+          <strong class="value">{{ statsInversion.inversion_total | currency:'EUR' }}</strong>
+          <span class="sub-value">{{ statsInversion.prendas_compradas }} <small>prendas totales</small></span>
+        </div>
+        <p class="explanation">Lo que pagaste por todas las prendas registradas en este periodo.</p>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top"><span class="label">Ingresos Generados</span></div>
+        <strong class="value">{{ statsInversion.ingresos_generados | currency:'EUR' }}</strong>
+        <p class="explanation">Dinero que ya has recuperado vendiendo parte de esta compra.</p>
+      </div>
+
+      <div class="kpi-card border-profit">
+        <div class="kpi-top"><span class="label">Beneficio de Inversión</span></div>
+        <strong class="value" [class.text-success]="statsInversion.beneficio_inversion > 0" [class.text-danger]="statsInversion.beneficio_inversion <= 0">
+          {{ statsInversion.beneficio_inversion | currency:'EUR' }}
+        </strong>
+        <p class="explanation">Si es negativo, aún no has recuperado el dinero de esta compra.</p>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top"><span class="label">Tasa de Venta (Éxito)</span></div>
+        <div class="dual-value">
+          <strong class="value">{{ statsInversion.tasa_venta }}</strong>
+          <span class="sub-value">{{ statsInversion.prendas_vendidas }} <small>vendidas</small></span>
+        </div>
+        <p class="explanation">Porcentaje de las prendas que ya han salido de la tienda.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div *ngIf="activeTab === 'proveedores' && statsProveedores && !cargando" class="stats-content">
+    
+    <div class="info-banner mb-4">
+      🤝 <b>Ranking de Proveedores:</b> Descubre quién te genera mayores márgenes de ganancia basado en la ropa que les compraste en estas fechas.
+    </div>
+
+    <div class="table-section shadow-sm">
+      <div class="table-header">
+        <h3>🏆 Top Proveedores por Rentabilidad</h3>
+      </div>
+      
+      <div style="overflow-x: auto;">
+        <table class="minimal-table">
+          <thead>
+            <tr>
+              <th>Pos.</th>
+              <th>Proveedor</th>
+              <th class="text-right">Inversión</th>
+              <th class="text-right">Ingresos Brutos</th>
+              <th class="text-right">Beneficio Limpio</th>
+              <th class="text-center">ROI</th>
+              <th class="text-center">Tasa Venta</th>
+              <th class="text-center" title="Prendas que aún no se venden">Stock Atrapado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let prov of statsProveedores; let i = index">
+              <td class="rank-col"><span class="rank-badge">#{{ i + 1 }}</span></td>
+              <td><strong>{{ prov.nombre }}</strong></td>
+              <td class="text-right" style="color: #64748b;">{{ prov.inversion_total | currency:'EUR' }}</td>
+              <td class="text-right">{{ prov.ingresos_generados | currency:'EUR' }}</td>
+              
+              <td class="text-right">
+                <strong [class.text-success]="prov.beneficio > 0" [class.text-danger]="prov.beneficio <= 0">
+                  {{ prov.beneficio | currency:'EUR' }}
+                </strong>
+              </td>
+              
+              <td class="text-center"><strong>{{ prov.roi_pct }}%</strong></td>
+              
+              <td class="text-center">
+                <span class="trend-badge">{{ prov.tasa_venta_pct }}%</span>
+              </td>
+              
+              <td class="text-center">
+                <span [class.text-danger]="prov.prendas_atrapadas > 0" style="font-weight: 600;">
+                  {{ prov.prendas_atrapadas }} unds.
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="(!stats && activeTab === 'financiero' && !cargando) || (!statsInversion && activeTab === 'inversion' && !cargando) || (!statsProveedores && activeTab === 'proveedores' && !cargando)" class="empty-state">
+    <p>No hay datos suficientes para generar el análisis en este rango de fechas.</p>
+  </div>
+
 </div>

@@ -1,36 +1,43 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';// Asegúrate de tener tu URL base aquí
+import { Observable } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class StatisticsService {
-  // Ajusta la URL según tu configuración de entorno
-  private apiUrl = `http://localhost:8000/api/v1/stats`; 
+  private API_URL = 'http://localhost:8000/api/v1/stats';
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Obtiene el set completo de estadísticas avanzadas.
-   * @param fechaInicio Formato 'YYYY-MM-DD'
-   * @param fechaFin Formato 'YYYY-MM-DD'
-   */
-  getDashboardCompleto(fechaInicio?: string, fechaFin?: string): Observable<any> {
+  obtenerEstadisticas(inicio?: string, fin?: string): Observable<any> {
     let params = new HttpParams();
+    if (inicio) params = params.set('fecha_inicio', inicio);
+    if (fin) params = params.set('fecha_fin', fin);
 
-    if (fechaInicio) {
-      params = params.set('fecha_inicio', fechaInicio);
-    }
-    if (fechaFin) {
-      params = params.set('fecha_fin', fechaFin);
-    }
-
-    return this.http.get<any>(`${this.apiUrl}/dashboard-completo`, { params });
+    return this.http.get(`${this.API_URL}/dashboard-completo`, { params });
   }
 
-  /**
-   * (Opcional) Si en el futuro quieres un reporte específico solo de productos,
-   * puedes añadir más métodos aquí siguiendo el mismo patrón.
-   */
+  // ==========================================
+  // 2. ANÁLISIS DE INVERSIÓN (NUEVO)
+  // ==========================================
+  // Analiza el éxito de la ropa que COMPRASTE en un periodo
+  obtenerRendimientoCompras(inicio?: string, fin?: string): Observable<any> {
+    let params = new HttpParams();
+    if (inicio) params = params.set('fecha_inicio', inicio);
+    if (fin) params = params.set('fecha_fin', fin);
+
+    return this.http.get(`${this.API_URL}/rendimiento-compras`, { params });
+  }
+
+
+  // ==========================================
+  // 3. ANÁLISIS DE PROVEEDORES (NUEVO)
+  // ==========================================
+  // Evalúa qué proveedor genera más rentabilidad y mejor tasa de venta
+  obtenerRendimientoProveedores(inicio?: string, fin?: string): Observable<any> {
+    let params = new HttpParams();
+    if (inicio) params = params.set('fecha_inicio', inicio);
+    if (fin) params = params.set('fecha_fin', fin);
+
+    return this.http.get(`${this.API_URL}/rendimiento-proveedores`, { params });
+  }
 }

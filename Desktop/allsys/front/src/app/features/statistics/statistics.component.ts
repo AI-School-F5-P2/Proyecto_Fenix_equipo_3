@@ -12,99 +12,129 @@ import { Chart, registerables } from 'chart.js';
   styleUrls: ['./statistics.component.css']
 })
 export class StatisticsComponent implements OnInit {
-  // Referencias a los diferentes Canvas
-  @ViewChild('chartVendedores') chartVendedoresRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('chartCanales') chartCanalesRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('vendedoresCanvas') vCanvas!: ElementRef;
+  @ViewChild('canalesCanvas') cCanvas!: ElementRef;
 
-  // Filtros
-  fechaInicio: string = this.getPrimerDiaMes();
-  fechaFin: string = this.getFechaHoy();
+  fechaInicio: string = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  fechaFin: string = new Date().toISOString().split('T')[0];
   
-  stats: any = null;
-  cargando = true;
+  // Control de las 3 pestañas
+  activeTab: 'financiero' | 'inversion' | 'proveedores' = 'financiero';
 
-  // Instancias de Chart.js para destruirlas al actualizar
-  private chartVendedoresInstance: any;
-  private chartCanalesInstance: any;
+  // Variables para guardar los datos de cada endpoint de forma independiente
+  stats: any = null;             // Datos pestaña 1 (Flujo de Caja)
+  statsInversion: any = null;    // Datos pestaña 2 (Compras Globales)
+  statsProveedores: any = null;  // Datos pestaña 3 (Ranking Proveedores)
+  
+  cargando = true;
+  private charts: any[] = [];
 
   constructor(private statsService: StatisticsService) {
     Chart.register(...registerables);
   }
 
-  ngOnInit(): void {
-    this.cargarEstadisticas();
+  ngOnInit() { 
+    this.cargarDatos(); 
   }
 
-  getFechaHoy(): string { return new Date().toISOString().split('T')[0]; }
-  getPrimerDiaMes(): string {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+  cambiarPestana(tab: 'financiero' | 'inversion' | 'proveedores') {
+    this.activeTab = tab;
+    this.cargarDatos();
   }
 
-  cargarEstadisticas() {
+  cargarDatos() {
     this.cargando = true;
-    this.statsService.getDashboardCompleto(this.fechaInicio, this.fechaFin).subscribe({
-      next: (data) => {
-        this.stats = data;
-        this.renderizarGraficas();
-        this.cargando = false;
-      },
-      error: (err) => {
-        console.error("Error cargando estadísticas", err);
-        this.cargando = false;
-      }
-    });
+    
+    // --- PESTAÑA 1: Flujo de Caja ---
+    if (this.activeTab === 'financiero') {
+      this.statsInversion = null; 
+      this.statsProveedores = null; 
+      
+      this.statsService.obtenerEstadisticas(this.fechaInicio, this.fechaFin).subscribe({
+        next: (data) => {
+          this.stats = data;
+          this.cargando = false;
+          this.inicializarGraficas();
+        },
+        error: (err) => {
+          console.error("Error cargando finanzas:", err);
+          this.cargando = false;
+        }
+      });
+    } 
+    
+    // --- PESTAÑA 2: Rendimiento de Compras ---
+    else if (this.activeTab === 'inversion') {
+      this.stats = null; 
+      this.statsProveedores = null; 
+      
+      this.statsService.obtenerRendimientoCompras(this.fechaInicio, this.fechaFin).subscribe({
+        next: (data) => {
+          this.statsInversion = data.analisis_inversion;
+          this.cargando = false;
+        },
+        error: (err) => {
+          console.error("Error cargando inversiones:", err);
+          this.cargando = false;
+        }
+      });
+    }
+
+    // --- PESTAÑA 3: Análisis de Proveedores ---
+    else if (this.activeTab === 'proveedores') {
+      this.stats = null; 
+      this.statsInversion = null; 
+      
+      this.statsService.obtenerRendimientoProveedores(this.fechaInicio, this.fechaFin).subscribe({
+        next: (data) => {
+          // Guardamos el array del ranking que nos devuelve el backend
+          this.statsProveedores = data.ranking_proveedores;
+          this.cargando = false;
+        },
+        error: (err) => {
+          console.error("Error cargando proveedores:", err);
+          this.cargando = false;
+        }
+      });
+    }
   }
 
-  renderizarGraficas() {
-    // Timeout para asegurar que el DOM cargó los canvas
+  inicializarGraficas() {
+    // Solo dibujamos gráficas si estamos en la pestaña financiera y hay datos
+    if (this.activeTab !== 'financiero' || !this.stats) return;
+
     setTimeout(() => {
-      this.initChartVendedores();
-      this.initChartCanales();
-    }, 200);
-  }
+      this.charts.forEach(c => c.destroy());
+      this.charts = [];
 
-  initChartVendedores() {
-    if (this.chartVendedoresInstance) this.chartVendedoresInstance.destroy();
-    
-    const ctx = this.chartVendedoresRef.nativeElement.getContext('2d');
-    if (!ctx) return;
+      if (!this.vCanvas || !this.cCanvas) return;
 
-    this.chartVendedoresInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: this.stats.por_vendedor.map((v: any) => v.nombre),
-        datasets: [{
-          label: 'Ventas Totales (€)',
-          data: this.stats.por_vendedor.map((v: any) => v.total),
-          backgroundColor: '#007782',
-          borderRadius: 8
-        }]
-      },
-      options: { responsive: true, maintainAspectRatio: false }
-    });
-  }
+      const vChart = new Chart(this.vCanvas.nativeElement, {
+        type: 'bar',
+        data: {
+          labels: this.stats.vendedores.map((v: any) => v.nombre),
+          datasets: [{
+            label: 'Ventas €',
+            data: this.stats.vendedores.map((v: any) => v.total),
+            backgroundColor: 'var(--primary)' // Usamos tu variable CSS
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
 
-  initChartCanales() {
-    if (this.chartCanalesInstance) this.chartCanalesInstance.destroy();
-    
-    const ctx = this.chartCanalesRef.nativeElement.getContext('2d');
-    if (!ctx) return;
+      const cChart = new Chart(this.cCanvas.nativeElement, {
+        type: 'doughnut',
+        data: {
+          labels: this.stats.canales.map((c: any) => c.nombre),
+          datasets: [{
+            data: this.stats.canales.map((c: any) => c.total),
+            backgroundColor: ['var(--primary)', '#27ae60', '#e74c3c', '#f1c40f']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
 
-    this.chartCanalesInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: this.stats.por_canal.map((c: any) => c.canal),
-        datasets: [{
-          data: this.stats.por_canal.map((c: any) => c.total),
-          backgroundColor: ['#007782', '#27ae60', '#3498db', '#e74c3c', '#f1c40f']
-        }]
-      },
-      options: { 
-        responsive: true, 
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } }
-      }
-    });
+      this.charts.push(vChart, cChart);
+    }, 300);
   }
 }
