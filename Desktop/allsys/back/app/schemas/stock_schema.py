@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 from datetime import date
 
 from app.schemas.atributo_schema import AtributoSchema
@@ -22,3 +22,17 @@ class StockSchema(BaseModel):
     atributos: List[AtributoSchema] = []
     orden: Optional[int] = 0
     ubicacion: str = Field(..., min_length=1, description="La ubicación en el almacén es obligatoria")
+
+class StockEditPayload(BaseModel):
+    cantidad: int
+    precio_compra: float
+    precio_venta: float
+    descuento: float = 0
+    ubicacion: Optional[str] = ""
+    fecha_compra: Optional[str] = None
+    proveedor_id: Optional[int] = None
+    proveedor_nombre_nuevo: Optional[str] = None
+    publicar_web: bool = False
+    publicar_vinted: bool = False
+    publicar_wallapop: bool = False
+    atributos: Optional[List[Dict[str, Any]]] = []

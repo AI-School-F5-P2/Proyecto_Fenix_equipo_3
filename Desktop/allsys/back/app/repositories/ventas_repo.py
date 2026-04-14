@@ -1,14 +1,18 @@
 from datetime import datetime
 import random
 import string
-from sqlalchemy.orm import Session
-from app.models.variantes_model import Variante
-from app.models.ventas_model import Venta, DetalleVenta
-from app.models.stock_model import Stock
+from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy import desc, or_, cast, String, func
 from fastapi import HTTPException
 
+# Modelos y Schemas
+from app.models.ventas_model import Venta, DetalleVenta
+from app.models.stock_model import Stock
+from app.models.variantes_model import Variante
 from app.schemas.ventas_schema import VentaCreate
 
+# ✨ IMPORTAMOS NUESTRO NUEVO SERVICIO ESTRELLA
+from app.services.cliente_services import procesar_cliente_omnicanal
 
 
 # =====================================================
@@ -20,39 +24,42 @@ def generar_codigo_venta(db: Session) -> str:
     y verifica en la BD que sea 100% único antes de devolverlo.
     """
     while True:
-        # 1. Obtenemos la fecha en formato corto (Ej: 260406 para 6 de Abril de 2026)
         fecha_str = datetime.utcnow().strftime("%y%m%d")
-        
-        # 2. Generamos 4 caracteres aleatorios
         rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-        
-        # 3. Armamos el código final
         codigo_candidato = f"VEN-{fecha_str}-{rand}"
         
-        # 4. Preguntamos a la base de datos si ya existe
         existe = db.query(Venta).filter(Venta.codigo_venta == codigo_candidato).first()
-        
-        # Si no existe, rompemos el bucle y devolvemos este código seguro
         if not existe:
             return codigo_candidato
-        
 
 
+# =====================================================
+# REGISTRO DE VENTA 💰
+# =====================================================
 def registrar_venta(db: Session, data: VentaCreate):
     try:
         # 1. Calcular Totales
         subtotal = sum(d.cantidad * d.precio_unitario for d in data.detalles)
         total_final = (subtotal + data.costo_envio) - data.descuento_total
 
-        # 2. Crear el objeto Venta (Padre)
+        # ✨ 2. DELEGAR AL SERVICIO DE CLIENTES (Adiós a la función Dios)
+        # Le pasamos toda la data y él nos devuelve el ID del cliente o None
+        cliente_id = procesar_cliente_omnicanal(db=db, data=data)
+
+        # 3. CREACIÓN DE LA VENTA PADRE
         nueva_venta = Venta(
             codigo_venta=generar_codigo_venta(db),
             fecha=data.fecha or datetime.utcnow(),
             canal=data.canal,
             vendedor=data.vendedor,
             metodo_pago=data.metodo_pago,
-            nombre_cliente=data.nombre_cliente,
+            estado_venta=data.estado_venta,
+            estado_pago=data.estado_pago,
+            
+            cliente_id=cliente_id, 
+            nombre_cliente=data.nombre_cliente, # Guardamos cómo se llamó en ESTE pedido
             email_cliente=data.email_cliente,
+            
             subtotal=subtotal,
             costo_envio=data.costo_envio,
             descuento_total=data.descuento_total,
@@ -63,74 +70,56 @@ def registrar_venta(db: Session, data: VentaCreate):
         )
         
         db.add(nueva_venta)
-        db.flush() # Para obtener el ID de la venta sin hacer commit aún
+        db.flush() 
 
-        # 3. Procesar cada producto del carrito
+        # 4. GESTIÓN DE STOCK (Detalles de la venta)
         for item in data.detalles:
-            # Buscamos el stock y cargamos producto/variante para el snapshot
             stock_db = db.query(Stock).filter(Stock.id == item.stock_id).first()
-            
             if not stock_db:
                 raise HTTPException(status_code=404, detail=f"Stock ID {item.stock_id} no encontrado.")
 
-            # 🛡️ VALIDACIÓN CRÍTICA: ¿Hay suficiente stock?
             if stock_db.cantidad < item.cantidad:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Stock insuficiente para {stock_db.variante.producto.nombre}. Disponible: {stock_db.cantidad}"
-                )
+                raise HTTPException(status_code=400, detail=f"Stock insuficiente para {stock_db.variante.producto.nombre}. Disponible: {stock_db.cantidad}")
 
-            # 📉 RESTAR STOCK
+            # Descontamos el stock
             stock_db.cantidad -= item.cantidad
 
-            # 📸 CREAR SNAPSHOT (Foto histórica)
-            nombre_prod = stock_db.variante.producto.nombre
-            color_prod = stock_db.variante.identidad_variante
-            talla_prod = stock_db.etiqueta
-
+            # Creamos el snapshot para la factura
             nuevo_detalle = DetalleVenta(
                 venta_id=nueva_venta.id,
                 stock_id=stock_db.id,
                 cantidad=item.cantidad,
                 precio_unitario_en_venta=item.precio_unitario,
-                nombre_producto_snapshot=nombre_prod,
-                talla_snapshot=talla_prod,
-                color_snapshot=color_prod
+                nombre_producto_snapshot=stock_db.variante.producto.nombre,
+                talla_snapshot=stock_db.etiqueta,
+                color_snapshot=stock_db.variante.identidad_variante
             )
             db.add(nuevo_detalle)
 
-        # 4. Finalizar Transacción
+        # 5. GUARDADO FINAL
         db.commit()
         db.refresh(nueva_venta)
         return nueva_venta
 
     except Exception as e:
-        db.rollback() # Si algo falla, deshacemos todo (incluso la resta de stock)
+        db.rollback() 
         if isinstance(e, HTTPException): raise e
         raise HTTPException(status_code=500, detail=f"Error al procesar la venta: {str(e)}")
-    
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-from sqlalchemy.orm import joinedload
-
+# =====================================================
+# OBTENER UNA VENTA DETALLADA 📄
+# =====================================================
 def obtener_venta_por_id(db: Session, venta_id: int):
     venta = db.query(Venta).options(
         joinedload(Venta.detalles)
     ).filter(Venta.id == venta_id).first()
     return venta
 
+
+# =====================================================
+# ACTUALIZAR ESTADOS DE UNA VENTA 🔄
+# =====================================================
 def actualizar_venta(db: Session, venta_id: int, datos: dict):
     venta = db.query(Venta).filter(Venta.id == venta_id).first()
     if not venta:
@@ -138,85 +127,67 @@ def actualizar_venta(db: Session, venta_id: int, datos: dict):
 
     estado_anterior = venta.estado_venta
 
-    # Actualizamos todos los campos enviados
+    # 1. Actualizar campos
     for key, value in datos.items():
         if hasattr(venta, key) and value is not None:
-            setattr(venta, key, value)
+            if key in ["total", "subtotal", "costo_envio", "descuento_total"]:
+                setattr(venta, key, float(value))
+            else:
+                setattr(venta, key, value)
 
-    # 🛡️ LÓGICA DE DEVOLUCIÓN DE STOCK (ANTI-PÉRDIDAS)
+    # 2. Recalcular si modifican el total
+    if "total" in datos:
+        venta.subtotal = float(datos["total"]) - (venta.costo_envio or 0) + (venta.descuento_total or 0)
+
+    # 3. Lógica de devolución/resta de stock según estado
     nuevo_estado = datos.get("estado_venta")
-    
-    # Si la venta se cancela o se devuelve, devolvemos el stock al inventario
-    if nuevo_estado in ["cancelada", "devuelta"] and estado_anterior not in ["cancelada", "devuelta"]:
-        for detalle in venta.detalles:
-            if detalle.stock_id:
-                stock_db = db.query(Stock).filter(Stock.id == detalle.stock_id).first()
-                if stock_db:
-                    stock_db.cantidad += detalle.cantidad
-                    print(f"♻️ Stock devuelto: +{detalle.cantidad} uds al stock_id {stock_db.id}")
+    if nuevo_estado and nuevo_estado != estado_anterior:
+        
+        # Devolver stock
+        if nuevo_estado in ["cancelada", "devuelta"] and estado_anterior not in ["cancelada", "devuelta"]:
+            for detalle in venta.detalles:
+                if detalle.stock_id:
+                    stock_db = db.query(Stock).filter(Stock.id == detalle.stock_id).first()
+                    if stock_db:
+                        stock_db.cantidad += detalle.cantidad
+                        print(f"♻️ Stock devuelto: +{detalle.cantidad} uds al stock_id {stock_db.id}")
 
-    # Si se habían cancelado y ahora se vuelven a activar (raro, pero posible)
-    elif nuevo_estado in ["procesando", "completada"] and estado_anterior in ["cancelada", "devuelta"]:
-        for detalle in venta.detalles:
-            if detalle.stock_id:
-                stock_db = db.query(Stock).filter(Stock.id == detalle.stock_id).first()
-                if stock_db:
-                    stock_db.cantidad -= detalle.cantidad # Volvemos a restar el stock
-                    if stock_db.cantidad < 0:
-                        db.rollback()
-                        raise HTTPException(status_code=400, detail="No hay stock suficiente para reactivar esta venta.")
+        # Reactivar stock
+        elif nuevo_estado in ["procesando", "completada"] and estado_anterior in ["cancelada", "devuelta"]:
+            for detalle in venta.detalles:
+                if detalle.stock_id:
+                    stock_db = db.query(Stock).filter(Stock.id == detalle.stock_id).first()
+                    if stock_db:
+                        if stock_db.cantidad < detalle.cantidad:
+                            db.rollback()
+                            raise HTTPException(
+                                status_code=400, 
+                                detail=f"No hay stock suficiente para reactivar esta venta. (ID Stock: {stock_db.id})"
+                            )
+                        stock_db.cantidad -= detalle.cantidad 
+                        print(f"📉 Stock restado por reactivación: -{detalle.cantidad} uds al stock_id {stock_db.id}")
 
-    db.commit()
-    db.refresh(venta)
-    return venta
-
-
-
-
-
-
-
-
-
-
-
+    try:
+        db.commit()
+        db.refresh(venta)
+        return venta
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al actualizar la venta: {str(e)}")
 
 
-
-
-
-
-
-
-
-
-from sqlalchemy import desc, or_, cast, String
-from sqlalchemy.orm import selectinload
-
-from sqlalchemy import desc, or_, cast, String, func
-from sqlalchemy.orm import Session, selectinload
-from app.models.ventas_model import Venta, DetalleVenta
-from app.models.stock_model import Stock
-from app.models.variantes_model import Variante
-
+# =====================================================
+# LISTAR VENTAS CON PAGINACIÓN Y FILTROS 📊
+# =====================================================
 def obtener_ventas_paginadas(
-    db: Session,
-    page: int = 1,
-    limit: int = 10,
-    search: str = None,
-    estado_venta: str = None,
-    canal: str = None,
-    fecha_inicio: str = None,
-    fecha_fin: str = None,
-    vendedor: str = None,
-    comprador: str = None
+    db: Session, page: int = 1, limit: int = 10, search: str = None,
+    estado_venta: str = None, canal: str = None, fecha_inicio: str = None,
+    fecha_fin: str = None, vendedor: str = None, comprador: str = None
 ):
     offset = (page - 1) * limit
-    
-    # 1. Iniciamos la consulta base
     query = db.query(Venta)
 
-    # --- APLICACIÓN DE FILTROS ---
+    # Filtros
     if search and search.strip():
         term = f"%{search.strip()}%"
         query = query.filter(
@@ -227,43 +198,25 @@ def obtener_ventas_paginadas(
                 cast(Venta.id, String).ilike(term)
             )
         )
-    
-    if estado_venta: 
-        query = query.filter(Venta.estado_venta == estado_venta)
-    
-    if canal: 
-        query = query.filter(Venta.canal == canal)
-    
-    if vendedor: 
-        query = query.filter(Venta.vendedor == vendedor)
-    
-    if comprador: 
-        query = query.filter(Venta.nombre_cliente.ilike(f"%{comprador}%"))
-    
-    if fecha_inicio: 
-        query = query.filter(Venta.fecha >= fecha_inicio)
-    
-    if fecha_fin: 
-        query = query.filter(Venta.fecha <= f"{fecha_fin} 23:59:59")
+    if estado_venta: query = query.filter(Venta.estado_venta == estado_venta)
+    if canal: query = query.filter(Venta.canal == canal)
+    if vendedor: query = query.filter(Venta.vendedor == vendedor)
+    if comprador: query = query.filter(Venta.nombre_cliente.ilike(f"%{comprador}%"))
+    if fecha_inicio: query = query.filter(Venta.fecha >= fecha_inicio)
+    if fecha_fin: query = query.filter(Venta.fecha <= f"{fecha_fin} 23:59:59")
 
-    # 2. CÁLCULO DE TOTALES FILTRADOS (Antes de paginar)
-    # Total Recaudado: Suma de la columna 'total' de todas las ventas filtradas
+    # Cálculos globales
     total_recaudado = query.with_entities(func.sum(Venta.total)).scalar() or 0
-
-    # Total Beneficio: Suma de (Total Venta - Costo de productos)
-    # Unimos con DetalleVenta y Stock para obtener el precio_compra de cada artículo
     total_costo = (
         db.query(func.sum(DetalleVenta.cantidad * Stock.precio_compra))
         .join(Venta, DetalleVenta.venta_id == Venta.id)
         .join(Stock, DetalleVenta.stock_id == Stock.id)
-        # IMPORTANTE: Aplicamos los mismos filtros de la query original
         .filter(Venta.id.in_(query.with_entities(Venta.id)))
         .scalar() or 0
     )
-    
     total_beneficio = float(total_recaudado) - float(total_costo)
 
-    # 3. PAGINACIÓN Y CARGA DE DATOS (Eager Loading)
+    # Paginación
     total_count = query.count()
     ventas_db = (
         query.options(
@@ -278,7 +231,7 @@ def obtener_ventas_paginadas(
         .all()
     )
 
-    # 4. APLANADO DE DATOS PARA ANGULAR
+    # Aplanado para Angular
     resultados = []
     for venta in ventas_db:
         imagen_cover = None
@@ -286,14 +239,11 @@ def obtener_ventas_paginadas(
 
         for detalle in venta.detalles:
             nombres_productos.append(detalle.nombre_producto_snapshot)
-            
-            # Buscar la primera imagen disponible del primer stock
             if not imagen_cover and detalle.stock and detalle.stock.variante and detalle.stock.variante.imagenes:
                 imgs = sorted(detalle.stock.variante.imagenes, key=lambda x: x.orden or 0)
                 if imgs:
                     imagen_cover = imgs[0].url
 
-        # Resumen de productos bonito
         if len(nombres_productos) > 1:
             resumen = f"{nombres_productos[0]} y {len(nombres_productos) - 1} más"
         elif len(nombres_productos) == 1:
@@ -315,7 +265,6 @@ def obtener_ventas_paginadas(
             "resumen_productos": resumen
         })
 
-    # 5. RETORNO FINAL
     return {
         "total": total_count,
         "items": resultados,

@@ -118,13 +118,19 @@ def guardar_valores_stock(db: Session, stock_obj: Stock, atributos_data: list):
 
 
 
+
+
+
+
+
+
 # =====================================================
 # CREAR PRODUCTO COMPLETO
 # =====================================================
 def crear_producto(
     db: Session, nombre: str, estado: str, descripcion: Optional[str], categoria_id: int, tipo: str, 
     publico_objetivo: str, variantes: str, marca_id: Optional[int] = None, 
-    marca_nombre: Optional[str] = None, imagenes: Optional[Dict[str, List]] = None
+    marca_nombre: Optional[str] = None, imagenes: Optional[Dict[str, List]] = None, es_vintage: bool = False, epoca: Optional[str] = None
 ):
     desc_final = descripcion.strip() if descripcion else ""
     
@@ -149,6 +155,8 @@ def crear_producto(
         categoria_id=categoria_id,
         marca_id=marca_id, 
         estado=estado,
+        es_vintage=es_vintage, # ✨ ASIGNACIÓN
+        epoca=epoca,
         tipo=tipo, 
         publico_objetivo=publico_objetivo,
         sku="TEMP"
@@ -226,11 +234,95 @@ def crear_producto(
     db.refresh(producto)
     return producto
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # =====================================================
 # LISTADO PAGINADO
 # =====================================================
-from sqlalchemy import or_, and_, cast, String, desc
+from sqlalchemy import func, or_, and_, cast, String, desc
 from sqlalchemy.orm import Session, selectinload
+from typing import List
 from app.models.producto_model import Producto
 from app.models.variantes_model import Variante
 from app.models.stock_model import Stock
@@ -257,12 +349,15 @@ def obtener_productos_paginados(
     disponibilidad: str = "todos",
     proveedores_ids: List[int] = None
 ):
+    print(f"\n🟢 [CATÁLOGO] --- INICIANDO BÚSQUEDA ---")
+    print(f"🟢 [CATÁLOGO] Parámetro color recibido: '{color}'")
+
     offset = (page - 1) * limit
     
     query = db.query(Producto).filter(Producto.activo == True)
 
-    necesita_join_stocks = talla or precio_min is not None or precio_max is not None or solo_vendidos or (search and tipo_busqueda == 'stock_id') or (proveedores_ids and len(proveedores_ids) > 0 )
-
+    necesita_join_stocks = talla or precio_min is not None or precio_max is not None or solo_vendidos or (search and tipo_busqueda == 'stock_id') or (proveedores_ids and len(proveedores_ids) > 0)
+    
     if necesita_join_stocks:
         query = query.join(Producto.variantes).join(Variante.stocks)
     elif color:
@@ -289,44 +384,38 @@ def obtener_productos_paginados(
     if proveedores_ids and len(proveedores_ids) > 0:
         query = query.filter(Stock.proveedor_id.in_(proveedores_ids))
     
+    # ✨ FILTRO DE COLOR CON LOGS
     if color:
-        color_clean = color.strip()
-        if not color_clean.startswith('#'):
-            color_clean = f"#{color_clean}"
-        query = query.filter(Variante.hex_identidad.ilike(color_clean))
-    # ✨ FILTRO ROBUSTO EN PYTHON
-
-# ✨ 2. LÓGICA DE DISPONIBILIDAD PARA CATÁLOGO (CORREGIDA)
-    if disponibilidad == "en_stock":
-        # Muéstrame productos que tengan al menos una variante con al menos un stock > 0
+        c_clean = color.replace('#', '').lower()
+        c_find = f"#{c_clean}"
+        print(f"🟢 [CATÁLOGO] Color limpio para buscar en BD: '{c_find}'")
+        
         query = query.filter(
             Producto.variantes.any(
-                Variante.stocks.any(Stock.cantidad > 0)
+                func.lower(Variante.hex_identidad) == c_find
             )
         )
+
+    # ✨ LÓGICA DE DISPONIBILIDAD
+    if disponibilidad == "en_stock":
+        query = query.filter(Producto.variantes.any(Variante.stocks.any(Stock.cantidad > 0)))
     elif disponibilidad == "agotado":
-        # Muéstrame productos donde NO EXISTE ninguna variante con stock > 0
-        # (Es decir, la suma de todo es 0 o no tiene stocks)
-        query = query.filter(
-            ~Producto.variantes.any(
-                Variante.stocks.any(Stock.cantidad > 0)
-            )
-        )
-    # Verifica que no sea None, ni vacío, ni el string "null"
-    if fecha_inicio: 
-        query = query.filter(Producto.fecha_registro >= fecha_inicio) # <-- Cambiar created_at por fecha_registro
-    if fecha_fin: 
-        query = query.filter(Producto.fecha_registro <= f"{fecha_fin} 23:59:59") # <-- Cambiar created_at por fecha_registro
+        query = query.filter(~Producto.variantes.any(Variante.stocks.any(Stock.cantidad > 0)))
+        
+    if fecha_inicio: query = query.filter(Producto.fecha_registro >= fecha_inicio)
+    if fecha_fin: query = query.filter(Producto.fecha_registro <= f"{fecha_fin} 23:59:59")
         
     if talla:
         query = query.join(Stock.valores).join(ValorAtributo.atributo).filter(
             and_(Atributo.nombre.ilike("talla"), ValorAtributo.valor == talla)
         )
+        
     if precio_min is not None: query = query.filter(Stock.precio_venta >= precio_min)
     if precio_max is not None: query = query.filter(Stock.precio_venta <= precio_max)
     if solo_vendidos: query = query.filter(Stock.cantidad == 0)
 
     total = query.distinct().count()
+    print(f"🟢 [CATÁLOGO] Total de productos encontrados antes de paginar: {total}")
 
     productos = (
         query.distinct()
@@ -350,28 +439,53 @@ def obtener_productos_paginados(
     for p in productos:
         vars_activas = sorted([v for v in p.variantes if v.activo], key=lambda x: x.orden or 0)
         
+        # ✨ IDENTIFICAR VARIANTE PRINCIPAL (POR COLOR)
+        variante_principal = vars_activas[0] if vars_activas else None
+        
+        if color:
+            c_target = f"#{color.replace('#', '').lower()}"
+            v_match = next((v for v in vars_activas if v.hex_identidad and v.hex_identidad.lower() == c_target), None)
+            if v_match:
+                variante_principal = v_match
+                print(f"🟢 [CATÁLOGO] Producto ID {p.id}: ¡Match de color! Usando variante ID {v_match.id}")
+            else:
+                print(f"🔴 [CATÁLOGO] Producto ID {p.id}: OJO, pasó el filtro de BD pero no encontré la variante en Python con color {c_target}")
+
+        img_url = None
+        if variante_principal and variante_principal.imagenes:
+            img_sorted = sorted(variante_principal.imagenes, key=lambda x: x.orden or 0)
+            if img_sorted:
+                img_url = img_sorted[0].url
+                
+        if not img_url:
+            for v in vars_activas:
+                if v.imagenes:
+                    img_sorted = sorted(v.imagenes, key=lambda x: x.orden or 0)
+                    if img_sorted:
+                        img_url = img_sorted[0].url
+                        break
+
         stocks_activos = []
         for v in vars_activas:
             stocks_ordenados = sorted([s for s in v.stocks if s.activo], key=lambda x: x.orden or 0)
             stocks_activos.extend(stocks_ordenados)
         
-        p_venta = stocks_activos[0].precio_venta if stocks_activos else 0.0
-        p_compra = stocks_activos[0].precio_compra if stocks_activos else 0.0
+        p_venta = 0.0
+        p_compra = 0.0
         
-        # Recolectamos las tallas sin repetidos
+        stocks_prioritarios = [s for s in variante_principal.stocks if s.activo] if variante_principal else []
+        if stocks_prioritarios:
+            p_venta = stocks_prioritarios[0].precio_venta
+            p_compra = stocks_prioritarios[0].precio_compra
+        elif stocks_activos:
+            p_venta = stocks_activos[0].precio_venta
+            p_compra = stocks_activos[0].precio_compra
+        
         tallas_set = set()
         for s in stocks_activos:
             for val in s.valores:
                 if val.atributo and val.atributo.nombre.lower() in ['talla', 'size', 'medida', 'numero', 'ml']:
                     tallas_set.add(val.valor)
-
-        img_url = None
-        for v in vars_activas:
-            if v.imagenes:
-                img_sorted = sorted(v.imagenes, key=lambda x: x.orden or 0)
-                if img_sorted:
-                    img_url = img_sorted[0].url
-                    break
 
         resultados.append({
             "id": p.id,
@@ -387,10 +501,7 @@ def obtener_productos_paginados(
             "precio_compra": float(p_compra),
             "precio_venta": float(p_venta),
             "colores": list({v.hex_identidad for v in vars_activas if v.hex_identidad}),
-            
-            # ✨ AQUÍ SE APLICA EL ORDENADOR INTELIGENTE
             "tallas": ordenar_tallas_logicamente(tallas_set),
-            
             "canales": {
                 "web": any(s.publicar_web for s in stocks_activos),
                 "vinted": any(s.publicar_vinted for s in stocks_activos),
@@ -398,7 +509,15 @@ def obtener_productos_paginados(
             }
         })
 
+    print(f"🟢 [CATÁLOGO] --- FIN BÚSQUEDA ---\n")
     return {"total": total, "items": resultados}
+
+
+
+
+
+
+
 
 
 def obtener_stocks_individuales_paginados(
@@ -421,6 +540,9 @@ def obtener_stocks_individuales_paginados(
     disponibilidad: str = "todos",
     proveedores_ids: List[int] = None
 ):
+    print(f"\n🔵 [INVENTARIO] --- INICIANDO BÚSQUEDA ---")
+    print(f"🔵 [INVENTARIO] Parámetro color recibido: '{color}'")
+
     offset = (page - 1) * limit
     
     query = (
@@ -461,18 +583,15 @@ def obtener_stocks_individuales_paginados(
     if proveedores_ids and len(proveedores_ids) > 0:
         query = query.filter(Stock.proveedor_id.in_(proveedores_ids))
 
+    # ✨ FILTRO DE COLOR CON LOGS
     if color:
-        color_clean = color.strip()
-        if not color_clean.startswith('#'):
-            color_clean = f"#{color_clean}"
-        query = query.filter(Variante.hex_identidad.ilike(color_clean))
+        c_clean = color.replace('#', '').lower()
+        c_find = f"#{c_clean}"
+        print(f"🔵 [INVENTARIO] Color limpio para buscar en BD: '{c_find}'")
+        query = query.filter(func.lower(Variante.hex_identidad) == c_find)
 
-        # ✨ FILTRO ROBUSTO EN PYTHON
-    # Busca esta línea (alrededor de la 416):
-    if fecha_inicio: 
-        query = query.filter(Producto.fecha_registro >= fecha_inicio) # <-- Cambiar created_at por fecha_registro
-    if fecha_fin: 
-        query = query.filter(Producto.fecha_registro <= f"{fecha_fin} 23:59:59") # <-- Cambiar created_at por fecha_registro
+    if fecha_inicio: query = query.filter(Producto.fecha_registro >= fecha_inicio)
+    if fecha_fin: query = query.filter(Producto.fecha_registro <= f"{fecha_fin} 23:59:59")
     
     if talla:
         query = query.join(Stock.valores).join(ValorAtributo.atributo).filter(
@@ -490,6 +609,7 @@ def obtener_stocks_individuales_paginados(
     else: query = query.order_by(Stock.id.desc())
 
     total = query.distinct().count()
+    print(f"🔵 [INVENTARIO] Total de stocks encontrados antes de paginar: {total}")
 
     stocks_db = (
         query.distinct()
@@ -551,7 +671,92 @@ def obtener_stocks_individuales_paginados(
             }
         })
 
+    print(f"🔵 [INVENTARIO] --- FIN BÚSQUEDA ---\n")
     return {"total": total, "items": resultados}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # =====================================================
 # DETALLE COMPLETO (Para Edición)
@@ -585,6 +790,8 @@ def obtener_producto_completo(db: Session, p_id: int):
         "publico_objetivo": producto.publico_objetivo,
         "categoria_id": producto.categoria_id,
         "marca": producto.marca,
+        "es_vintage": producto.es_vintage, 
+        "epoca": producto.epoca,
         
         "variantes": [
             {
@@ -715,6 +922,15 @@ def obtener_stock_detalle(db: Session, stock_id: int):
 
 
 
+
+
+
+
+
+
+
+
+
 def actualizar_stock_individual(db: Session, stock_id: int, datos_nuevos: dict):
     stock = db.query(Stock).filter(Stock.id == stock_id).first()
     if not stock: return None
@@ -728,12 +944,12 @@ def actualizar_stock_individual(db: Session, stock_id: int, datos_nuevos: dict):
     if "fecha_compra" in datos_nuevos and datos_nuevos["fecha_compra"]: 
         stock.fecha_compra = datos_nuevos["fecha_compra"]
     
-    # Switches de publicación
+    # Switches
     if "publicar_web" in datos_nuevos: stock.publicar_web = datos_nuevos["publicar_web"]
     if "publicar_vinted" in datos_nuevos: stock.publicar_vinted = datos_nuevos["publicar_vinted"]
     if "publicar_wallapop" in datos_nuevos: stock.publicar_wallapop = datos_nuevos["publicar_wallapop"]
     
-    # Manejo de proveedor
+    # Proveedor
     p_id = datos_nuevos.get("proveedor_id")
     if p_id:
         stock.proveedor_id = p_id
@@ -741,8 +957,51 @@ def actualizar_stock_individual(db: Session, stock_id: int, datos_nuevos: dict):
         nuevo_p = buscar_o_crear(db, datos_nuevos["proveedor_nombre_nuevo"])
         stock.proveedor_id = nuevo_p.id
 
+    # ========================================================
+    # 🚨 MODO PARANOIA: GUARDADO AGRESIVO DE ATRIBUTOS
+    # ========================================================
+    atributos_data = datos_nuevos.get("atributos")
+    
+    # 🕵️‍♂️ ESPÍA 1: Imprimimos en la terminal de Python lo que llegó
+    print(f"\n--- INICIANDO GUARDADO DE ATRIBUTOS PARA STOCK {stock_id} ---")
+    print(f"📦 DATOS RECIBIDOS DEL FRONTEND: {atributos_data}")
+    
+    if atributos_data is not None:
+        for attr in atributos_data:
+            nombre_attr = attr.get("nombre", "").strip().lower()
+            valor_raw = attr.get("valor")
+            
+            if not nombre_attr: continue
+            
+            atributo_base = db.query(Atributo).filter(Atributo.nombre == nombre_attr).first()
+            if not atributo_base:
+                atributo_base = Atributo(nombre=nombre_attr)
+                db.add(atributo_base)
+                db.flush()
+            
+            valor_existente = next((v for v in stock.valores if v.atributo_id == atributo_base.id), None)
+            
+            # Si el frontend manda un valor vacío, lo borramos
+            if valor_raw is None or str(valor_raw).strip() == "":
+                if valor_existente:
+                    print(f"🗑️ Borrando atributo: {nombre_attr}")
+                    db.delete(valor_existente)
+            else:
+                texto_limpio = str(valor_raw).strip().upper()
+                if valor_existente:
+                    print(f"✏️ Actualizando {nombre_attr} -> {texto_limpio}")
+                    valor_existente.valor = texto_limpio
+                    db.add(valor_existente) # 🔥 FORZAMOS ACTUALIZACIÓN
+                else:
+                    print(f"✨ Creando nuevo {nombre_attr} -> {texto_limpio}")
+                    nuevo_valor = ValorAtributo(atributo_id=atributo_base.id, valor=texto_limpio)
+                    stock.valores.append(nuevo_valor)
+                    db.add(nuevo_valor) # 🔥 FORZAMOS CREACIÓN
+
+    # Guardamos todo el paquete en la Base de Datos
     db.commit()
     db.refresh(stock)
+    print("✅ GUARDADO COMPLETADO\n")
     return stock
 
 
@@ -762,6 +1021,8 @@ def editar_producto_completo(
     estado: str,
     publico_objetivo: str, 
     variantes: str, 
+    es_vintage: bool = False,      # ✨ NUEVO
+    epoca: Optional[str] = None,
     marca_id: Optional[int] = None, 
     marca_nombre: Optional[str] = None, 
     imagenes: Optional[Dict[str, List]] = None
@@ -776,6 +1037,8 @@ def editar_producto_completo(
     producto.tipo = tipo
     producto.estado = estado
     producto.publico_objetivo = publico_objetivo
+    producto.es_vintage = es_vintage
+    producto.epoca = epoca
     
     m_id = int(marca_id) if (marca_id and str(marca_id).isdigit() and int(marca_id) > 0) else None
     if m_id:

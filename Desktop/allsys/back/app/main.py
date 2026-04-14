@@ -37,6 +37,7 @@ from app.models.variante_imagen_model import Imagen
 from app.models.ventas_model import Venta, DetalleVenta
 from app.models.proveedores_model import Proveedor          # Cambiado de Proveedores (Singular)
 from app.models.gastos_model import Gasto
+from app.models.clientes_model import Cliente  # Nuevo modelo para clientes
 
 
 

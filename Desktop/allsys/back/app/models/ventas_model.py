@@ -10,6 +10,7 @@ class Venta(Base):
     codigo_venta = Column(String(50), unique=True, nullable=False) 
     fecha = Column(DateTime, default=datetime.utcnow)
     
+    
     # --- FINANZAS DETALLADAS ---
     subtotal = Column(Float, nullable=False)
     iva_monto = Column(Float, default=0.0) # Para contabilidad
@@ -31,7 +32,7 @@ class Venta(Base):
     vendedor = Column(String(50), nullable=False) 
 
     # --- CLIENTE ---
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True) 
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=True)
     nombre_cliente = Column(String(100), nullable=True)
     email_cliente = Column(String(100), nullable=True)
     notas_internas = Column(Text, nullable=True) # Para Yenny/Maikol
@@ -43,6 +44,7 @@ class Venta(Base):
     numero_seguimiento = Column(String(100), nullable=True)
 
     detalles = relationship("DetalleVenta", back_populates="venta", cascade="all, delete-orphan")
+    cliente = relationship("Cliente", back_populates="ventas")
 
 
 class DetalleVenta(Base):

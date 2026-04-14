@@ -13,6 +13,8 @@ class Producto(Base):
     estado = Column(String(50), default="nuevo")
     activo = Column(Boolean, default=True)
     publico_objetivo = Column(String(50)) 
+    es_vintage = Column(Boolean, default=False)
+    epoca = Column(String(50), nullable=True)
     categoria_id = Column(Integer, ForeignKey("categorias.id"))
     marca_id = Column(Integer, ForeignKey("marcas.id"))
     sku = Column(String(100), unique=True)

@@ -9,19 +9,24 @@ class DetalleVentaCreate(BaseModel):
 
 class VentaCreate(BaseModel):
     fecha: Optional[datetime] = None
-    canal: str # web, tienda, vinted, wallapop
-    vendedor: str # Yenny, Maikol, Paola, sistema_web
-    metodo_pago: str # efectivo, tarjeta, stripe, etc.
+    canal: str 
+    vendedor: str 
+    metodo_pago: str 
+    
+    # ✨ NUEVOS CAMPOS
+    estado_venta: str = "completada" 
+    estado_pago: str = "pagado"
     
     # Datos opcionales del cliente
     nombre_cliente: Optional[str] = None
     email_cliente: Optional[str] = None
+    identificador_cliente: Optional[str] = None
     
     # Costos extra
     costo_envio: float = 0.0
     descuento_total: float = 0.0
     
-    # Logística (opcional al inicio)
+    # Logística
     transaccion_id_externo: Optional[str] = None
     empresa_transporte: Optional[str] = None
     numero_seguimiento: Optional[str] = None
@@ -33,18 +38,18 @@ class VentaCreate(BaseModel):
 
 
 class VentaUpdate(BaseModel):
-    # Estados
-    estado_venta: Optional[str] = None # procesando, enviada, completada, cancelada, devuelta
-    estado_pago: Optional[str] = None # pendiente, pagado, reembolsado
+    estado_venta: Optional[str] = None
+    estado_pago: Optional[str] = None
     metodo_pago: Optional[str] = None
-    
-    # Cliente
     nombre_cliente: Optional[str] = None
     email_cliente: Optional[str] = None
-    notas_internas: Optional[str] = None
-    
-    # Logística
     estado_envio: Optional[str] = None
-    direccion_envio: Optional[str] = None
     empresa_transporte: Optional[str] = None
     numero_seguimiento: Optional[str] = None
+    notas_internas: Optional[str] = None
+    
+    # ✨ ESTOS CAMPOS DEBEN ESTAR AQUÍ PARA QUE FASTAPI LOS DEJE PASAR
+    total: Optional[float] = None
+    subtotal: Optional[float] = None
+    costo_envio: Optional[float] = None
+    descuento_total: Optional[float] = None
