@@ -54,7 +54,7 @@ export function determinarTipoBase(ruta: any[]): string {
     const palabrasInferior = [
       'falda', 'pantalón', 'pantalon', 'vaquero', 'short', 'bermuda', 
       'leggin', 'chino', 'jogger', 'braguita', 'polaina', 'culetine', 
-      'calzoncillo', 'slip', 'boxer'
+      'calzoncillo', 'slip', 'boxer', 'vestido'
     ];
 
     // Si alguna palabra de la lista está en cualquier parte de la ruta, es inferior

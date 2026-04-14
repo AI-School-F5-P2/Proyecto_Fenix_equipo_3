@@ -11,15 +11,24 @@ export interface DetalleVenta {
 
 export interface VentaData {
   fecha?: string;
-  canal: string;          // 'web' | 'tienda' | 'vinted' | 'wallapop'
-  vendedor: string;       // 'Yenny' | 'Maikol' | 'Paola'
-  metodo_pago: string;    // 'efectivo' | 'tarjeta' | 'stripe'
+  canal: string;          
+  vendedor: string;       
+  metodo_pago: string;    
+  estado_venta: string;   // 👈 NUEVO
+  estado_pago: string;    // 👈 NUEVO
   nombre_cliente?: string;
   email_cliente?: string;
   costo_envio?: number;
   descuento_total?: number;
   transaccion_id_externo?: string;
-  detalles: DetalleVenta[]; // El "carrito"
+  empresa_transporte?: string; // 👈 NUEVO
+  numero_seguimiento?: string; // 👈 NUEVO
+  detalles: DetalleVenta[]; 
+  identificador_cliente?: string; // <-- AÑADIR ESTA LÍNEA
+  tipo_identificador?: string;
+  prefijo_telefono?: string;
+  tipo_documento?: string;
+ 
 }
 
 @Injectable({

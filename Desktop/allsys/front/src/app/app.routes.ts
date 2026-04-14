@@ -39,6 +39,7 @@ export const routes: Routes = [
       { path: 'papelera', component: PapeleraComponent },
       { path: 'gastos', component: GastosListComponent },
       { path: 'gastos/nuevo', component: GastosCreateComponent },
+      { path: 'gastos/editar/:id', component: GastosCreateComponent },
       { path: 'edit-sale/:id', component: EditSaleComponent },
       { path: 'pos', component: PosComponent },
       { path: 'sales-list', component: SalesListComponent },

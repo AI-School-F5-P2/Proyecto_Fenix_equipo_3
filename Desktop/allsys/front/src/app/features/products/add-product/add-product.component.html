@@ -37,11 +37,33 @@
         </div>
 
         <div class="field">
-          <label>Estado del Artículo <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+          <label>Condición de la prenda <span class="required-asterisk">*</span></label>
           <div class="custom-select">
             <select [(ngModel)]="estadoSeleccionado" name="estadoSeleccionado">
-              <option value="nuevo">✨ Nuevo / A estrenar</option>
-              <option value="segunda_mano">♻️ Segunda Mano / Usado</option>
+              <option value="nuevo">✨ Nuevo / Con etiquetas</option>
+              <option value="segunda_mano">♻️ Usado / Segunda Mano</option>
+              <option value="reacondicionado">🛠️ Reacondicionado (Reparado)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="toggle-switch" style="margin-top: 25px;">
+            <input type="checkbox" [(ngModel)]="esVintage" name="esVintage" (change)="onVintageChange()" />
+            <span class="slider"></span>
+            <span class="toggle-label">¿Es una prenda <b>Vintage</b>?</span>
+          </label>
+        </div>
+
+        <div class="field" *ngIf="esVintage">
+          <label>Época / Década <span class="required-asterisk">*</span></label>
+          <div class="custom-select">
+            <select [(ngModel)]="epoca" name="epoca">
+              <option [ngValue]="null">Selecciona década...</option>
+              <option value="70s">Años 70 o anterior</option>
+              <option value="80s">Años 80</option>
+              <option value="90s">Años 90</option>
+              <option value="Y2K">Y2K (Principios de los 2000)</option>
             </select>
           </div>
         </div>
@@ -84,17 +106,82 @@
           <p class="drag-hint">Arrastra desde aquí para reordenar los estilos.</p>
         </div>
 
-        <div class="field image-upload-section">
-          <label>
-            Fotos del estilo
-            <span class="required-web-asterisk" *ngIf="varianteVaAPublicarse(v)" title="Requerido para publicar">*</span>
+        <div class="field full-width" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
+          <label style="font-weight: 600; font-size: 1.1rem; color: #2c3e50; margin-bottom: 10px;">
+            {{ ejeVariacion.label }} <span class="required-asterisk">*</span>
           </label>
+
+          <app-color-selector 
+            *ngIf="ejeVariacion.tipo === 'color'"
+            [initialHex]="v.hex_identidad" 
+            (colorChanged)="onVariantColorChanged(v, $event)">
+          </app-color-selector>
+
+          <div class="custom-select" *ngIf="ejeVariacion.tipo === 'dropdown'">
+            <select [(ngModel)]="v.identidad_variante" (ngModelChange)="onVariantDropdownChanged(v)" [name]="'var_ident_' + v.temp_id">
+              <option value="" disabled selected>Selecciona el material principal...</option>
+              <option *ngFor="let opt of ejeVariacion.opciones" [value]="opt">{{ opt }}</option>
+            </select>
+          </div>
+
+          <input 
+            *ngIf="ejeVariacion.tipo === 'texto'"
+            type="text" 
+            [(ngModel)]="v.identidad_variante" 
+            [name]="'var_ident_' + v.temp_id" 
+            [placeholder]="ejeVariacion.placeholder" />
+        </div>
+
+        <div class="field image-upload-section">
+          
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
+            <label style="margin: 0;">
+              Fotos del estilo
+              <span class="required-web-asterisk" *ngIf="varianteVaAPublicarse(v)" title="Requerido para publicar">*</span>
+            </label>
+            
+            <div class="action-buttons" style="display: flex; gap: 8px;">
+              
+              <input 
+                type="file" 
+                accept="image/*" 
+                multiple
+                (change)="onFilesSelected($event, i)" 
+                #fileInput 
+                style="display: none;">
+              <button 
+                type="button" 
+                class="btn-outline-primary" 
+                style="padding: 4px 10px; font-size: 0.9em; display: flex; align-items: center; gap: 5px;"
+                (click)="fileInput.click()">
+                <span>📁</span> Subir fotos
+              </button>
+
+              <input 
+                type="file" 
+                accept="image/jpeg, image/png, image/jpg" 
+                capture="environment" 
+                (change)="onFilesSelected($event, i)" 
+                #cameraInput 
+                style="display: none;">
+              <button 
+                type="button" 
+                class="btn-outline-primary" 
+                style="padding: 4px 10px; font-size: 0.9em; display: flex; align-items: center; gap: 5px;"
+                (click)="cameraInput.click()">
+                <span>📸</span> Cámara
+              </button>
+
+            </div>
+          </div>
+
           <app-image-manager
             [variantId]="v.temp_id"
             [imagenes]="v.imagenes"
             [imagenesFiles]="v.imagenesFiles"
             (imagesChanged)="v.imagenes = $event.imagenes; v.imagenesFiles = $event.files">
           </app-image-manager>
+          
         </div>
 
         <div class="field full-width">
@@ -114,37 +201,37 @@
               
               <div class="grid-4">
                 
-                <div class="field" *ngFor="let attr of s.atributos; let k=index">
-                  <label>
-                    {{ formatLabel(attr.nombre) }}
+                <ng-container *ngFor="let attr of s.atributos; let k=index">
+                  <div class="field" *ngIf="attr.nombre !== mapeoIdentidadPorCategoria">
                     
-                    <span class="identity-star" *ngIf="attr.nombre === mapeoIdentidadPorCategoria" title="Define la identidad de la variante">⭐</span>
-                    <span class="required-asterisk" *ngIf="attr.nombre === mapeoIdentidadPorCategoria" title="Requerido para inventario">*</span>
-                    <span class="required-asterisk" *ngIf="attr.nombre === 'talla'" title="Requerido para inventario">*</span>
-                    <span class="required-web-asterisk" *ngIf="(s.publicar_web || s.publicar_vinted || s.publicar_wallapop) && attr.nombre === 'peso_kg'" title="Requerido para envíos">*</span>
-                  </label>
+                    <label>
+                      {{ formatLabel(attr.nombre) }}
+                      <span class="required-asterisk" *ngIf="attr.nombre === 'talla'" title="Requerido para inventario">*</span>
+                      <span class="required-web-asterisk" *ngIf="(s.publicar_web || s.publicar_vinted || s.publicar_wallapop) && attr.nombre === 'peso_kg'" title="Requerido para envíos">*</span>
+                    </label>
 
-                  <app-color-selector 
-                    *ngIf="attr.tipo === 'color-dropdown'"
-                    [initialHex]="getHexColor(attr.valor)" 
-                    (colorChanged)="seleccionarColorAtributo(attr, $event, v)">
-                  </app-color-selector>
+                    <app-color-selector 
+                      *ngIf="attr.tipo === 'color-dropdown'"
+                      [initialHex]="getHexColor(attr.valor)" 
+                      (colorChanged)="attr.valor = $event.nombre">
+                    </app-color-selector>
 
-                  <input 
-                    *ngIf="attr.tipo !== 'color-dropdown' && attr.tipo !== 'select'" 
-                    [type]="attr.tipo" 
-                    [(ngModel)]="attr.valor" 
-                    (ngModelChange)="sincronizarIdentidadVariante(v)" 
-                    [name]="'attr_' + s.temp_id + '_' + attr.nombre" 
-                    [placeholder]="getPlaceholder(attr.nombre)" />
+                    <input 
+                      *ngIf="attr.tipo !== 'color-dropdown' && attr.tipo !== 'select'" 
+                      [type]="attr.tipo" 
+                      [(ngModel)]="attr.valor" 
+                      [name]="'attr_' + s.temp_id + '_' + attr.nombre" 
+                      [placeholder]="getPlaceholder(attr.nombre)" />
 
-                  <div class="custom-select" *ngIf="attr.tipo === 'select'">
-                    <select [(ngModel)]="attr.valor" (ngModelChange)="sincronizarIdentidadVariante(v)" [name]="'attr_' + s.temp_id + '_' + attr.nombre">
-                      <option [ngValue]="null" disabled selected>Selecciona...</option>
-                      <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
-                    </select>
+                    <div class="custom-select" *ngIf="attr.tipo === 'select'">
+                      <select [(ngModel)]="attr.valor" [name]="'attr_' + s.temp_id + '_' + attr.nombre">
+                        <option [ngValue]="null" disabled selected>Selecciona...</option>
+                        <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
+                      </select>
+                    </div>
+
                   </div>
-                </div>
+                </ng-container>
 
                 <div class="field">
                   <label>Unidades / stocks <span class="required-asterisk" title="Requerido para inventario">*</span></label>

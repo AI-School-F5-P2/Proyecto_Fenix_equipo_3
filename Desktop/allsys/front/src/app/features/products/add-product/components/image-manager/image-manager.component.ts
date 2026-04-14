@@ -25,17 +25,30 @@ export class ImageManagerComponent {
   indiceActivo = 0;
 
   // --- GESTIÓN DE ARCHIVOS ---
+  // --- GESTIÓN DE ARCHIVOS (Dentro de ImageManagerComponent) ---
+  // ================== GESTIÓN DE ARCHIVOS ==================
+  // --- GESTIÓN DE ARCHIVOS (HIJO) ---
   async onFilesSelected(event: Event) {
-    const files = (event.target as HTMLInputElement).files;
-    if (!files) return;
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    
+    if (!files || files.length === 0) return;
 
     const filesArray = Array.from(files);
+    
     for (const file of filesArray) {
-      this.imagenesFiles.push(file);
       const base64 = await this.fileToBase64(file);
-      this.imagenes.push(base64);
+      
+      // El hijo solo actualiza sus propios Inputs y avisa al padre
+      this.imagenesFiles = [...this.imagenesFiles, file];
+      this.imagenes = [...this.imagenes, base64];
     }
+    
+    // Notificamos al Padre (AddProductComponent) que las fotos cambiaron
     this.notificarCambio();
+
+    // Limpiamos el input
+    input.value = '';
   }
 
   eliminarImagen(index: number) {

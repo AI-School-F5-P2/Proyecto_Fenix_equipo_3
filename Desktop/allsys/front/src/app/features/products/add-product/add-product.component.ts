@@ -15,7 +15,8 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 // ✨ IMPORTACIONES ESTRUCTURADAS
 import { 
   ATRIBUTOS_BASE, ATRIBUTOS_POR_TIPO, COLORES_PALETA, MATERIALES_JOYERIA, 
-  Variante, StockVariante, ProductoBackend, AtributoBackend, Marca, EstadoPrenda 
+  Variante, StockVariante, ProductoBackend, AtributoBackend, Marca, EstadoPrenda, 
+  Color
 } from './product-form.config';
 
 import { generarTempId, formatLabel, getPlaceholder, determinarTipoBase, MAPEO_IDENTIDAD_POR_TIPO, MAPEO_MATERIAL_A_COLOR, determinarGenero } from './product-utils';
@@ -46,6 +47,8 @@ export class AddProductComponent implements OnInit {
   fragmentAEnfocar: string | null = null;
   variantes: Variante[] = [];
   colores = COLORES_PALETA;
+  esVintage: boolean = false;
+  epoca: string | null = null;
 
   constructor(private productsService: ProductsService, private router: Router, private route: ActivatedRoute) {}
 
@@ -70,10 +73,13 @@ export class AddProductComponent implements OnInit {
   }
 
   // ================== CARGA Y MAPEO ==================
+  // ================== CARGA Y MAPEO ==================
   cargarProductoParaEditar(id: number) {
     this.cargandoDatos = true;
     this.productsService.obtenerProducto(id).subscribe({
       next: (productoDB: ProductoBackend) => {
+        console.log(productoDB)
+        
         this.nombre = productoDB.nombre;
         this.descripcion = productoDB.descripcion;
         this.estadoSeleccionado = productoDB.estado;
@@ -81,6 +87,8 @@ export class AddProductComponent implements OnInit {
         this.tipoProductoBase = productoDB.tipo;
         this.marcaSeleccionada = productoDB.marca || null;
         this.categoriaSeleccionadaFinal = productoDB.categoria_id;
+        this.esVintage = productoDB.es_vintage || false;
+        this.epoca = productoDB.epoca || null;
 
         this.variantes = productoDB.variantes.sort((a,b) => (a.orden || 0) - (b.orden || 0)).map(vDB => ({
           id: vDB.id,
@@ -88,10 +96,12 @@ export class AddProductComponent implements OnInit {
           identidad_variante: vDB.identidad_variante,
           hex_identidad: vDB.hex_identidad,
           descripcion: vDB.descripcion,
-          imagenes: vDB.imagenes ? [...vDB.imagenes] : [],
+          
+          // ✨ CORRECCIÓN 1: Aseguramos que sea un texto puro (URL), no un objeto
+          imagenes: vDB.imagenes ? vDB.imagenes.map((img: any) => typeof img === 'string' ? img : img.url) : [],
           imagenesFiles: vDB.imagenes ? vDB.imagenes.map(() => null) : [],
+          
           stocks: vDB.stocks.sort((a,b) => (a.orden || 0) - (b.orden || 0)).map(sDB => {
-             // ✨ AL CARGAR: Extraemos la talla de los atributos para que el (ngModel) la vea
              const attrTalla = sDB.atributos.find(a => ['talla', 'numero', 'capacidad_ml', 'talla_anillo'].includes(a.nombre.toLowerCase()));
              const tallaVisual = attrTalla ? attrTalla.valor : null;
 
@@ -110,14 +120,15 @@ export class AddProductComponent implements OnInit {
                 publicar_vinted: sDB.publicar_vinted,
                 publicar_wallapop: sDB.publicar_wallapop,
                 etiqueta: sDB.etiqueta || '',
-                ubicacion: sDB.ubicacion || '', 
-                talla: tallaVisual, // ✨ Lo asignamos aquí para el binding del HTML
+                ubicacion: sDB.ubicacion || '',
+                 
+                talla: tallaVisual, 
                 atributos: this.hidratarAtributos(sDB.atributos)
              }
           })
         }));
+        
         this.cargandoDatos = false;
-        // ✨ LÓGICA DE SCROLL REFORZADA
         if (this.fragmentAEnfocar) {
           this.ejecutarScrollInteligente(this.fragmentAEnfocar);
         }
@@ -159,35 +170,35 @@ export class AddProductComponent implements OnInit {
   
 
   private hidratarAtributos(atributosDB: AtributoBackend[]): any[] {
-  const molde = this.getAtributosVacios();
-  const sinonimosTalla = ['talla', 'numero', 'talla_anillo', 'capacidad_ml'];
+    const molde = this.getAtributosVacios();
+    const sinonimosTalla = ['talla', 'numero', 'talla_anillo', 'capacidad_ml'];
 
-  return molde.map(attrForm => {
-    const nombreBuscado = attrForm.nombre.toLowerCase();
-    
-    // Intentamos encontrar el valor en la DB
-    const match = atributosDB.find(a => {
-      const nombreDB = a.nombre.toLowerCase();
+    return molde.map(attrForm => {
+      const nombreBuscado = attrForm.nombre.toLowerCase();
       
-      // Si el nombre es idéntico, es un match directo
-      if (nombreDB === nombreBuscado) return true;
-      
-      // Si ambos están en la lista de "sinónimos de tamaño", también es un match
-      if (sinonimosTalla.includes(nombreBuscado) && sinonimosTalla.includes(nombreDB)) {
-        return true;
+      const match = atributosDB.find(a => {
+        const nombreDB = a.nombre.toLowerCase();
+        if (nombreDB === nombreBuscado) return true;
+        if (sinonimosTalla.includes(nombreBuscado) && sinonimosTalla.includes(nombreDB)) return true;
+        return false;
+      });
+
+      if (match) {
+        attrForm.valor = match.valor ? String(match.valor).trim() : null;
       }
-      
-      return false;
-    });
 
-    if (match) {
-      // Importante: Forzamos a string y limpiamos espacios por si el select tiene valores exactos
-      attrForm.valor = match.valor ? String(match.valor).trim() : null;
-    }
-    
-    return attrForm;
-  });
-}
+      // ✨ EL AUTO-CORRECTOR PARA SELECTS (Arregla el Material)
+      if (attrForm.tipo === 'select' && attrForm.valor) {
+        const valorGuardado = String(attrForm.valor).toLowerCase().trim();
+        const opcionExacta = attrForm.opciones?.find((opt: string) => opt.toLowerCase().trim() === valorGuardado);
+        if (opcionExacta) {
+          attrForm.valor = opcionExacta;
+        }
+      }
+
+      return attrForm;
+    });
+  }
 
   // Helper para saber si alguna talla de esta variante tiene el switch activado
   varianteVaAPublicarse(v: Variante): boolean {
@@ -195,7 +206,16 @@ export class AddProductComponent implements OnInit {
   }
 
   // ================== EVENTOS SELECTORES ==================
-  onBrandChanged(marca: Marca) { this.marcaSeleccionada = marca; }
+  // ================== EVENTOS SELECTORES ==================
+  onBrandChanged(marca: Marca) { 
+    // Escudo anti-bucles: Si la marca que llega es exactamente la misma que ya tenemos, 
+    // ignoramos el evento para no disparar un ciclo infinito de recargas.
+    if (this.marcaSeleccionada && marca && this.marcaSeleccionada.id === marca.id && this.marcaSeleccionada.nombre === marca.nombre) {
+      return;
+    }
+    
+    this.marcaSeleccionada = marca; 
+  }
 
   onSupplierChanged(prov: Proveedor, stock: StockVariante) {
     stock.proveedor = prov.nombre;
@@ -313,57 +333,21 @@ private capitalizar(s: string): string {
     this.variantes.forEach(v => v.stocks.forEach(s => s.atributos = JSON.parse(JSON.stringify(nuevos))));
   }
 
-// DENTRO DE AddProductComponent
 
-sincronizarIdentidadVariante(variante: Variante): void {
-  const nombreAtributoMaestro = this.mapeoIdentidadPorCategoria; // 'material' en joyeria
-  const primerStock = variante.stocks[0];
-  const atributoMaestro = primerStock.atributos.find(a => a.nombre === nombreAtributoMaestro);
-
-  if (atributoMaestro && atributoMaestro.valor) {
-    variante.identidad_variante = atributoMaestro.valor;
-
-    // --- LÓGICA AUTOMÁTICA PARA JOYERÍA ---
-    if (this.tipoProductoBase.startsWith('joyeria')) {
-      // 1. Buscamos el color correspondiente al material
-      const nombreColorAuto = MAPEO_MATERIAL_A_COLOR[atributoMaestro.valor];
-      
-      if (nombreColorAuto) {
-        // 2. Buscamos el atributo 'color' en TODOS los stocks de la variante y lo rellenamos
-        variante.stocks.forEach(s => {
-          const attrColor = s.atributos.find(a => a.nombre === 'color');
-          if (attrColor) {
-            attrColor.valor = nombreColorAuto;
-          }
-        });
-
-        // 3. Actualizamos el círculo visual (HEX) de la variante
-        const found = this.colores.find(c => c.nombre === nombreColorAuto);
-        variante.hex_identidad = found ? found.hex : '#E2E8F0';
-      }
-    } 
-    // --- LÓGICA NORMAL PARA ROPA/CALZADO ---
-    else if (nombreAtributoMaestro === 'color') {
-      const found = this.colores.find(c => c.nombre === atributoMaestro.valor);
-      variante.hex_identidad = found ? found.hex : '#FFFFFF';
-    } 
-    else {
-      variante.hex_identidad = '#E2E8F0';
-    }
-  }
-
-  // Sincronización Vertical del maestro (Material/Color/ML)
-  variante.stocks.forEach(s => {
-    const attr = s.atributos.find(at => at.nombre === nombreAtributoMaestro);
-    if (attr) attr.valor = variante.identidad_variante;
-  });
-}
 // 1. Primero, el helper que revisa si el producto entero va para la web
 productoVaAPublicarse(): boolean {
   return this.variantes.some(v => 
     v.stocks.some(s => s.publicar_web || s.publicar_vinted || s.publicar_wallapop)
   );
 }
+
+
+// ✨ NUEVO: Limpia la época si el usuario desmarca el switch
+  onVintageChange(): void {
+    if (!this.esVintage) {
+      this.epoca = null;
+    }
+  }
 
 
 
@@ -388,6 +372,15 @@ private validarFormulario(): boolean {
 
   if (!this.marcaSeleccionada) {
     return this.lanzarError('Debes seleccionar una marca (o crear una nueva).');
+  }
+
+  if (!this.marcaSeleccionada) {
+    return this.lanzarError('Debes seleccionar una marca (o crear una nueva).');
+  }
+
+  // ✨ NUEVA VALIDACIÓN VINTAGE
+  if (this.esVintage && !this.epoca) {
+    return this.lanzarError('Has indicado que la prenda es Vintage. Por favor, selecciona la Época/Década.');
   }
 
   // Obtenemos el nombre del atributo maestro (Color, Material, etc.) según el tipo de producto
@@ -516,21 +509,24 @@ private validarFormulario(): boolean {
 
   // ================== GESTIÓN DE ARCHIVOS ==================
   // Reemplaza tu onFilesSelected por este:
-async onFilesSelected(event: Event, i: number): Promise<void> {
-  const files = (event.target as HTMLInputElement).files;
-  if (!files) return;
+// ================== GESTIÓN DE ARCHIVOS (PADRE) ==================
+  async onFilesSelected(event: Event, i: number): Promise<void> {
+    const files = (event.target as HTMLInputElement).files;
+    if (!files) return;
 
-  const filesArray = Array.from(files);
-  
-  for (const file of filesArray) {
-    // 1. Añadimos el archivo al array de archivos
-    this.variantes[i].imagenesFiles.push(file);
+    const filesArray = Array.from(files);
     
-    // 2. Esperamos a que se lea para añadir la previa en el MISMO orden
-    const base64 = await this.fileToBase64(file);
-    this.variantes[i].imagenes.push(base64);
+    for (const file of filesArray) {
+      const base64 = await this.fileToBase64(file);
+      
+      // El padre asigna la foto a la variante específica
+      this.variantes[i].imagenesFiles = [...this.variantes[i].imagenesFiles, file];
+      this.variantes[i].imagenes = [...this.variantes[i].imagenes, base64];
+    }
+    
+    // Limpiamos el input
+    (event.target as HTMLInputElement).value = '';
   }
-}
 
 // Función auxiliar para convertir a base64 con promesas
 private fileToBase64(file: File): Promise<string> {
@@ -547,9 +543,9 @@ private fileToBase64(file: File): Promise<string> {
     this.variantes[i].imagenesFiles.splice(j, 1);
   }
 
-  seleccionarColorAtributo(attr: any, color: any, v: Variante) {
-    attr.valor = color.nombre; v.hex_identidad = color.hex; this.sincronizarIdentidadVariante(v);
-  }
+  // seleccionarColorAtributo(attr: any, color: any, v: Variante) {
+  //   attr.valor = color.nombre; v.hex_identidad = color.hex; this.sincronizarIdentidadVariante(v);
+  // }
 
 // Helper para limpiar el código
 private lanzarError(msj: string): boolean {
@@ -617,6 +613,10 @@ private construirFormData(): FormData {
     fd.append('estado', this.estadoSeleccionado);
     fd.append('categoria_id', String(this.categoriaSeleccionadaFinal));
     fd.append('publico_objetivo', this.publicoSeleccionado);
+    fd.append('es_vintage', String(this.esVintage));
+    if (this.esVintage && this.epoca) {
+      fd.append('epoca', this.epoca);
+    }
 
     // 2. GESTIÓN DE MARCA
     if (this.marcaSeleccionada) {
@@ -638,29 +638,26 @@ private construirFormData(): FormData {
         hex_identidad: v.hex_identidad,
         descripcion: v.descripcion,
         orden: idxV,
+        
+        // ✨ CORRECCIÓN CLAVE: 
+        // Si hay un archivo físico (no es null), marcamos como NUEVA. Si no, dejamos la URL original.
         imagenes: v.imagenes.map((img, idxI) => 
-          img.startsWith('http') ? img : `NUEVA_${idxI}`
+          v.imagenesFiles[idxI] !== null ? `NUEVA_${idxI}` : img
         ),
+        
         stocks: v.stocks.map((s, idxS) => {
-          
-          // ✨ 1. EL GRAN CAMBIO: Buscamos lo que realmente escribiste en el input dinámico del HTML
           const attrTallaEditado = s.atributos.find(a => 
             ['talla', 'numero', 'talla_anillo', 'capacidad_ml'].includes(a.nombre.toLowerCase())
           );
 
-          // Tomamos el valor de ese input dinámico (Si no hay, usamos s.talla por si acaso, y si no 'UNICA')
           const valorFinalTalla = attrTallaEditado?.valor || s.talla || 'UNICA';
-
-          // ✨ 2. Construimos la etiqueta visual (Ej: "ROJO / S")
           const etiquetaCompuesta = `${identidadPadre} / ${valorFinalTalla}`.trim().toUpperCase();
 
-          // ✨ 3. BARRIDO: Limpiamos el array viejo para no enviar tallas duplicadas
           let atributosBlindados = s.atributos.filter(a => 
             !['talla', 'numero', 'talla_anillo', 'capacidad_ml'].includes(a.nombre.toLowerCase()) &&
             a.valor !== null && a.valor !== ''
           );
 
-          // ✨ 4. INYECCIÓN: Agregamos la talla nueva que capturamos del HTML
           atributosBlindados.push({ nombre: 'talla', valor: valorFinalTalla });
 
           return { 
@@ -676,33 +673,98 @@ private construirFormData(): FormData {
       };
     });
 
-    // 🔍 ✨ ¡AQUÍ ESTÁ EL LOG ESPÍA! ✨ 🔍
-    console.log('🚀 ========================================== 🚀');
-    console.log('DATOS DE VARIANTES QUE SE ENVIARÁN AL BACKEND:');
-    console.log(JSON.stringify(cleanV, null, 2));
-    console.log('🚀 ========================================== 🚀');
-
     fd.append('variantes', JSON.stringify(cleanV));
 
     // 4. ADJUNCIÓN DE ARCHIVOS BINARIOS (IMÁGENES NUEVAS)
+    let contadorArchivos = 0; // Para depuración
     this.variantes.forEach(v => {
-      v.imagenes.forEach((img, idx) => {
-        if (!img.startsWith('http')) {
-          const file = v.imagenesFiles[idx];
-          if (file) {
-            fd.append(`file_${v.temp_id}_NUEVA_${idx}`, file);
-          }
+      v.imagenesFiles.forEach((file, idx) => {
+        // ✨ CORRECCIÓN CLAVE: Solo subimos si de verdad hay un archivo seleccionado
+        if (file !== null) {
+          fd.append(`file_${v.temp_id}_NUEVA_${idx}`, file);
+          contadorArchivos++;
         }
       });
     });
 
+    console.log(`🚀 Se están enviando ${contadorArchivos} archivos físicos nuevos al backend.`);
+    
     return fd;
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// =====================================================
+  // EVENTOS DE IDENTIDAD DE LA VARIANTE
+  // =====================================================
+  
+  onVariantColorChanged(v: Variante, color: Color) {
+    v.identidad_variante = color.nombre;
+    v.hex_identidad = color.hex;
+  }
+
+  onVariantDropdownChanged(v: Variante) {
+    // Si estamos en joyería, asignamos un color Hex automático al círculo
+    if (this.tipoProductoBase.startsWith('joyeria')) {
+      const nombreColorAuto = MAPEO_MATERIAL_A_COLOR[v.identidad_variante];
+      if (nombreColorAuto) {
+        const found = this.colores.find(c => c.nombre === nombreColorAuto);
+        v.hex_identidad = found ? found.hex : '#E2E8F0';
+      } else {
+        v.hex_identidad = '#E2E8F0';
+      }
+    } else {
+      v.hex_identidad = '#E2E8F0'; // Fallback por defecto
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Helpers para HTML
   formatLabel(n: string): string { return formatLabel(n); }
   getPlaceholder(n: string): string { return getPlaceholder(n); }
-  getHexColor(n: string): string { return this.colores.find(c => c.nombre === n)?.hex || '#fff'; }
+  
+  // ✨ CORRECCIÓN: Ignoramos mayúsculas para que atrape el "ROJO" de la BD
+  getHexColor(n: string): string { 
+    if (!n) return '#fff';
+    const colorGuardado = String(n).toLowerCase().trim();
+    return this.colores.find(c => c.nombre.toLowerCase().trim() === colorGuardado)?.hex || '#fff'; 
+  }
 
   moverProductoPapelera(): void {
     if (!this.productoId) return;

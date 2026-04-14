@@ -52,6 +52,7 @@ export class GastosListComponent implements OnInit {
 
     this.gastosService.getGastos(parametros).subscribe({
       next: (res: any) => {
+        console.log(res)
         this.gastos = res.items;
         this.totalItems = res.total;
         this.cargando = false;

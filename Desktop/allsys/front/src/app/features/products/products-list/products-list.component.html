@@ -99,14 +99,14 @@
           </div>
         </div>
 
-        <button class="btn-clear-all" *ngIf="filtrosActivos.length > 0" (click)="limpiarFiltros()">
+        <button class="btn-clear" *ngIf="listaFiltrosActivos.length > 0" (click)="limpiarFiltros()">
           Borrar filtros
         </button>
       </div>
     </div>
 
-    <div class="chips-row" *ngIf="filtrosActivos.length > 0">
-      <div class="filter-chip" *ngFor="let chip of filtrosActivos">
+    <div class="chips-row" *ngIf="listaFiltrosActivos.length > 0">
+      <div class="filter-chip" *ngFor="let chip of listaFiltrosActivos">
         <span *ngIf="chip.isColor" class="color-circle-small" [style.backgroundColor]="chip.hex"></span>
         {{ chip.label }}
         <span class="close-chip" (click)="eliminarFiltro(chip.id)">✕</span>

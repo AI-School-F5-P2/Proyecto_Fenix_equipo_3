@@ -6,8 +6,13 @@ import { ProductsService } from '../../../core/services/products.service';
 import { SupplierSelectorComponent, Proveedor } from "../add-product/components/supplier-selector/supplier-selector.component";
 import { 
   ATRIBUTOS_BASE, 
-  ATRIBUTOS_POR_TIPO 
+  ATRIBUTOS_POR_TIPO,
+  MATERIALES_ROPA,      // ✨ Añade esto
+  MATERIALES_JOYERIA,   // ✨ Añade esto
+  PIEDRAS_JOYERIA,      // ✨ Añade esto
+  COLORES_PIEDRA        // ✨ Añade esto
 } from '../add-product/product-form.config'; 
+
 
 import { 
   formatLabel, 
@@ -64,11 +69,11 @@ export class EditStockComponent implements OnInit {
     }));
   }
 
+
+
   hidratarAtributos(extrasBackend: any, tipo: string): any[] {
     const molde = this.getAtributosVacios(tipo);
     
-    // ✨ FILTRO CRÍTICO: Excluimos los que ya se muestran en la sección de Identidad
-    // para que no aparezcan inputs editables de talla o color aquí.
     const atributosAExcluir = [
       'talla', 'color', 'identidad_variante', 'numero', 
       'talla_anillo', 'capacidad_ml', 'talla_guantes'
@@ -77,9 +82,43 @@ export class EditStockComponent implements OnInit {
     return molde
       .filter(attr => !atributosAExcluir.includes(attr.nombre.toLowerCase()))
       .map(attr => {
-        if (extrasBackend && extrasBackend[attr.nombre] !== undefined) {
-          attr.valor = extrasBackend[attr.nombre];
+        const keyBackend = attr.nombre.toLowerCase(); 
+        
+        // 1. Recuperamos el valor que viene de la base de datos
+        if (extrasBackend && extrasBackend[keyBackend] !== undefined) {
+          attr.valor = extrasBackend[keyBackend];
         }
+
+        // 2. Convertimos los inputs en selects dinámicos
+        if (keyBackend === 'material') {
+          attr.tipo = 'select';
+          attr.opciones = tipo.toLowerCase().includes('joyeria') ? MATERIALES_JOYERIA : MATERIALES_ROPA;
+        }
+
+        if (keyBackend === 'tipo_piedra' || keyBackend === 'piedras') {
+          attr.tipo = 'select';
+          attr.opciones = PIEDRAS_JOYERIA;
+        }
+
+        if (keyBackend === 'color_piedra') {
+          attr.tipo = 'select';
+          attr.opciones = COLORES_PIEDRA;
+        }
+
+        // =========================================================
+        // ✨ EL AUTO-CORRECTOR PARA ANGULAR (LA SOLUCIÓN)
+        // =========================================================
+        // Si es un select y tiene un valor guardado, buscamos la opción exacta 
+        // en tu lista ignorando mayúsculas y minúsculas.
+        if (attr.tipo === 'select' && attr.valor) {
+          const valorGuardado = String(attr.valor).toLowerCase().trim();
+          const opcionExacta = attr.opciones.find((opt: string) => opt.toLowerCase().trim() === valorGuardado);
+          
+          if (opcionExacta) {
+            attr.valor = opcionExacta; 
+          }
+        }
+
         return attr;
       });
   }
@@ -93,6 +132,11 @@ export class EditStockComponent implements OnInit {
     this.productsService.obtenerStock(id).subscribe({
       next: (data) => {
         this.tipoProducto = data.tipo_producto || 'ropa_superior';
+
+        // ✨ CORRECCIÓN 1: Extraemos el material de atributos_extra
+        const materialBackend = data.atributos_extra && data.atributos_extra['material'] 
+                                ? data.atributos_extra['material'] 
+                                : null;
         
         this.contexto = {
           producto_id: data.producto_id,
@@ -103,7 +147,8 @@ export class EditStockComponent implements OnInit {
           talla: data.talla,
           sku: data.stock_sku,
           imagen_cover: data.imagen_cover,
-          hex_identidad: data.hex_identidad
+          hex_identidad: data.hex_identidad,
+          material: materialBackend,
         };
 
         this.stockData = {
@@ -115,8 +160,10 @@ export class EditStockComponent implements OnInit {
           fecha_compra: data.fecha_compra || '',
           proveedor_id: data.proveedor_id || null,
           publicar_web: data.canales?.web || false,
-          atributos: this.hidratarAtributos(data.atributos_extra, this.tipoProducto)
+          atributos: this.hidratarAtributos(data.atributos_extra, this.tipoProducto),
+          material: this.contexto.material,
         };
+        console.log('Stock cargado:', this.stockData);
         this.cargandoDatos = false;
       },
       error: (err) => {
@@ -145,97 +192,101 @@ export class EditStockComponent implements OnInit {
   }
 
  private validarFormulario(): boolean {
-    // 🔍 LOG ESPÍA: Mira en la consola (F12) qué valores está leyendo Angular
-    console.log('--- DATOS A VALIDAR ---');
-    console.log('Cantidad:', this.stockData.cantidad);
-    console.log('Precio Compra:', this.stockData.precio_compra);
-    console.log('Precio Venta:', this.stockData.precio_venta);
-    console.log('Publicar Web:', this.stockData.publicar_web);
-
-    // Forzamos conversión matemática estricta
-    const cantidad = Number(this.stockData.cantidad);
-    const precioCompra = Number(this.stockData.precio_compra);
-    const precioVenta = Number(this.stockData.precio_venta);
+    // 1. FORZAMOS A QUE LOS NÚMEROS BASE SEAN AL MENOS 0 SI ESTÁN VACÍOS
+    this.stockData.cantidad = Number(this.stockData.cantidad) || 0;
+    this.stockData.precio_compra = Number(this.stockData.precio_compra) || 0;
+    this.stockData.precio_venta = Number(this.stockData.precio_venta) || 0;
+    this.stockData.descuento = Number(this.stockData.descuento) || 0;
 
     // =======================================================
-    // 1. VALIDACIONES GENERALES (OBLIGATORIAS SIEMPRE)
+    // 2. VALIDACIONES ESTRICTAS (OBLIGATORIAS SIEMPRE)
     // =======================================================
-    
-    if (isNaN(precioCompra) || precioCompra <= 0) {
-      alert('El precio de compra es obligatorio y debe ser mayor a 0.');
+    if (this.stockData.precio_compra <= 0) {
+      alert('⚠️ El precio de compra es obligatorio y debe ser mayor a 0.');
       return false;
     }
     
-    // ✨ MOVIDO AQUÍ: El precio de venta ahora es obligatorio SIEMPRE
-    // if (isNaN(precioVenta) || precioVenta <= 0) {
-    //   alert('El precio de venta es obligatorio y debe ser mayor a 0.');
-    //   return false;
-    // }
-
-    if (!this.stockData.fecha_compra || this.stockData.fecha_compra.trim() === '') {
-      alert('La fecha de compra es obligatoria.');
+    if (!this.stockData.fecha_compra || String(this.stockData.fecha_compra).trim() === '') {
+      alert('⚠️ La fecha de compra es obligatoria.');
       return false;
     }
     
-    if (!this.stockData.ubicacion || this.stockData.ubicacion.trim() === '') {
-      alert('La ubicación en el almacén es obligatoria.');
+    if (!this.stockData.ubicacion || String(this.stockData.ubicacion).trim() === '') {
+      alert('⚠️ La ubicación en el almacén es obligatoria.');
       return false;
     }
     
     if (!this.stockData.proveedor_id) {
-      alert('Debes seleccionar un proveedor válido.');
+      alert('⚠️ Debes seleccionar un proveedor válido.');
       return false;
     }
 
     // =======================================================
-    // 2. VALIDACIONES ESTRICTAS (SOLO SI SE PUBLICA EN WEB)
+    // 3. VALIDACIONES WEB (SOLO SI SE PUBLICA EN TIENDA)
     // =======================================================
     const vaAWeb = this.stockData.publicar_web === true || String(this.stockData.publicar_web) === 'true';
     
     if (vaAWeb) {
-      // Si va a la web, no permitimos que el stock sea 0
-      if (isNaN(cantidad) || cantidad <= 0) {
-        alert('⚠️ Para publicar en la web, debes tener al menos 1 unidad en stock.');
+      if (this.stockData.cantidad <= 0) {
+        alert('🌐 Para publicar en la web, debes tener al menos 1 unidad en stock.');
         return false;
       }
-      // ✨ NUEVA VALIDACIÓN: Peso obligatorio para envíos
-      const pesoAttr = this.stockData.atributos.find((a: any) => a.nombre === 'peso_kg');
-      const pesoValor = pesoAttr && pesoAttr.valor !== null && pesoAttr.valor !== '' ? Number(pesoAttr.valor) : null;
       
-      if (pesoValor === null || isNaN(pesoValor) || pesoValor <= 0) {
-        alert('⚠️ Para publicar en la web, el peso (kg) es obligatorio para calcular los costos de envío.');
-        return false;
-      }
-    } else {
-      // Si NO va a la web (control interno), sí permitimos stock en 0 (agotado)
-      // pero NUNCA negativo.
-      if (isNaN(cantidad) || cantidad < 0) {
-        alert('El stock no puede ser un número negativo.');
+      // Buscamos el peso para forzar que lo llenen
+      const pesoAttr = this.stockData.atributos.find((a: any) => a.nombre === 'peso_kg');
+      const pesoValor = pesoAttr && pesoAttr.valor ? Number(pesoAttr.valor) : 0;
+      
+      if (pesoValor <= 0) {
+        alert('🌐 Para publicar en la web, el peso (kg) es obligatorio para los envíos.');
         return false;
       }
     }
 
-    // Si llega hasta aquí, todo está perfecto
-    return true;
+    return true; // Si pasa todos los filtros, está listo para enviarse
   }
 
   onSubmit(): void {
-    // Llamamos a la función separada. Si devuelve false, cortamos la ejecución.
+    // Primero pasamos por la aduana (Validación)
     if (!this.validarFormulario()) {
       return; 
     }
 
     this.isSubmitting = true;
 
+    // ✨ EL RELLENADOR AUTOMÁTICO DE ATRIBUTOS
+    const atributosCompletos = this.stockData.atributos.map((attr: any) => {
+      let valorCrudo = attr.valor;
+      let valorFinal = String(valorCrudo).trim();
+
+      // Detectamos si el campo está vacío, es null, o el usuario dejó "Selecciona..."
+      const estaVacio = valorCrudo === null || 
+                        valorCrudo === undefined || 
+                        valorFinal === '' || 
+                        valorFinal === 'null' || 
+                        valorFinal === 'Selecciona...';
+
+      if (estaVacio) {
+        // Si el campo es de tipo numérico (medidas, capacidad, etc.), forzamos un 0
+        if (attr.tipo === 'number') {
+          valorFinal = '0';
+        } else {
+          // Si es un texto o un select (material, piedra), forzamos "No especificado"
+          valorFinal = 'No especificado';
+        }
+      }
+
+      return {
+        nombre: attr.nombre,
+        valor: valorFinal
+      };
+    });
+
     const dataParaEnviar = {
       ...this.stockData,
-      atributos: this.stockData.atributos.reduce((acc: any, attr: any) => {
-        if (attr.valor !== null && attr.valor !== '') {
-          acc[attr.nombre] = attr.valor;
-        }
-        return acc;
-      }, {})
+      atributos: atributosCompletos
     };
+
+    console.log("🚀 ENVIANDO AL BACKEND (100% Lleno):", dataParaEnviar.atributos);
 
     this.productsService.actualizarStockIndividual(this.stockId!, dataParaEnviar).subscribe({
       next: () => {

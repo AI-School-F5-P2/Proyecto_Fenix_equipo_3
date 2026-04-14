@@ -10,7 +10,7 @@
   </label>
 </div>
 
-<div class="image-preview-list" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="onImageDrop($event)">
+<div class="image-preview-list" cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="onImageDrop($event)">
   <div class="image-thumbnail" *ngFor="let img of imagenes; let i = index" cdkDrag>
     <img [src]="img" (click)="abrirModal(i)" alt="Vista previa" />
     <span class="badge-cover" *ngIf="i === 0">Portada</span>

@@ -14,6 +14,7 @@ export class StockDetailComponent implements OnInit {
 
   stock: any = null;
   cargando = true;
+  stockId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -23,11 +24,11 @@ export class StockDetailComponent implements OnInit {
 
   ngOnInit() {
     // Capturamos el ID del stock desde la URL (ej: /stock-detail/15)
-    const stockId = Number(this.route.snapshot.paramMap.get('id'));
+    this.stockId = Number(this.route.snapshot.paramMap.get('id'));
     
-    if (stockId) {
+    if (this.stockId) {
       // ⚠️ Asegúrate de tener este método en tu ProductsService
-      this.productsService.obtenerStock(stockId).subscribe({
+      this.productsService.obtenerStock(this.stockId).subscribe({
         next: (data) => {
           this.stock = data;
           this.cargando = false;
@@ -51,7 +52,7 @@ export class StockDetailComponent implements OnInit {
   // Si quieres permitir edición rápida, puedes enviarlo al form de edición del producto padre
   editarStock() {
     if (this.stock?.producto_id) {
-      this.router.navigate(['/edit-stock', this.stock.producto_id]);
+      this.router.navigate(['/edit-stock', this.stockId]);
     }
   }
 }

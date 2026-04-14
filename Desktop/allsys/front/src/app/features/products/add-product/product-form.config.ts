@@ -30,7 +30,7 @@ export interface VarianteBackend {
 export interface ProductoBackend {
   id: number; nombre: string; descripcion: string; tipo: string;
   estado: EstadoPrenda; publico_objetivo: string; categoria_id: number;
-  marca_id: number; variantes: VarianteBackend[]; marca?: Marca;
+  marca_id: number; variantes: VarianteBackend[]; marca?: Marca; es_vintage?: boolean; epoca?: string | null;
 }
 
 export interface StockVariante {

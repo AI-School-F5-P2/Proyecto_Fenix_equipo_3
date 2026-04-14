@@ -151,6 +151,44 @@ export class ProductsListComponent implements OnInit {
     this.aplicarFiltros();
   }
 
+
+  // 1. Añade esta variable arriba, con el resto de tus variables
+  listaFiltrosActivos: any[] = [];
+
+  // 2. Crea esta función que recalcula los chips SOLO cuando tú se lo pides
+  actualizarChipsDeFiltros() {
+    const activos = [];
+    if (this.filtros.search) {
+      let labelBusqueda = `Búsqueda: ${this.filtros.search}`;
+      if (this.filtros.tipo_busqueda === 'producto_id') labelBusqueda = `ID Prod: #${this.filtros.search}`;
+      if (this.filtros.tipo_busqueda === 'stock_id') labelBusqueda = `ID Stock: #${this.filtros.search}`;
+      activos.push({ id: 'search', label: labelBusqueda });
+    }
+    if (this.filtros.proveedores_ids && this.filtros.proveedores_ids.length > 0) {
+      activos.push({ id: 'proveedores', label: `${this.filtros.proveedores_ids.length} Proveedor(es)` });
+    }
+    if (this.filtros.disponibilidad !== 'todos') {
+      const label = this.filtros.disponibilidad === 'en_stock' ? 'Solo en Stock' : 'Solo Agotados';
+      activos.push({ id: 'disponibilidad', label: label });
+    }
+    if (this.filtros.fecha_inicio || this.filtros.fecha_fin) {
+      let label = 'Fecha: ';
+      if (this.filtros.fecha_inicio && this.filtros.fecha_fin) label += `${this.filtros.fecha_inicio} al ${this.filtros.fecha_fin}`;
+      else if (this.filtros.fecha_inicio) label += `Desde ${this.filtros.fecha_inicio}`;
+      else label += `Hasta ${this.filtros.fecha_fin}`;
+      activos.push({ id: 'fechas', label: label });
+    }
+    if (this.filtros.categoria_id) activos.push({ id: 'categoria_id', label: 'Categoría seleccionada' });
+    if (this.filtros.precio_min) activos.push({ id: 'precio_min', label: `Desde $${this.filtros.precio_min}` });
+    if (this.filtros.precio_max) activos.push({ id: 'precio_max', label: `Hasta $${this.filtros.precio_max}` });
+    if (this.filtros.estado) activos.push({ id: 'estado', label: `Estado: ${this.filtros.estado}` });
+    if (this.filtros.color) activos.push({ id: 'color', label: 'Color', isColor: true, hex: this.filtros.color });
+    
+    // Guardamos en la variable fija
+    this.listaFiltrosActivos = activos;
+  }
+
+
   onFechasSelected(fechas: {inicio: string | null, fin: string | null}) {
     this.filtros.fecha_inicio = fechas.inicio;
     this.filtros.fecha_fin = fechas.fin;
@@ -173,6 +211,7 @@ export class ProductsListComponent implements OnInit {
   }
 
   aplicarFiltros() {
+    this.actualizarChipsDeFiltros();
     // ✨ ELIMINADO EL AUTO-SWITCHING. AHORA LA PESTAÑA MANDA.
     // Solo nos aseguramos de que el tipo de búsqueda coincida con la pestaña actual
     this.querySubscription?.unsubscribe();
@@ -189,6 +228,7 @@ export class ProductsListComponent implements OnInit {
   }
 
   limpiarFiltros() {
+    this.actualizarChipsDeFiltros();
     // ✨ Mantenemos el tipo_busqueda de la pestaña actual al limpiar
     const tipoBusquedaActual = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_id';
     
@@ -210,11 +250,41 @@ export class ProductsListComponent implements OnInit {
     this.filtros.categoria_id = event.categoriaId;
     this.aplicarFiltros();
   }
+  
 
-  onColorSelected(event: Color | null): void {
-    this.filtros.color = event ? event.hex : null; 
+
+
+
+
+
+
+
+
+
+
+
+ onColorSelected(event: Color | null): void {
+    console.log('🎨 [FRONTEND] Evento de color recibido desde el selector:', event);
+    
+    if (event) {
+      // Le quitamos el hashtag y lo forzamos a mayúsculas
+      const hexLimpio = event.hex.replace('#', '').toUpperCase();
+      this.filtros.color = hexLimpio;
+      console.log(`🎨 [FRONTEND] Guardado en filtros.color (listo para URL): '${this.filtros.color}'`);
+    } else {
+      this.filtros.color = null;
+      console.log('🎨 [FRONTEND] Filtro de color limpiado (null).');
+    }
+    
     this.aplicarFiltros(); 
   }
+
+
+
+
+
+
+  
 
   get filtrosActivos() {
     const activos = [];

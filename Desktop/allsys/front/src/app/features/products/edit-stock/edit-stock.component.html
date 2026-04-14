@@ -98,6 +98,13 @@
 
         <div class="field">
           <label>
+            Descuento (%) 
+          </label>
+          <input type="number" step="1" [(ngModel)]="stockData.descuento" name="descuento" placeholder="Ej: 15" />
+        </div>
+
+        <div class="field">
+          <label>
             Ubicación Almacén
             <span class="required-asterisk" title="Requerido para inventario">*</span>
           </label>
@@ -130,6 +137,16 @@
         <h3>Medidas y Proporciones</h3>
       </div>
       <div class="grid-4">
+
+        <!-- <div class="field">
+          <label>Material</label>
+          <input 
+            type="text" 
+            [(ngModel)]="stockData.material" 
+            name="material" 
+            placeholder="Ej: Algodón, Cuero..." />
+        </div> -->
+        
         <div class="field" *ngFor="let attr of stockData.atributos; let k=index">
           <label>
             {{ formatLabel(attr.nombre) }}

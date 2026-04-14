@@ -49,6 +49,7 @@ export class CategorySelectorComponent implements OnInit {
   private cargarCategorias(): void {
     this.productsService.cargarCategorias().subscribe({
       next: (data) => {
+        console.log(data)
         this.todasLasCategorias = data;
         // Si no hay nada seleccionado, mostramos las raíces
         if (this.rutaCategorias.length === 0) {
