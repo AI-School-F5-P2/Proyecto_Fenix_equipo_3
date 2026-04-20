@@ -11,15 +11,21 @@
   <div class="product-form">
     
     <section class="card-section">
-      <div class="section-header"><h3>Estados de la Venta</h3></div>
-      <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+      <div class="section-header"><h3>Datos y Estados de la Venta</h3></div>
+      
+      <div class="grid-4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
         
+        <div class="field">
+          <label>Fecha de Venta (Ticket)</label>
+          <input type="datetime-local" [(ngModel)]="formData.fecha">
+        </div>
+
         <div class="field">
           <label>Estado del Pedido</label>
           <select [(ngModel)]="formData.estado_venta" [ngClass]="{'border-danger': formData.estado_venta === 'cancelada'}">
             <option value="procesando">⏳ Procesando (Preparando paquete)</option>
             <option value="enviada">🚚 Enviada (En tránsito)</option>
-            <option value="completada">✅ Completada (Entregada / Saldo liberado)</option>
+            <option value="completada">✅ Completada (Entregada)</option>
             <option value="devuelta">↩️ Devuelta</option>
             <option value="cancelada">❌ Cancelada (Devuelve Stock)</option>
           </select>
@@ -45,12 +51,20 @@
             <option value="wallapop">📦 Wallapop</option>
           </select>
         </div>
+
+        <div class="field" style="grid-column: 3;">
+          <label class="text-muted"><small>Fecha de Cobro Real</small></label>
+          <input type="datetime-local" [(ngModel)]="formData.fecha_pago">
+        </div>
+
       </div>
     </section>
 
     <section class="card-section">
       <div class="section-header"><h3>Logística y Envío</h3></div>
-      <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+      
+      <div class="grid-4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+        
         <div class="field">
           <label>Estado de Envío</label>
           <select [(ngModel)]="formData.estado_envio">
@@ -60,6 +74,7 @@
             <option value="recogido_en_tienda">Recogido en Tienda</option>
           </select>
         </div>
+
         <div class="field">
           <label>Empresa Transporte</label>
           <select [(ngModel)]="formData.empresa_transporte">
@@ -166,34 +181,50 @@
             <option value="sin_transporte">Sin Transporte</option>
           </select>
         </div>
+
         <div class="field">
           <label>Número Seguimiento</label>
           <input type="text" [(ngModel)]="formData.numero_seguimiento" placeholder="Ej: PKG123456789">
         </div>
+
+        <div class="field">
+          <label class="text-muted"><small>Fecha Envío/Entrega</small></label>
+          <input type="datetime-local" [(ngModel)]="formData.fecha_envio">
+        </div>
+
       </div>
     </section>
 
     <section class="card-section">
       <div class="section-header">
         <h3>Cliente y Notas</h3>
-        <span *ngIf="venta.cliente_id" style="font-size: 0.8rem; color: var(--ap-color-success); background: var(--ap-color-success-bg); padding: 2px 8px; border-radius: 12px;">
+        <span *ngIf="venta.cliente_id" style="font-size: 0.8rem; color: var(--ap-color-success); background: var(--ap-color-success-bg); padding: 2px 8px; border-radius: 12px; margin-left: 10px;">
           ✓ Vinculado a CRM (ID: {{ venta.cliente_id }})
         </span>
       </div>
+
+      <div *ngIf="identificadorCrm" style="background-color: var(--ap-bg-variant); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--ap-border-base); display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.5rem;">👤</span>
+        <div>
+          <small class="text-muted" style="display: block; line-height: 1;">Identificador principal (App / Contacto)</small>
+          <strong style="font-size: 1.1rem; color: var(--ap-text-main);">{{ identificadorCrm }}</strong>
+        </div>
+      </div>
+
       <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
         <div class="field">
-          <label>
-            Nombre en Factura / Envío
-            <span class="required-asterisk" *ngIf="['vinted', 'wallapop'].includes(venta.canal)">*</span>
-          </label>
+          <label>Nombre Real y Apellidos (Envío/Factura)</label>
           <input type="text" [(ngModel)]="formData.nombre_cliente">
-          <small class="text-muted" style="display: block; margin-top: 4px;">Edita solo para corregir la etiqueta de este pedido.</small>
+          <small class="text-muted" style="display: block; margin-top: 4px;">
+            Si aquí aparece un <b>&#64;usuario</b> de una venta vieja, bórralo. Este espacio es <b>solo para nombres reales</b>.
+          </small>
         </div>
         <div class="field">
           <label>Email del Cliente</label>
           <input type="email" [(ngModel)]="formData.email_cliente">
         </div>
       </div>
+      
       <div class="field" style="margin-top: 15px;">
         <label>Notas Internas (Solo visibles para staff)</label>
         <textarea [(ngModel)]="formData.notas_internas" rows="3" placeholder="Ej: Cliente pidió cambio de talla después de pagar, el paquete se retrasó..."></textarea>

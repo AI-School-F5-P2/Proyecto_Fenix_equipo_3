@@ -28,6 +28,8 @@ export interface VentaData {
   tipo_identificador?: string;
   prefijo_telefono?: string;
   tipo_documento?: string;
+  pais?: string;
+  apellidos_cliente?: string;
  
 }
 
@@ -49,6 +51,11 @@ export class VentasService {
     return this.http.get<any>(`${this.API_URL}/producto/${stockId}`);
   }
 
+
+  obtenerConteoCompras(identificador: string): Observable<{compras_totales: number}> {
+  return this.http.get<{compras_totales: number}>(`${this.API_URL}/historial-cliente/${identificador}`);
+}
+
   /**
    * 💰 Registrar una venta completa
    * Ahora enviamos un JSON plano, Angular se encarga del resto
@@ -68,19 +75,32 @@ export class VentasService {
 
 
   // 📄 Obtener historial de ventas con filtros
+  // 📄 Obtener historial de ventas con filtros
+  // 📄 Obtener historial de ventas con filtros
   listarVentas(
-    page: number, limit: number, search?: string, 
-    estado?: string, canal?: string, fechaInicio?: string, 
-    fechaFin?: string, vendedor?: string, comprador?: string // 👈 Agregados
+    page: number, limit: number, 
+    searchProducto?: string, tipoBusquedaProd?: string, 
+    searchCodigo?: string, 
+    searchCliente?: string, tipoBusquedaCliente?: string, // ✨ NUEVOS
+    estado?: string, canal?: string, fechaInicio?: string, fechaFin?: string, 
+    vendedor?: string, marca_id?: string, categoria_id?: number
   ): Observable<any> {
     let params = `?page=${page}&limit=${limit}`;
-    if (search) params += `&search=${search}`;
+    
+    if (searchProducto) params += `&search_producto=${searchProducto}`;
+    if (tipoBusquedaProd) params += `&tipo_busqueda_prod=${tipoBusquedaProd}`;
+    if (searchCodigo) params += `&search_codigo=${searchCodigo}`;
+    
+    if (searchCliente) params += `&search_cliente=${searchCliente}`;
+    if (tipoBusquedaCliente) params += `&tipo_busqueda_cliente=${tipoBusquedaCliente}`;
+
     if (estado) params += `&estado=${estado}`;
     if (canal) params += `&canal=${canal}`;
-    if (fechaInicio) params += `&fecha_inicio=${fechaInicio}`; // 👈 NUEVO
+    if (fechaInicio) params += `&fecha_inicio=${fechaInicio}`; 
     if (fechaFin) params += `&fecha_fin=${fechaFin}`;
-    if (vendedor) params += `&vendedor=${vendedor}`;    // 👈
-    if (comprador) params += `&comprador=${comprador}`;
+    if (vendedor) params += `&vendedor=${vendedor}`;    
+    if (marca_id) params += `&marca_id=${marca_id}`;
+    if (categoria_id) params += `&categoria_id=${categoria_id}`;
 
     return this.http.get<any>(`${this.API_URL}/${params}`);
   }

@@ -12,7 +12,7 @@
   <div class="dropdown-list" *ngIf="dropdownOpen">
     <div 
       class="dropdown-item" 
-      *ngFor="let p of proveedoresFiltrados" 
+      *ngFor="let p of listaFiltrada" 
       (mousedown)="selectProveedor(p)" 
       [class.selected]="proveedorSeleccionado?.nombre === p.nombre"
     >
@@ -24,7 +24,7 @@
       <input type="radio" [checked]="proveedorSeleccionado?.nombre === p.nombre" class="item-radio" />
     </div>
     
-    <div class="dropdown-item empty-state" *ngIf="proveedoresFiltrados.length === 0">
+    <div class="dropdown-item empty-state" *ngIf="listaFiltrada.length === 0">
       Escribe para añadir "{{proveedorInput}}"
     </div>
   </div>

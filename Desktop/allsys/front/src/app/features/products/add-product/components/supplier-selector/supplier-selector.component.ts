@@ -17,10 +17,11 @@ export interface Proveedor {
   styleUrls: ['./supplier-selector.component.css']
 })
 export class SupplierSelectorComponent implements OnInit {
-  // ✨ NUEVO: Define qué tipo de proveedores cargar. Por defecto 'inventario'.
   @Input() tipoProveedor: TipoProveedor = 'inventario'; 
 
   proveedores: Proveedor[] = [];
+  listaFiltrada: Proveedor[] = []; // ✨ NUEVA VARIABLE DE ESTADO
+
   proveedorInput: string = '';
   dropdownOpen: boolean = false;
   proveedorSeleccionado: Proveedor | null = null;
@@ -35,6 +36,7 @@ export class SupplierSelectorComponent implements OnInit {
       this.proveedorSeleccionado = null;
       this.proveedorInput = '';
     }
+    this.actualizarFiltro(); // ✨ Actualizamos si cambia desde fuera
   }
 
   @Output() supplierChanged = new EventEmitter<Proveedor>();
@@ -48,7 +50,6 @@ export class SupplierSelectorComponent implements OnInit {
   cargarProveedores(): void {
     this.cargandoProveedores = true;
     
-    // ✨ ACTUALIZADO: Pasamos el tipoProveedor al servicio
     this.suppliersService.getProveedores(this.tipoProveedor).subscribe({
       next: (data: any[]) => {
         this.proveedores = data.map(p => ({ 
@@ -58,8 +59,12 @@ export class SupplierSelectorComponent implements OnInit {
         
         this.cargandoProveedores = false;
         this.vincularProveedor();
+        this.actualizarFiltro(); // ✨ Llenamos la lista la primera vez
       },
-      error: () => this.cargandoProveedores = false
+      error: () => {
+        this.cargandoProveedores = false;
+        this.actualizarFiltro();
+      }
     });
   }
 
@@ -75,20 +80,28 @@ export class SupplierSelectorComponent implements OnInit {
     }
   }
 
-  get proveedoresFiltrados(): Proveedor[] {
+  // ✨ LA MAGIA OCURRE AQUÍ: Esta función reemplaza al "get"
+  actualizarFiltro(): void {
     const input = this.proveedorInput.trim().toLowerCase();
+    
+    // 1. Filtramos
     let filtrados = this.proveedores.filter(p => p.nombre.toLowerCase().includes(input));
     
+    // 2. SALVAVIDAS: Solo tomamos 50 para no reventar el HTML
+    filtrados = filtrados.slice(0, 50);
+
+    // 3. Posicionamos la seleccionada arriba
     if (this.proveedorSeleccionado) {
       filtrados = filtrados.filter(p => p.nombre !== this.proveedorSeleccionado!.nombre);
       filtrados.unshift(this.proveedorSeleccionado);
     }
     
-    // Si el usuario escribe algo que no existe, ofrece crearlo
+    // 4. Si el usuario escribe algo que no existe, ofrece crearlo
     if (input && !this.proveedores.some(p => p.nombre.toLowerCase() === input)) {
       filtrados.unshift({ nombre: this.proveedorInput, isNew: true });
     }
-    return filtrados;
+    
+    this.listaFiltrada = filtrados;
   }
 
   selectProveedor(proveedor: Proveedor): void {
@@ -96,6 +109,7 @@ export class SupplierSelectorComponent implements OnInit {
     this.proveedorSeleccionado = proveedor;
     this.proveedorInput = proveedor.nombre;
     this.supplierChanged.emit(proveedor);
+    this.actualizarFiltro(); // Recalculamos al seleccionar
   }
 
   onBlur(): void {
@@ -106,16 +120,18 @@ export class SupplierSelectorComponent implements OnInit {
       } else if (!this.proveedorInput.trim()) {
         this.proveedorInput = '';
       }
-      // Nota: Si es nuevo (isNew), no lo borramos para permitir que el padre lo cree al hacer submit
     }, 200);
   }
 
   onInputChange(): void { 
     this.dropdownOpen = true; 
     this.proveedorSeleccionado = null;
-    // Emitimos que es un proveedor nuevo para que el formulario padre sepa que debe crearlo
     this.supplierChanged.emit({ nombre: this.proveedorInput, isNew: true });
+    this.actualizarFiltro(); // ✨ SOLO se filtra cuando el usuario teclea
   }
 
-  onFocus(): void { this.dropdownOpen = true; }
+  onFocus(): void { 
+    this.dropdownOpen = true; 
+    this.actualizarFiltro();
+  }
 }

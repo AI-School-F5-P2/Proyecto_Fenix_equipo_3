@@ -238,6 +238,8 @@
                   <input type="number" [(ngModel)]="s.stock" [name]="'stock_' + s.temp_id" />
                 </div>
 
+                
+
                 <div class="field">
                   <label>Precio Compra <span class="required-asterisk" title="Requerido para inventario">*</span></label>
                   <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc_' + s.temp_id" />
@@ -275,6 +277,42 @@
                   <label>Descuento %</label>
                   <input type="number" [(ngModel)]="s.descuento" [name]="'desc_' + s.temp_id" />
                 </div>
+
+                <div class="field" style="position: relative; z-index: 100;">
+                  <label>Dueño de la prenda <span class="required-asterisk">*</span></label>
+                  <app-client-selector
+                    [clienteInicialId]="s.propietario_id"
+                    (clientSelected)="s.propietario_id = $event">
+                  </app-client-selector>
+                </div>
+
+                <div class="field">
+                  <label>
+                    {{ s.propietario_id ? 'Comisión para el Cliente' : 'Precio Compra' }} 
+                    <span class="required-asterisk" title="Requerido para inventario">*</span>
+                  </label>
+                  <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc_' + s.temp_id" [placeholder]="s.propietario_id ? 'Ej: 5.00 o 0' : ''" />
+                </div>
+
+                <!-- <div class="field">
+                  <label>Dueño de la prenda <span class="required-asterisk">*</span></label>
+                  <div class="custom-select">
+                    <select [(ngModel)]="s.propietario_id" [name]="'prop_' + s.temp_id">
+                      <option [ngValue]="null">🏢 Inventario Propio (Allsys)</option>
+                      <option *ngFor="let c of clientesLista" [ngValue]="c.id">
+                        👤 {{ c.nombre }} {{ c.apellidos || '' }} {{ c.usuario_vinted ? '(@' + c.usuario_vinted + ')' : '' }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>
+                    {{ s.propietario_id ? 'Comisión para el Cliente' : 'Precio Compra' }} 
+                    <span class="required-asterisk" title="Requerido para inventario">*</span>
+                  </label>
+                  <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc_' + s.temp_id" [placeholder]="s.propietario_id ? 'Ej: 5.00 o 0' : ''" />
+                </div> -->
               </div>
 
               <div class="stock-footer">

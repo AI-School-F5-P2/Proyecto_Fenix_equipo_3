@@ -16,8 +16,11 @@ export class EditSaleComponent implements OnInit {
   cargando = true;
   guardando = false;
   venta: any = {};
-
+  identificadorCrm: string = '';
   formData: any = {
+    fecha: '', 
+    fecha_pago: '',  // ✨ NUEVO
+    fecha_envio: '', // ✨ NUEVO
     estado_venta: '',
     estado_pago: '',
     metodo_pago: '',
@@ -43,23 +46,48 @@ export class EditSaleComponent implements OnInit {
     }
   }
 
+  // Adapta la fecha de la base de datos al formato del input HTML
+  formatDateForInput(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const tzOffset = date.getTimezoneOffset() * 60000; 
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+  }
+
   cargarVenta() {
     this.ventasService.obtenerVenta(this.ventaId!).subscribe({
       next: (res) => {
         this.venta = res;
         
-        // Purgamos los datos al formulario, incluyendo el total
+        // ✨ LÓGICA MÁGICA: Extraemos el identificador real del CRM
+        if (res.cliente) {
+          if (res.canal === 'vinted') {
+            this.identificadorCrm = res.cliente.usuario_vinted ? `@${res.cliente.usuario_vinted}` : 'Sin usuario Vinted';
+          } else if (res.canal === 'wallapop') {
+            this.identificadorCrm = res.cliente.usuario_wallapop ? `@${res.cliente.usuario_wallapop}` : 'Sin usuario Wallapop';
+          } else if (res.canal === 'tienda_fisica') {
+            this.identificadorCrm = res.cliente.telefono || res.cliente.dni_nie || 'Cliente de Tienda';
+          } else {
+            this.identificadorCrm = res.cliente.email || 'Sin email';
+          }
+        }
+        
+        // Purgamos los datos al formulario
         this.formData = {
+          fecha: this.formatDateForInput(res.fecha), 
+          fecha_pago: this.formatDateForInput(res.fecha_pago), 
+          fecha_envio: this.formatDateForInput(res.fecha_envio),
           estado_venta: res.estado_venta || '',
           estado_pago: res.estado_pago || '',
           metodo_pago: res.metodo_pago || '',
-          nombre_cliente: res.nombre_cliente || '',
+          // Si por error en BD vieja el identificador está aquí, se mostrará, pero ya les avisamos que lo borren
+          nombre_cliente: res.nombre_cliente || '', 
           email_cliente: res.email_cliente || '',
           estado_envio: res.estado_envio || '',
           empresa_transporte: res.empresa_transporte || '', 
           numero_seguimiento: res.numero_seguimiento || '',
           notas_internas: res.notas_internas || '',
-          total: res.total || 0 
+          total: res.total || 0
         };
         this.cargando = false;
       },
@@ -69,15 +97,23 @@ export class EditSaleComponent implements OnInit {
       }
     });
   }
+  // Limpiamos fechas vacías antes de enviar al backend
+  prepararDatosParaGuardar(): any {
+    const dataToSend = { ...this.formData };
+    
+    // Si la fecha se borra en el input, enviamos null para que la BD lo acepte (en caso de pagos o envíos)
+    if (!dataToSend.fecha) dataToSend.fecha = null;
+    if (!dataToSend.fecha_pago) dataToSend.fecha_pago = null;
+    if (!dataToSend.fecha_envio) dataToSend.fecha_envio = null;
+
+    return dataToSend;
+  }
 
   guardarCambios() {
-    // Validación estricta adaptada a los canales online
-    const canalesOnline = ['vinted', 'wallapop', 'web'];
-    if (canalesOnline.includes(this.venta.canal) && !this.formData.nombre_cliente?.trim() && !this.formData.email_cliente?.trim()) {
-      alert('Debes mantener al menos un Nombre o un Email de referencia para ventas online.');
-      return;
-    }
-
+    // ✨ QUITAMOS LA RESTRICCIÓN: En Vinted muchas veces usamos etiquetas prepagadas 
+    // y no sabemos el nombre real del cliente, ni su email. Solo su @usuario, el cual ya está a salvo en el CRM.
+    // Así que ya no bloquearemos el guardado si el nombre está vacío.
+    
     this.guardando = true;
     
     if (this.formData.estado_venta === 'cancelada' && this.venta.estado_venta !== 'cancelada') {
@@ -88,7 +124,9 @@ export class EditSaleComponent implements OnInit {
       }
     }
 
-    this.ventasService.editarVenta(this.ventaId!, this.formData).subscribe({
+    const payload = this.prepararDatosParaGuardar();
+
+    this.ventasService.editarVenta(this.ventaId!, payload).subscribe({
       next: () => {
         alert('✅ Venta actualizada con éxito.');
         this.volver();
@@ -101,6 +139,6 @@ export class EditSaleComponent implements OnInit {
   }
 
   volver() {
-    this.router.navigate(['/ventas-history']);
+    this.router.navigate(['/sales-list']);
   }
 }

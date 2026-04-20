@@ -12,7 +12,7 @@
   <div class="dropdown-list" *ngIf="dropdownOpen">
     <div 
       class="dropdown-item" 
-      *ngFor="let marca of marcasFiltradas" 
+      *ngFor="let marca of listaFiltrada" 
       (mousedown)="selectMarca(marca)" 
       [class.selected]="marcaSeleccionada?.nombre === marca.nombre"
     >
@@ -23,7 +23,7 @@
       <input type="radio" [checked]="marcaSeleccionada?.nombre === marca.nombre" class="item-radio" />
     </div>
     
-    <div class="dropdown-item empty-state" *ngIf="marcasFiltradas.length === 0">
+    <div class="dropdown-item empty-state" *ngIf="listaFiltrada.length === 0">
       Escribe para añadir "{{marcaInput}}"
     </div>
   </div>

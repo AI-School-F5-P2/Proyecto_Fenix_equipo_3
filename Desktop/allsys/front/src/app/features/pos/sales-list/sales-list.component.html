@@ -17,34 +17,64 @@
   </div>
 
   <div class="filters-card">
-    <div class="search-box">
-      <span class="icon">🔍</span>
-      <input type="text" placeholder="Buscar por código (VEN-...) o cliente" [(ngModel)]="searchQuery" (keyup.enter)="buscar()">
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+      
+      <div class="search-box" style="flex: 1; min-width: 250px; display: flex; background: white; border-radius: var(--ap-radius-md); border: 1px solid var(--ap-border-base); overflow: hidden;">
+        <select [(ngModel)]="tipoBusquedaProd" style="border: none; background-color: var(--ap-bg-variant); padding: 8px 12px; font-weight: bold; color: var(--ap-text-main); outline: none; border-radius: 0; border-right: 1px solid var(--ap-border-base);">
+          <option value="sku">🏷️ SKU Prenda</option>
+          <option value="id_producto">🔢 ID Exacto (Escáner)</option>
+        </select>
+        <input type="text" placeholder="Buscar producto..." [(ngModel)]="searchProducto" (keyup.enter)="buscar()" style="flex: 1; border: none; padding: 8px 12px; outline: none; background: transparent;">
+      </div>
+
+      <div class="search-box" style="flex: 1; min-width: 180px; display: flex; background: white; border-radius: var(--ap-radius-md); border: 1px solid var(--ap-border-base); overflow: hidden;">
+        <span style="padding: 8px 12px; background: var(--ap-bg-variant); border-right: 1px solid var(--ap-border-base);" title="Código de Venta">📄</span>
+        <input type="text" placeholder="Código (VEN-...)" [(ngModel)]="searchCodigo" (keyup.enter)="buscar()" style="flex: 1; border: none; padding: 8px 12px; outline: none;">
+      </div>
+
+      <div class="search-box" style="flex: 1; min-width: 300px; display: flex; background: white; border-radius: var(--ap-radius-md); border: 1px solid var(--ap-border-base); overflow: hidden;">
+        <select [(ngModel)]="tipoBusquedaCliente" style="border: none; background-color: var(--ap-bg-variant); padding: 8px 12px; font-weight: bold; color: var(--ap-text-main); outline: none; border-radius: 0; border-right: 1px solid var(--ap-border-base);">
+          <option value="nombre">👤 Nombre / Usuario</option>
+          <option value="email">📧 Email</option>
+          <option value="telefono">📱 Teléfono</option>
+          <option value="documento">🪪 Documento (DNI/NIE)</option>
+        </select>
+        <input type="text" placeholder="Buscar cliente..." [(ngModel)]="searchCliente" (keyup.enter)="buscar()" style="flex: 1; border: none; padding: 8px 12px; outline: none;">
+      </div>
+
+      <button type="button" (click)="buscar()" style="padding: 8px 16px; background-color: var(--vinted-teal); color: white; border: none; border-radius: var(--ap-radius-md); cursor: pointer; font-weight: bold;">
+        🔍 Buscar
+      </button>
+
+      <app-date-selector
+        [fechaInicio]="fechaInicio"
+        [fechaFin]="fechaFin"
+        (fechasCambiadas)="onFechasCambiadas($event)">
+      </app-date-selector>
     </div>
 
-    <app-date-selector
-      [fechaInicio]="fechaInicio"
-      [fechaFin]="fechaFin"
-      (fechasCambiadas)="onFechasCambiadas($event)">
-    </app-date-selector>
-    
+    <div class="filter-group" style="margin-bottom: 12px;">
+      <select [(ngModel)]="filtroMarca" style="min-width: 150px;">
+        <option value="">Todas las marcas</option>
+        <option *ngFor="let marca of marcas" [value]="marca.id">{{ marca.nombre }}</option>
+      </select>
+      <div style="flex: 1; max-width: 300px;">
+        <app-category-selector 
+          [value]="filtroCategoria" 
+          [permitirSeleccionarTodo]="true"  (categorySelected)="onCategoriaSeleccionada($event)">
+        </app-category-selector>
+      </div>
+    </div>
+
     <div class="filter-group">
-      <select [(ngModel)]="filtroVendedor" (change)="buscar()">
+      <select [(ngModel)]="filtroVendedor">
         <option value="">Vendedor...</option>
         <option value="Yenny">Yenny</option>
         <option value="Maikol">Maikol</option>
         <option value="Paola">Paola</option>
       </select>
-
-      <div class="search-box small">
-        <span class="icon">👤</span>
-        <input 
-          type="text" 
-          placeholder="Nombre comprador..." 
-          [(ngModel)]="filtroComprador" 
-          (keyup.enter)="buscar()">
-      </div>
-      <select [(ngModel)]="filtroEstado" (change)="buscar()">
+      <select [(ngModel)]="filtroEstado">
         <option value="">Todos los estados</option>
         <option value="completada">✅ Completada</option>
         <option value="procesando">⏳ Procesando</option>
@@ -52,19 +82,17 @@
         <option value="devuelta">↩️ Devuelta</option>
         <option value="cancelada">❌ Cancelada</option>
       </select>
-
-      <select [(ngModel)]="filtroCanal" (change)="buscar()">
+      <select [(ngModel)]="filtroCanal">
         <option value="">Todos los canales</option>
         <option value="tienda_fisica">🏪 Tienda Física</option>
         <option value="web">🌐 Web Propia</option>
         <option value="vinted">👗 Vinted</option>
         <option value="wallapop">📦 Wallapop</option>
       </select>
-
-
-
       <button class="btn-clear" (click)="limpiarFiltros()">Limpiar</button>
     </div>
+
+   
   </div>
 
   <div class="table-container" *ngIf="!cargando && ventas.length > 0">
@@ -95,9 +123,17 @@
           </td>
 
           <td>{{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          
           <td>
-            <span *ngIf="venta.nombre_cliente">{{ venta.nombre_cliente }}</span>
-            <span *ngIf="!venta.nombre_cliente" class="text-muted">Anónimo</span>
+            <div style="line-height: 1.3;">
+              <strong>{{ venta.nombre_cliente || 'Sin nombre registrado' }}</strong>
+              <br>
+              
+              <small class="text-muted">{{ venta.identificador_cliente }}</small>
+              <br *ngIf="venta.pais">
+              
+              <span *ngIf="venta.pais" style="font-size: 0.8rem; color: #7f8c8d;">📍 {{ venta.pais }}</span>
+            </div>
           </td>
           <td>
             <div class="channel-info">

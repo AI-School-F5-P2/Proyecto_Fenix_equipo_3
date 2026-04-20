@@ -20,12 +20,14 @@ import {
 } from './product-form.config';
 
 import { generarTempId, formatLabel, getPlaceholder, determinarTipoBase, MAPEO_IDENTIDAD_POR_TIPO, MAPEO_MATERIAL_A_COLOR, determinarGenero } from './product-utils';
+import { ClientesService } from '../../../core/services/clientes.service';
+import { ClientSelectorComponent } from './components/client-selector/client-selector.component';
 // import { ImageManagerComponent } from "../../../components/image-manager/image-manager.component";
 
 @Component({
   selector: 'app-add-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, BrandSelectorComponent, DragDropModule, SupplierSelectorComponent, ColorSelectorComponent, CategorySelectorComponent, ImageManagerComponent],
+  imports: [ClientSelectorComponent, CommonModule, FormsModule, BrandSelectorComponent, DragDropModule, SupplierSelectorComponent, ColorSelectorComponent, CategorySelectorComponent, ImageManagerComponent],
   templateUrl: './add-product.component.html',
   styleUrls: ['./add-product.component.css']
 })
@@ -49,11 +51,12 @@ export class AddProductComponent implements OnInit {
   colores = COLORES_PALETA;
   esVintage: boolean = false;
   epoca: string | null = null;
+  clientesLista: any[] = [];
 
-  constructor(private productsService: ProductsService, private router: Router, private route: ActivatedRoute) {}
+  constructor(private productsService: ProductsService, private router: Router, private route: ActivatedRoute, private clientesService: ClientesService) {}
 
   ngOnInit(): void {
-
+    // this.cargarClientesParaSelector();
     this.route.fragment.subscribe(fragment => {
       if (fragment) {
         this.fragmentAEnfocar = fragment;
@@ -71,6 +74,24 @@ export class AddProductComponent implements OnInit {
       }
     });
   }
+
+
+
+  // cargarClientesParaSelector() {
+  //   // ✨ CORRECCIÓN: Pasamos un único objeto con page y limit dentro
+  //   this.clientesService.obtenerClientes({ page: 1, limit: 500 }).subscribe({
+  //     next: (res: any) => {
+  //       console.log("Clientes cargados para selector:", res);
+  //       this.clientesLista = res.items || [];
+  //     },
+  //     error: () => console.error("No se pudieron cargar los clientes")
+  //   });
+  // }
+
+
+  
+
+  
 
   // ================== CARGA Y MAPEO ==================
   // ================== CARGA Y MAPEO ==================
@@ -121,7 +142,7 @@ export class AddProductComponent implements OnInit {
                 publicar_wallapop: sDB.publicar_wallapop,
                 etiqueta: sDB.etiqueta || '',
                 ubicacion: sDB.ubicacion || '',
-                 
+                propietario_id: sDB.propietario_id,
                 talla: tallaVisual, 
                 atributos: this.hidratarAtributos(sDB.atributos)
              }
@@ -275,10 +296,10 @@ private capitalizar(s: string): string {
 
   nuevoStock(): StockVariante {
     return { 
-        id_manual: null, sku: '', atributos: this.getAtributosVacios(), stock: 0, precio_compra: 0, ubicacion: '',
+        id_manual: null, sku: '', atributos: this.getAtributosVacios(), stock: 1, precio_compra: 0, ubicacion: '',
         precio_venta: 0, descuento: 0, proveedor: '', proveedor_id: null, 
         fecha_compra: '', publicar_vinted: false, publicar_wallapop: false, publicar_web: false, temp_id: generarTempId(),
-        talla: null // Inicializamos
+        talla: null, propietario_id: null // Inicializamos
     };
   }
 
@@ -311,6 +332,7 @@ private capitalizar(s: string): string {
       nuevoStock.precio_compra = ultimoStock.precio_compra || 0;
       nuevoStock.precio_venta = ultimoStock.precio_venta || 0;
       nuevoStock.fecha_compra = ultimoStock.fecha_compra || '';
+      nuevoStock.propietario_id = ultimoStock.propietario_id || null;
       
       // 3. Copiar Ubicación
       nuevoStock.ubicacion = ultimoStock.ubicacion || ''; 
@@ -484,14 +506,19 @@ private validarFormulario(): boolean {
     return MAPEO_IDENTIDAD_POR_TIPO[this.tipoProductoBase] || 'color';
   }
 
+  // ⚡ OPTIMIZACIÓN: Creamos el objeto de configuración solo UNA VEZ en la memoria
+  private configEjes: Record<string, any> = {
+    ropa_superior: { tipo: 'color', titulo: 'Estilo / Color', label: 'Color principal' },
+    calzado: { tipo: 'color', titulo: 'Estilo / Color', label: 'Color principal' },
+    joyeria_anillos: { tipo: 'dropdown', titulo: 'Variante de Metal', label: 'Metal / Material', opciones: MATERIALES_JOYERIA },
+    perfumeria: { tipo: 'texto', titulo: 'Formato', label: 'Capacidad', placeholder: 'Ej: 100ml' }
+  };
+  
+  private defaultEje = { tipo: 'color', titulo: 'Estilo / Color', label: 'Color principal' };
+
+  // Ahora el getter simplemente devuelve una referencia rápida, sin sobrecargar la memoria
   get ejeVariacion() {
-    const configuracionEjes: Record<string, any> = {
-      ropa_superior: { tipo: 'color', titulo: 'Estilo / Color', label: 'Color principal' },
-      calzado: { tipo: 'color', titulo: 'Estilo / Color', label: 'Color principal' },
-      joyeria_anillos: { tipo: 'dropdown', titulo: 'Variante de Metal', label: 'Metal / Material', opciones: MATERIALES_JOYERIA },
-      perfumeria: { tipo: 'texto', titulo: 'Formato', label: 'Capacidad', placeholder: 'Ej: 100ml' }
-    };
-    return configuracionEjes[this.tipoProductoBase] || { tipo: 'color', titulo: 'Estilo / Color', label: 'Color principal' };
+    return this.configEjes[this.tipoProductoBase] || this.defaultEje;
   }
 
   // ================== TRIPLE DRAG AND DROP ==================
@@ -667,7 +694,8 @@ private construirFormData(): FormData {
             orden: idxS, 
             ubicacion: s.ubicacion,
             etiqueta: etiquetaCompuesta,
-            atributos: atributosBlindados 
+            atributos: atributosBlindados,
+            propietario_id: s.propietario_id
           };
         })
       };

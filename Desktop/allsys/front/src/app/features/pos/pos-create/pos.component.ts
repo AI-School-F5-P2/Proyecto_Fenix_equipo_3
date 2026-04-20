@@ -41,6 +41,28 @@ export class PosComponent {
     { id: 'OTRO', nombre: 'Otro Documento' }
   ];
 
+  // Lista plana de países
+  listaPaises = [
+    { nombre: 'España', bandera: '🇪🇸' },
+    { nombre: 'Francia', bandera: '🇫🇷' },
+    { nombre: 'Italia', bandera: '🇮🇹' },
+    { nombre: 'Portugal', bandera: '🇵🇹' },
+    { nombre: 'Bélgica', bandera: '🇧🇪' },
+    { nombre: 'Alemania', bandera: '🇩🇪' },
+    { nombre: 'Países Bajos', bandera: '🇳🇱' },
+    { nombre: 'Reino Unido', bandera: '🇬🇧' },
+    { nombre: 'Luxemburgo', bandera: '🇱🇺' },
+    { nombre: 'Austria', bandera: '🇦🇹' },
+    { nombre: 'Polonia', bandera: '🇵🇱' },
+    { nombre: 'República Checa', bandera: '🇨🇿' },
+    { nombre: 'Suecia', bandera: '🇸🇪' },
+    { nombre: 'Dinamarca', bandera: '🇩🇰' },
+    { nombre: 'Finlandia', bandera: '🇫🇮' },
+    { nombre: 'EE.UU.', bandera: '🇺🇸' },
+    { nombre: 'Canadá', bandera: '🇨🇦' },
+    { nombre: 'Otros', bandera: '🌍' }
+  ];
+
   datosVenta: VentaData = {
     fecha: new Date().toISOString().split('T')[0],
     canal: 'vinted',
@@ -48,6 +70,7 @@ export class PosComponent {
     metodo_pago: 'vinted',
     estado_venta: 'procesando',
     estado_pago: 'pendiente',  
+    pais: '', // Queda vacío por defecto para forzar que lo elijan
     
     // ✨ Campos Estructurados
     tipo_identificador: 'telefono', // Por defecto
@@ -75,6 +98,7 @@ export class PosComponent {
       this.datosVenta.estado_venta = 'completada';
       this.datosVenta.estado_pago = 'pagado';
       this.datosVenta.metodo_pago = 'efectivo';
+      this.datosVenta.pais = 'España'; // En tienda física, casi siempre será España
     } else {
       this.datosVenta.estado_venta = 'procesando';
       this.datosVenta.estado_pago = 'pendiente';
@@ -86,31 +110,26 @@ export class PosComponent {
   // LÓGICA DEL CLIENTE (HISTORIAL)
   // ==========================================
   buscarHistorialCliente() {
-    let idParaBuscar = '';
+    let idParaBuscar = this.datosVenta.identificador_cliente?.trim();
 
-    if (this.datosVenta.canal === 'tienda_fisica') {
-      if (!this.datosVenta.identificador_cliente?.trim()) {
-        this.comprasPreviasCliente = null;
-        return;
-      }
-      
-      if (this.datosVenta.tipo_identificador === 'telefono') {
-        idParaBuscar = `${this.datosVenta.prefijo_telefono}${this.datosVenta.identificador_cliente.trim()}`;
-      } else {
-         idParaBuscar = this.datosVenta.identificador_cliente.trim();
-      }
-    } else {
-      // Para Web o Apps, usamos el identificador tal cual
-      idParaBuscar = this.datosVenta.identificador_cliente?.trim() || '';
+    // Si es teléfono, le pegamos el prefijo para buscar el número completo
+    if (this.datosVenta.canal === 'tienda_fisica' && this.datosVenta.tipo_identificador === 'telefono') {
+      idParaBuscar = `${this.datosVenta.prefijo_telefono}${idParaBuscar}`;
     }
 
-    if (!idParaBuscar) return;
+    if (!idParaBuscar || idParaBuscar.length < 3) {
+      this.comprasPreviasCliente = null;
+      return;
+    }
 
-    // Simulación de búsqueda en base de datos
-    console.log(`Buscando historial de: ${idParaBuscar}`);
-    setTimeout(() => {
-      this.comprasPreviasCliente = idParaBuscar.toLowerCase().includes('yenny') ? 3 : 0;
-    }, 300);
+    // LLAMADA REAL AL BACKEND
+    this.ventasService.obtenerConteoCompras(idParaBuscar).subscribe({
+      next: (res) => {
+        this.comprasPreviasCliente = res.compras_totales;
+        console.log(`El cliente tiene ${res.compras_totales} compras.`);
+      },
+      error: () => this.comprasPreviasCliente = 0
+    });
   }
 
   // ==========================================
@@ -186,9 +205,29 @@ export class PosComponent {
   completarVenta() {
     if (this.carrito.length === 0) return;
 
-    // ✨ VALIDACIÓN ESTRICTA DEL CLIENTE
-    if (['vinted', 'wallapop', 'web'].includes(this.datosVenta.canal) && !this.datosVenta.identificador_cliente?.trim()) {
-      alert('El Identificador del Cliente (Usuario o Email) es OBLIGATORIO para este canal.');
+    // ✨ VALIDACIONES ESTRICTAS (Obligatorios)
+    if (!this.datosVenta.fecha) {
+      alert('⚠️ La Fecha de Venta es obligatoria.');
+      return;
+    }
+
+    if (!this.datosVenta.vendedor) {
+      alert('⚠️ Seleccionar el Vendedor es obligatorio.');
+      return;
+    }
+
+    if (!this.datosVenta.identificador_cliente?.trim()) {
+      alert('⚠️ El Identificador del Cliente (Usuario, Email o Teléfono) es OBLIGATORIO.');
+      return;
+    }
+
+    if (!this.datosVenta.pais) {
+      alert('⚠️ El País de Compra es obligatorio.');
+      return;
+    }
+
+    if (this.total <= 0) {
+      alert('⚠️ Error: El TOTAL de la venta debe ser mayor a 0 €.\nPor favor, revisa los precios o descuentos aplicados.');
       return;
     }
 
@@ -216,6 +255,8 @@ export class PosComponent {
     this.carrito = [];
     this.datosVenta.identificador_cliente = '';
     this.datosVenta.nombre_cliente = '';
+    this.datosVenta.apellidos_cliente = '';
+    this.datosVenta.pais = ''; // Reseteamos país
     this.datosVenta.descuento_total = 0;
     this.datosVenta.costo_envio = 0;
     this.datosVenta.numero_seguimiento = '';

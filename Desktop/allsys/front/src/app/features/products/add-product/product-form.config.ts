@@ -13,6 +13,7 @@ export interface Categoria {
 export interface AtributoBackend { id?: number; nombre: string; valor: any; }
 
 export interface StockBackend {
+  propietario_id: any;
   id: number; sku: string; cantidad: number; precio_compra: number;
   precio_venta: number; fecha_compra: string; proveedor_id?: number | null;
   proveedor?: { id: number; nombre_proveedor: string };
@@ -38,7 +39,7 @@ export interface StockVariante {
   precio_compra: number; precio_venta: number; descuento: number;
   proveedor: string; proveedor_id?: number | null; fecha_compra: string;
   publicar_vinted: boolean; publicar_wallapop: boolean; publicar_web: boolean;
-  etiqueta?: string; ubicacion: string; temp_id?: string; id_manual?: number | null;
+  etiqueta?: string; ubicacion: string; temp_id?: string; id_manual?: number | null; propietario_id?: number | null;
 }
 
 export interface Marca { id?: number; nombre: string; isNew?: boolean; }

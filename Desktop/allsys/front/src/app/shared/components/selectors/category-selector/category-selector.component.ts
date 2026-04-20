@@ -2,10 +2,9 @@ import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductsService } from '../../../../core/services/products.service';
 
-// ✨ INTERFAZ ACTUALIZADA: categoriaId ahora acepta number | null
 export interface CategorySelectionEvent {
   categoriaId: number | null;
-  rutaCategorias?: any[]; // Opcional para filtros
+  rutaCategorias?: any[];
 }
 
 @Component({
@@ -22,9 +21,11 @@ export class CategorySelectorComponent implements OnInit {
   dropdownAbierto = false;
   private idPendiente: number | null = null;
 
+  // ✨ NUEVO INPUT: Por defecto en false. El padre lo activa si quiere.
+  @Input() permitirSeleccionarTodo: boolean = false;
+
   @Input() set value(id: number | null) {
     if (id === null) {
-      // ✨ SI EL PADRE ENVÍA NULL, LIMPIAMOS TODO EL ESTADO VISUAL
       this.rutaCategorias = [];
       this.categoriaActual = this.todasLasCategorias.filter((c: any) => c.parent_id === null);
       this.dropdownAbierto = false;
@@ -33,7 +34,6 @@ export class CategorySelectorComponent implements OnInit {
     }
   }
 
-  // Mantenemos este por compatibilidad con tu código de edición
   @Input() set categoriaInicial(id: number | null) {
     if (id) this.value = id;
   }
@@ -49,9 +49,7 @@ export class CategorySelectorComponent implements OnInit {
   private cargarCategorias(): void {
     this.productsService.cargarCategorias().subscribe({
       next: (data) => {
-        console.log(data)
         this.todasLasCategorias = data;
-        // Si no hay nada seleccionado, mostramos las raíces
         if (this.rutaCategorias.length === 0) {
           this.categoriaActual = data.filter((c: any) => c.parent_id === null);
         }
@@ -64,7 +62,6 @@ export class CategorySelectorComponent implements OnInit {
     });
   }
 
-  // ✨ Limpia el texto y vuelve al inicio del árbol
   private limpiarEstadoInterno() {
     this.rutaCategorias = [];
     this.categoriaActual = this.todasLasCategorias.filter((c: any) => c.parent_id === null);
@@ -114,6 +111,18 @@ export class CategorySelectorComponent implements OnInit {
     }
   }
 
+  // ✨ NUEVA FUNCIÓN: Para cuando el usuario hace clic en "Todo en..."
+  confirmarSeleccionTodo(): void {
+    if (this.rutaCategorias.length > 0) {
+      const categoriaPadre = this.rutaCategorias[this.rutaCategorias.length - 1];
+      this.dropdownAbierto = false;
+      this.categorySelected.emit({
+        categoriaId: categoriaPadre.id,
+        rutaCategorias: [...this.rutaCategorias]
+      });
+    }
+  }
+
   volverCategoria(): void {
     this.rutaCategorias.pop();
     const last = this.rutaCategorias.at(-1);
@@ -122,9 +131,8 @@ export class CategorySelectorComponent implements OnInit {
       this.todasLasCategorias.filter(c => c.parent_id === null);
   }
 
-  // ✨ NUEVO: Botón para limpiar manualmente desde el selector
   limpiarSeleccion(event: Event): void {
-    event.stopPropagation(); // Para que no abra el dropdown
+    event.stopPropagation();
     this.limpiarEstadoInterno();
     this.categorySelected.emit({ categoriaId: null, rutaCategorias: [] });
   }

@@ -11,67 +11,70 @@ export interface Marca {
 
 @Component({
   selector: 'app-brand-selector',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './brand-selector.component.html',
   styleUrl: './brand-selector.component.css'
 })
 export class BrandSelectorComponent implements OnInit {
-  // @Input() marcas: Marca[] = [];
-  @Input() initialValue: string = ''; // Para edición: nombre de la marca actual
+  @Input() initialValue: string = ''; 
   @Output() brandChanged = new EventEmitter<Marca>();
 
   marcaInput: string = '';
   dropdownOpen: boolean = false;
   marcaSeleccionada: Marca | null = null;
-
+  
   marcas: any[] = [];
+  listaFiltrada: Marca[] = []; // ✨ NUEVA VARIABLE DE ESTADO
 
   constructor(private productsService: ProductsService) {}
 
   ngOnInit() {
-    
       this.cargarMarcas();
-      // this.marcaInput = this.initialValue;
-      // // Intentamos encontrar la marca en la lista inicial
-      // const existente = this.marcas.find(m => m.nombre.toLowerCase() === this.initialValue.toLowerCase());
-      // if (existente) this.marcaSeleccionada = existente;
-    
   }
 
   cargarMarcas(): void {
     this.productsService.cargarMarcas().subscribe({
       next: (data: any[]) => {
         this.marcas = data.sort((a,b) => a.nombre.localeCompare(b.nombre));
+        this.actualizarFiltro(); // Llenamos la lista la primera vez
       }
     });
   }
 
-@Input() set marcaInicial(marca: any | null) {
+  @Input() set marcaInicial(marca: any | null) {
     if (marca) {
       this.marcaSeleccionada = marca;
       this.marcaInput = marca.nombre;
     } else {
-      // Si llega null (al darle a "Añadir Nuevo Producto"), limpiamos todo
       this.marcaSeleccionada = null;
       this.marcaInput = '';
     }
+    this.actualizarFiltro(); // Actualizamos si cambia desde fuera
   }
 
-  get marcasFiltradas(): Marca[] {
+  // ✨ LA MAGIA OCURRE AQUÍ: Esta función reemplaza al "get"
+  actualizarFiltro(): void {
     const input = this.marcaInput.trim().toLowerCase();
+    
+    // 1. Filtramos
     let filtradas = this.marcas.filter(m => m.nombre.toLowerCase().includes(input));
 
-    // Si hay una seleccionada, la ponemos primero
+    // 2. SALVAVIDAS: Solo tomamos 50 para no reventar el HTML
+    filtradas = filtradas.slice(0, 50);
+
+    // 3. Posicionamos la seleccionada arriba
     if (this.marcaSeleccionada) {
       filtradas = filtradas.filter(m => m.nombre !== this.marcaSeleccionada!.nombre);
       filtradas.unshift(this.marcaSeleccionada);
     }
 
-    // Opción para marca nueva
+    // 4. Opción para nueva marca
     if (input && !this.marcas.some(m => m.nombre.toLowerCase() === input)) {
       filtradas.unshift({ nombre: this.marcaInput, isNew: true });
     }
-    return filtradas;
+    
+    this.listaFiltrada = filtradas;
   }
 
   selectMarca(marca: Marca): void {
@@ -79,10 +82,12 @@ export class BrandSelectorComponent implements OnInit {
     this.marcaInput = marca.nombre;
     this.dropdownOpen = false;
     this.brandChanged.emit(marca);
+    this.actualizarFiltro(); // Recalculamos al seleccionar
   }
 
   onInputChange(): void {
     this.dropdownOpen = true;
+    this.actualizarFiltro(); // ✨ SOLO se filtra cuando el usuario teclea
   }
 
   onBlur(): void {
@@ -91,7 +96,6 @@ export class BrandSelectorComponent implements OnInit {
       if (this.marcaSeleccionada) {
         this.marcaInput = this.marcaSeleccionada.nombre;
       } else if (this.marcaInput.trim()) {
-        // Si no seleccionó nada pero escribió algo nuevo
         const nueva = { nombre: this.marcaInput, isNew: true };
         this.selectMarca(nueva);
       }
@@ -100,5 +104,6 @@ export class BrandSelectorComponent implements OnInit {
 
   onFocus(): void {
     this.dropdownOpen = true;
+    this.actualizarFiltro();
   }
 }

@@ -6,7 +6,7 @@
         <span class="icon">🔍</span>
         <input 
           type="text" 
-          placeholder="Escanea el código de barras o teclea el ID del Stock y presiona Enter..." 
+          placeholder="Escanea el código de barras o teclea el ID del Stock..." 
           [(ngModel)]="codigoBusqueda"
           (keyup.enter)="buscarYAgregarProducto()"
           autofocus>
@@ -48,12 +48,13 @@
     <div class="checkout-card">
       <div class="grid-2" style="margin-bottom: 12px;">
         <div class="field">
-          <label>Fecha de Venta</label>
+          <label>Fecha de Venta <span style="color: #e74c3c; font-weight: bold;">*</span></label>
           <input type="date" [(ngModel)]="datosVenta.fecha">
         </div>
         <div class="field">
-          <label>Vendedor</label>
+          <label>Vendedor <span style="color: #e74c3c; font-weight: bold;">*</span></label>
           <select [(ngModel)]="datosVenta.vendedor">
+            <option value="">Selecciona...</option>
             <option value="Yenny">Yenny</option>
             <option value="Maikol">Maikol</option>
             <option value="Paola">Paola</option>
@@ -75,7 +76,7 @@
           <label>Estado del Pago</label>
           <select [(ngModel)]="datosVenta.estado_pago">
             <option value="pagado">✅ Pagado</option>
-            <option value="pendiente">⏳ Pendiente (Retenido)</option>
+            <option value="pendiente">⏳ Pendiente</option>
           </select>
         </div>
       </div>
@@ -83,107 +84,125 @@
       <div class="field">
         <label>Estado del Pedido</label>
         <select [(ngModel)]="datosVenta.estado_venta">
-          <option value="completada">✅ Completada (Entregada)</option>
-          <option value="procesando">📦 Procesando (Preparando paquete)</option>
-          <option value="enviada">🚚 Enviada (En tránsito)</option>
+          <option value="completada">✅ Completada</option>
+          <option value="procesando">📦 Procesando</option>
+          <option value="enviada">🚚 Enviada</option>
         </select>
       </div>
     </div>
 
     <div class="checkout-card">
-      
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h4 style="margin: 0; font-size: 0.9rem; color: #7f8c8d;">👤 Identificación de Cliente</h4>
+        <span *ngIf="comprasPreviasCliente !== null && comprasPreviasCliente > 0" 
+              style="background: #eafaf1; color: #27ae60; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; border: 1px solid #27ae60;">
+          ⭐ Recurrente: {{ comprasPreviasCliente }} compras
+        </span>
+      </div>
+
       <ng-container *ngIf="datosVenta.canal === 'tienda_fisica'">
         <div class="grid-2" style="margin-bottom: 12px;">
-          
           <div class="field">
-            <label>Tipo de Identificador</label>
+            <label>Tipo Identificador</label>
             <select [(ngModel)]="datosVenta.tipo_identificador" (change)="datosVenta.identificador_cliente = ''">
               <option value="telefono">📱 Teléfono</option>
-              <option value="documento">🪪 Documento (DNI/Cédula)</option>
-              <option value="nombre_anonimo">👤 Solo Nombre / Anónimo</option>
+              <option value="email">📧 Email</option> 
+              <option value="documento">🪪 DNI/NIE</option>
+              <option value="nombre_anonimo">👤 Nombre / Anónimo</option>
             </select>
           </div>
 
           <div class="field" *ngIf="datosVenta.tipo_identificador === 'telefono'">
-            <label>Número de Teléfono</label>
-            <div style="display: flex; gap: 8px;">
-              <select [(ngModel)]="datosVenta.prefijo_telefono" style="width: 130px; font-size: 0.9em;">
-                <option *ngFor="let p of prefijosPaises" [value]="p.codigo">{{ p.pais }}</option>
+            <label>Teléfono <span style="color: #e74c3c; font-weight: bold;">*</span></label>
+            <div style="display: flex; gap: 5px;">
+              <select [(ngModel)]="datosVenta.prefijo_telefono" style="width: 80px;">
+                <option *ngFor="let p of prefijosPaises" [value]="p.codigo">{{ p.codigo }}</option>
               </select>
-              <input 
-                type="text" 
-                [(ngModel)]="datosVenta.identificador_cliente" 
-                (blur)="buscarHistorialCliente()"
-                placeholder="600 123 456"
-                style="flex: 1;">
+              <input type="text" [(ngModel)]="datosVenta.identificador_cliente" (blur)="buscarHistorialCliente()" placeholder="600123456" style="flex: 1;">
             </div>
           </div>
 
+          <div class="field" *ngIf="datosVenta.tipo_identificador === 'email'">
+            <label>Email <span style="color: #e74c3c; font-weight: bold;">*</span></label>
+            <input type="email" [(ngModel)]="datosVenta.identificador_cliente" (blur)="buscarHistorialCliente()" placeholder="correo@ejemplo.com">
+          </div>
+          
           <div class="field" *ngIf="datosVenta.tipo_identificador === 'documento'">
-            <label>Nº de Documento</label>
-            <div style="display: flex; gap: 8px;">
-              <select [(ngModel)]="datosVenta.tipo_documento" style="width: 140px; font-size: 0.9em;">
-                <option *ngFor="let doc of tiposDocumentos" [value]="doc.id">{{ doc.nombre }}</option>
-              </select>
-              <input 
-                type="text" 
-                [(ngModel)]="datosVenta.identificador_cliente" 
-                (blur)="buscarHistorialCliente()"
-                placeholder="X1234567Z"
-                style="flex: 1;">
-            </div>
+            <label>Documento <span style="color: #e74c3c; font-weight: bold;">*</span></label>
+            <input type="text" [(ngModel)]="datosVenta.identificador_cliente" (blur)="buscarHistorialCliente()" placeholder="12345678X">
           </div>
 
           <div class="field" *ngIf="datosVenta.tipo_identificador === 'nombre_anonimo'">
-            <label>Identificador (Opcional)</label>
-            <input 
-              type="text" 
-              [(ngModel)]="datosVenta.identificador_cliente" 
-              (blur)="buscarHistorialCliente()"
-              placeholder="Ej: El chico de la gorra azul"
-              style="width: 100%;">
+            <label>Identificador <span style="color: #e74c3c; font-weight: bold;">*</span></label>
+            <input type="text" [(ngModel)]="datosVenta.identificador_cliente" (blur)="buscarHistorialCliente()" placeholder="Ej: Anónimo o Cliente Mostrador">
           </div>
-
         </div>
       </ng-container>
 
       <ng-container *ngIf="datosVenta.canal !== 'tienda_fisica'">
         <div class="field" style="margin-bottom: 12px;">
           <label>
-            <span *ngIf="datosVenta.canal === 'vinted' || datosVenta.canal === 'wallapop'">Usuario de la App</span>
+            <span *ngIf="datosVenta.canal === 'vinted' || datosVenta.canal === 'wallapop'">Usuario de la App (&#64;usuario)</span>
             <span *ngIf="datosVenta.canal === 'web'">Email del Cliente</span>
-            <span class="required-asterisk" title="Obligatorio">*</span>
+            <span style="color: #e74c3c; font-weight: bold;"> *</span>
           </label>
           <input 
             type="text" 
             [(ngModel)]="datosVenta.identificador_cliente" 
             (blur)="buscarHistorialCliente()"
-            [placeholder]="datosVenta.canal === 'web' ? 'ejemplo@correo.com' : 'Ej: @maria_cool'"
-            style="width: 100%;">
+            [placeholder]="datosVenta.canal === 'web' ? 'ejemplo@correo.com' : 'Ej: @maria_cool'">
         </div>
       </ng-container>
 
       <div class="field">
-        <label>Nombre Real / Facturación <span style="font-weight: normal; color: #7f8c8d;">(Opcional)</span></label>
-        <div style="display: flex; gap: 8px;">
+        <label>País de Compra <span style="color: #e74c3c; font-weight: bold;">*</span></label>
+        <select [(ngModel)]="datosVenta.pais">
+          <option value="">Selecciona el país...</option>
+          <option *ngFor="let p of listaPaises" [value]="p.nombre">
+            {{ p.bandera }} {{ p.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field" style="border-top: 1px solid #f0f2f5; margin-top: 10px; padding-top: 10px;">
+        <label>Nombre y Apellidos Reales <span class="text-muted">(Factura/Envío)</span></label>
+        <div style="display: flex; gap: 10px; margin-bottom: 5px;">
           <input 
             type="text" 
             [(ngModel)]="datosVenta.nombre_cliente" 
-            placeholder="Para la etiqueta de envío o factura..."
+            placeholder="Nombre" 
             style="flex: 1;">
-          
-          <button type="button" class="btn-outline-primary" style="padding: 0 10px;" *ngIf="comprasPreviasCliente !== null" title="Compras previas">
-            🛍️ {{ comprasPreviasCliente }}
-          </button>
+          <input 
+            type="text" 
+            [(ngModel)]="datosVenta.apellidos_cliente" 
+            placeholder="Apellidos" 
+            style="flex: 1;">
         </div>
-        <small style="color: #7f8c8d; font-size: 0.8rem; margin-top: 4px; display: block;" *ngIf="comprasPreviasCliente !== null">
-          {{ comprasPreviasCliente > 0 ? '¡Cliente recurrente! Considera un descuento.' : 'Cliente nuevo.' }}
-        </small>
+        
+        <div style="margin-top: 10px;">
+          <div *ngIf="comprasPreviasCliente !== null && comprasPreviasCliente > 0" 
+              style="background: #eafaf1; color: #27ae60; padding: 8px; border-radius: 8px; border: 1px solid #27ae60; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">⭐</span>
+            <div>
+              <strong style="display: block;">¡CLIENTE RECONOCIDO!</strong>
+              <span>Ha realizado {{ comprasPreviasCliente }} compra{{ comprasPreviasCliente > 1 ? 's' : '' }} anteriormente.</span>
+            </div>
+          </div>
+
+          <div *ngIf="comprasPreviasCliente === 0" 
+              style="background: #f4f6f8; color: #7f8c8d; padding: 8px; border-radius: 8px; border: 1px solid #e0e6ed; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🆕</span>
+            <div>
+              <strong style="display: block;">CLIENTE NUEVO</strong>
+              <span>No hay registros previos de este identificador en el CRM.</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="checkout-card" *ngIf="datosVenta.canal !== 'tienda_fisica'">
-      <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #7f8c8d;">📦 Datos de Envío</h4>
+      <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #7f8c8d;">📦 Logística</h4>
       <div class="grid-2">
         <div class="field">
           <label>Transportista</label>
@@ -193,112 +212,11 @@
             <option value="vinted_go">Vinted Go</option>
             <option value="inpost">InPost</option>
             <option value="seur">SEUR</option>
-            <option value="gls">GLS</option>
-            <option value="boyaca">Boyacá</option>
-            <option value="liberty_express">Liberty Express</option>
-            <option value="fedex">FedEx</option>
-            <option value="mrw">MRW</option>
-            <option value="dhl">DHL</option>
-
-            <option value="correos_express">Correos Express</option>
-            <option value="nacex">Nacex</option>
-            <option value="tnt">TNT</option>
-            <option value="ups">UPS</option>
-            <option value="zeleris">Zeleris</option>
-            <option value="envialia">Envialia</option>
-            <option value="tipsa">Tipsa</option>
-            <option value="ctt_express">CTT Express</option>
-            <option value="mondial_relay">Mondial Relay</option>
-            <option value="punto_pack">Punto Pack</option>
-            <option value="paack">Paack</option>
-            <option value="ontime">Ontime</option>
-            <option value="ecoscooting">EcoScooting</option>
-            <option value="koiki">Koiki</option>
-            <option value="dpd">DPD</option>
-            <option value="chronopost">Chronopost</option>
-            <option value="colissimo">Colissimo</option>
-            <option value="la_poste">La Poste (Francia)</option>
-            <option value="bpost">Bpost (Bélgica)</option>
-            <option value="postnl">PostNL (Países Bajos)</option>
-            <option value="deutsche_post">Deutsche Post (Alemania)</option>
-            <option value="hermes">Hermes / Evri</option>
-            <option value="poste_italiane">Poste Italiane (Italia)</option>
-            <option value="brt">BRT Bartolini (Italia)</option>
-            <option value="swiss_post">Swiss Post (Suiza)</option>
-            <option value="royal_mail">Royal Mail (Reino Unido)</option>
-            <option value="parcelforce">Parcelforce</option>
-            <option value="yodel">Yodel</option>
-            <option value="postnord">PostNord (Escandinavia)</option>
-            <option value="bring">Bring (Noruega)</option>
-            <option value="omniva">Omniva (Bálticos)</option>
-
-            <option value="usps">USPS (Estados Unidos)</option>
-            <option value="canada_post">Canada Post</option>
-            <option value="purolator">Purolator</option>
-            <option value="estafeta">Estafeta (México)</option>
-            <option value="redpack">Redpack (México)</option>
-            <option value="tresguerras">Tresguerras (México)</option>
-            <option value="correos_de_mexico">Correos de México</option>
-            <option value="andreani">Andreani (Argentina)</option>
-            <option value="correo_argentino">Correo Argentino</option>
-            <option value="oca">OCA (Argentina)</option>
-            <option value="chilexpress">Chilexpress</option>
-            <option value="starken">Starken (Chile)</option>
-            <option value="servientrega">Servientrega (Colombia)</option>
-            <option value="coordinadora">Coordinadora (Colombia)</option>
-            <option value="deprisa">Deprisa (Colombia)</option>
-            <option value="envia">Envía (Colombia)</option>
-            <option value="olva_courier">Olva Courier (Perú)</option>
-            <option value="serpost">Serpost (Perú)</option>
-            <option value="correios">Correios (Brasil)</option>
-            <option value="jadlog">Jadlog (Brasil)</option>
-            <option value="loggi">Loggi (Brasil)</option>
-            <option value="total_express">Total Express (Brasil)</option>
-            <option value="grupo_zoom">Grupo ZOOM (Venezuela)</option>
-            <option value="tealca">Tealca (Venezuela)</option>
-            <option value="domesa">Domesa (Venezuela)</option>
-            <option value="servientrega_ecuador">Servientrega (Ecuador)</option>
-            <option value="tramaco_express">Tramaco Express (Ecuador)</option>
-
-            <option value="australia_post">Australia Post</option>
-            <option value="toll_group">Toll Group</option>
-            <option value="startrack">StarTrack</option>
-            <option value="japan_post">Japan Post</option>
-            <option value="yamato_transport">Yamato Transport</option>
-            <option value="sagawa_express">Sagawa Express</option>
-            <option value="china_post">China Post</option>
-            <option value="sf_express">SF Express</option>
-            <option value="yto_express">YTO Express</option>
-            <option value="zto_express">ZTO Express</option>
-            <option value="sto_express">STO Express</option>
-            <option value="cainiao">Cainiao</option>
-            <option value="jd_logistics">JD Logistics</option>
-            <option value="india_post">India Post</option>
-            <option value="blue_dart">Blue Dart</option>
-            <option value="delhivery">Delhivery</option>
-            <option value="dt_dc">DTDC</option>
-            <option value="pos_indonesia">Pos Indonesia</option>
-            <option value="jne">JNE (Indonesia)</option>
-            <option value="jt_express">J&T Express</option>
-            <option value="ninja_van">Ninja Van</option>
-            <option value="aramex">Aramex</option>
-            <option value="saudi_post">Saudi Post (SPL)</option>
-            <option value="emirates_post">Emirates Post</option>
-
-            <option value="amazon_logistics">Amazon Logistics</option>
-            <option value="stuart">Stuart</option>
-            <option value="glovo">Glovo</option>
-            <option value="uber_connect">Uber Connect</option>
-            <option value="grab_express">GrabExpress</option>
-            <option value="lalamove">Lalamove</option>
-
-            <option value="otros">Otros</option>
-            <option value="sin_transporte">Sin Transporte</option>
           </select>
         </div>
         <div class="field">
           <label>Nº Seguimiento</label>
-          <input type="text" [(ngModel)]="datosVenta.numero_seguimiento" placeholder="Ej: PKG123456789...">
+          <input type="text" [(ngModel)]="datosVenta.numero_seguimiento" placeholder="Seguimiento...">
         </div>
       </div>
     </div>
@@ -309,23 +227,23 @@
         <span>{{ subtotal | number:'1.2-2' }} €</span>
       </div>
       <div class="tot-row">
-        <span>Descuento Manual</span>
+        <span>Descuento</span>
         <div class="discount-input">
           <span>-</span>
-          <input type="number" [(ngModel)]="datosVenta.descuento_total" (ngModelChange)="calcularTotales()" placeholder="0.00">
+          <input type="number" [(ngModel)]="datosVenta.descuento_total" (ngModelChange)="calcularTotales()">
           <span>€</span>
         </div>
       </div>
       <div class="tot-row" *ngIf="datosVenta.canal !== 'tienda_fisica'">
-        <span>Costos de Envío</span>
+        <span>Envío</span>
         <div class="discount-input">
           <span>+</span>
-          <input type="number" [(ngModel)]="datosVenta.costo_envio" (ngModelChange)="calcularTotales()" placeholder="0.00">
+          <input type="number" [(ngModel)]="datosVenta.costo_envio" (ngModelChange)="calcularTotales()">
           <span>€</span>
         </div>
       </div>
       <div class="tot-row total-row">
-        <span>TOTAL A COBRAR</span>
+        <span>TOTAL</span>
         <span class="total-amount">{{ total | number:'1.2-2' }} €</span>
       </div>
     </div>
@@ -336,9 +254,8 @@
         <button [class.active]="datosVenta.metodo_pago === 'efectivo'" (click)="datosVenta.metodo_pago = 'efectivo'">💵 Efectivo</button>
         <button [class.active]="datosVenta.metodo_pago === 'tarjeta'" (click)="datosVenta.metodo_pago = 'tarjeta'">💳 Tarjeta</button>
         <button [class.active]="datosVenta.metodo_pago === 'bizum'" (click)="datosVenta.metodo_pago = 'bizum'">📱 Bizum</button>
-        <button [class.active]="datosVenta.metodo_pago === 'plataforma'" *ngIf="datosVenta.canal !== 'tienda_fisica'" (click)="datosVenta.metodo_pago = 'plataforma'">🌐 App/Web</button>
-        <button [class.active]="datosVenta.metodo_pago === 'vinted'" *ngIf="datosVenta.canal === 'vinted'" (click)="datosVenta.metodo_pago = 'vinted'">👗 Vinted</button>
-        <button [class.active]="datosVenta.metodo_pago === 'wallapop'" *ngIf="datosVenta.canal === 'wallapop'" (click)="datosVenta.metodo_pago = 'wallapop'">📦 Wallapop</button>
+        <button [class.active]="datosVenta.metodo_pago === 'plataforma'" *ngIf="datosVenta.canal !== 'tienda_fisica'" (click)="datosVenta.metodo_pago = 'plataforma'">🌐 Web</button>
+        <button [class.active]="datosVenta.metodo_pago === 'vinted'" (click)="datosVenta.metodo_pago = 'vinted'">🌐 Vinted</button>
       </div>
     </div>
 
