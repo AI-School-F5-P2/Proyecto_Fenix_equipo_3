@@ -85,7 +85,7 @@ app.include_router(gastos_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(router_statistics, prefix="/api/v1")
 app.include_router(cliente_router, prefix="/api/v1")
-app.include_router(consignacion_router, prefix="/api/v1/consignacion")
+app.include_router(consignacion_router, prefix="/api/v1")
 
 
 

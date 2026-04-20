@@ -125,37 +125,55 @@ def guardar_valores_stock(db: Session, stock_obj: Stock, atributos_data: list):
 
 
 # =====================================================
-# CREAR PRODUCTO COMPLETO
+# CREAR PRODUCTO COMPLETO (CORREGIDA)
 # =====================================================
 def crear_producto(
-    db: Session, nombre: str, estado: str, descripcion: Optional[str], categoria_id: int, tipo: str, 
-    publico_objetivo: str, variantes: str, marca_id: Optional[int] = None, 
-    marca_nombre: Optional[str] = None, imagenes: Optional[Dict[str, List]] = None, es_vintage: bool = False, epoca: Optional[str] = None
+    db: Session, 
+    nombre: str, 
+    estado: str, 
+    descripcion: Optional[str], 
+    categoria_id: int, 
+    tipo: str, 
+    publico_objetivo: str, 
+    variantes: str, 
+    marca_id: Optional[int] = None, 
+    marca_nombre: Optional[str] = None, 
+    imagenes: Optional[Dict[str, List]] = None, 
+    es_vintage: bool = False, 
+    epoca: Optional[str] = None
 ):
     desc_final = descripcion.strip() if descripcion else ""
     
     if not publico_objetivo or not publico_objetivo.strip():
         raise HTTPException(status_code=400, detail="El público objetivo es obligatorio.")
 
+    # 1. VALIDACIÓN Y PARSEO DE VARIANTES
     try:
         variantes_json = json.loads(variantes)
         variantes_validadas = [VarianteSchema(**v) for v in variantes_json] 
     except ValidationError as e:
+        # ✨ EL CHIVATO: Extraemos exactamente qué campo falló en el esquema
+        campo_fallido = e.errors()[0].get("loc", ["desconocido"])[-1]
         error_msg = e.errors()[0].get("msg", "Datos de variante inválidos")
-        raise HTTPException(status_code=400, detail=f"Error en variantes: {error_msg}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Error en la variante (Campo '{campo_fallido}'): {error_msg}"
+        )
 
+    # 2. GESTIÓN DE MARCA
     if not marca_id and marca_nombre:
         nombre_clean = marca_nombre.strip()
         marca_existente = db.query(Marca).filter(Marca.nombre.ilike(nombre_clean)).first()
         marca_id = marca_existente.id if marca_existente else crear_marca(db, nombre=nombre_clean).id
 
+    # 3. CREACIÓN DEL PRODUCTO PADRE
     producto = Producto(
         nombre=nombre.strip(), 
         descripcion=desc_final, 
         categoria_id=categoria_id,
         marca_id=marca_id, 
         estado=estado,
-        es_vintage=es_vintage, # ✨ ASIGNACIÓN
+        es_vintage=es_vintage,
         epoca=epoca,
         tipo=tipo, 
         publico_objetivo=publico_objetivo,
@@ -165,6 +183,7 @@ def crear_producto(
     db.flush()
     producto.sku = generar_sku(tipo, producto.id)
 
+    # 4. PROCESAMIENTO DE VARIANTES
     for v_data in variantes_validadas:
         if not v_data.descripcion or not v_data.descripcion.strip():
             raise HTTPException(status_code=400, detail="Cada variante debe tener su propia descripción.")
@@ -180,32 +199,45 @@ def crear_producto(
         db.flush()
         nueva_variante.sku = generar_sku(tipo, nueva_variante.id)
 
+        # 5. PROCESAMIENTO DE STOCKS (Tallas/Medidas)
         for s_data in v_data.stocks:
+            # Validación básica de stock físico
             if s_data.stock <= 0:
-                raise HTTPException(status_code=400, detail="El stock debe ser mayor a 0.")
+                raise HTTPException(status_code=400, detail="El stock inicial debe ser mayor a 0.")
 
+            # --- ✨ LÓGICA DE PROVEEDOR Y DUEÑO (CONSIGNACIÓN) ---
             p_id = s_data.proveedor_id
-            if not p_id:
-                nombre_p = s_data.proveedor_nombre_nuevo or s_data.proveedor
-                proveedor_obj = buscar_o_crear(db, nombre_p, contexto="inventario")
-                p_id = proveedor_obj.id if proveedor_obj else None
+            propietario_id = getattr(s_data, 'propietario_id', None)
 
+            if propietario_id:
+                # Si hay un dueño (Merlina), el proveedor no es obligatorio
+                # Ignoramos cualquier intento de buscar proveedor mayorista
+                p_id = None 
+            else:
+                # Si es inventario Allsys, buscamos o creamos el proveedor
+                if not p_id:
+                    nombre_p = s_data.proveedor_nombre_nuevo or s_data.proveedor
+                    if nombre_p and nombre_p.strip():
+                        proveedor_obj = buscar_o_crear(db, nombre_p.strip(), contexto="inventario")
+                        p_id = proveedor_obj.id if proveedor_obj else None
+
+            # Gestión de ID manual (Para migraciones de Excel)
             id_forzado = s_data.id_manual if hasattr(s_data, 'id_manual') and s_data.id_manual else None
-
-            # Verificación de seguridad: Si envías un ID, comprobamos que no esté ocupado
             if id_forzado:
                 stock_existente = db.query(Stock).filter(Stock.id == id_forzado).first()
                 if stock_existente:
-                    raise HTTPException(status_code=400, detail=f"El ID manual {id_forzado} ya está en uso en otro producto.")
+                    raise HTTPException(status_code=400, detail=f"El ID manual {id_forzado} ya está en uso.")
 
+            # Crear objeto Stock
             stock_obj = Stock(
-                id=id_forzado, # ✨ AQUÍ LE PASAMOS EL ID FORZADO (Si es None, PostgreSQL usará el Auto-Increment)
+                id=id_forzado,
                 variante_id=nueva_variante.id,
                 proveedor_id=p_id,
+                propietario_id=propietario_id, # ✨ ASIGNACIÓN DEL DUEÑO
                 ubicacion=s_data.ubicacion,
                 etiqueta=s_data.etiqueta,
                 cantidad=s_data.stock,
-                precio_compra=s_data.precio_compra,
+                precio_compra=s_data.precio_compra, # Puede ser 0 si hay propietario_id
                 precio_venta=s_data.precio_venta,
                 fecha_compra=s_data.fecha_compra,
                 publicar_web=s_data.publicar_web,
@@ -217,23 +249,29 @@ def crear_producto(
             db.flush()
             stock_obj.sku = generar_sku(tipo, stock_obj.id)
 
-            if s_data.atributos:
+            # 6. ATRIBUTOS EAV (Talla, Material, etc.)
+            if s_data.atributos: # Nota: asegurate si en tu schema es 'atributos' o 'attributes'
+                attr_dicts = [{"nombre": a.nombre, "valor": a.valor} for a in s_data.atributos]
+                guardar_valores_stock(db, stock_obj, attr_dicts)
+            elif hasattr(s_data, 'atributos') and s_data.atributos:
                 attr_dicts = [{"nombre": a.nombre, "valor": a.valor} for a in s_data.atributos]
                 guardar_valores_stock(db, stock_obj, attr_dicts)
 
+        # 7. IMÁGENES (S3)
         lista_mezclada = v_data.imagenes if v_data.imagenes else []
         for indice, marcador in enumerate(lista_mezclada):
             if isinstance(marcador, str) and marcador.startswith('NUEVA_'):
                 key_archivo = f"file_{v_data.temp_id}_{marcador}"
                 if imagenes and key_archivo in imagenes:
                     file_to_upload = imagenes[key_archivo][0]
+                    # Subimos a S3 organizado por Producto/Variante
                     url_s3 = upload_image_to_s3(file_to_upload, folder=f"productos/{producto.id}/{nueva_variante.id}")
                     db.add(Imagen(url=url_s3, variante_id=nueva_variante.id, orden=indice))
 
+    # FINALIZAR
     db.commit()
     db.refresh(producto)
     return producto
-
 
 
 

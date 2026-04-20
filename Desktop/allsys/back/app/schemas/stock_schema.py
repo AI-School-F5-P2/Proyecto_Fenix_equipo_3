@@ -5,23 +5,43 @@ from datetime import date
 from app.schemas.atributo_schema import AtributoSchema
 
 class StockSchema(BaseModel):
-    # Reglas estrictas:
+    # Identificadores
+    id: Optional[int] = None
+    temp_id: Optional[str] = None # ✨ Necesario para que coincida con el Front
     id_manual: Optional[int] = None
+    
+    # Dueño (Consignación)
+    propietario_id: Optional[int] = None # ✨ CRUCIAL: Aquí es donde entra Merlina
+    
+    # Inventario y Costos
     stock: int = Field(..., ge=0, description="Las unidades no pueden ser negativas")
     precio_compra: float = Field(..., ge=0, description="El precio de compra no puede ser negativo")
-    proveedor: str = Field(..., min_length=1, description="El proveedor es obligatorio")
+    
+    # Proveedor (Ahora acepta vacíos sin rechistar)
+    proveedor: Optional[str] = "" 
+    proveedor_id: Optional[int] = None
+    proveedor_nombre_nuevo: Optional[str] = None
+    
+    # Logística
     fecha_compra: date = Field(..., description="La fecha de compra es obligatoria")
+    ubicacion: str = Field(default="", description="Ubicación en almacén") # ✨ Quitamos el min_length=1 por seguridad
+    etiqueta: str = Field(default="Única")
+    orden: Optional[int] = 0
+    
+    # Venta y Canales
+    precio_venta: float = Field(default=0.0)
+    descuento: int = 0
     publicar_web: bool = False
     publicar_vinted: bool = False
     publicar_wallapop: bool = False
-    descuento: int = 0
-    precio_venta: float = Field(default=0.0)
-    etiqueta: str = Field(default="Única")
-    proveedor_id: Optional[int] = None
-    proveedor_nombre_nuevo: Optional[str] = None
+    
+    # Atributos EAV
     atributos: List[AtributoSchema] = []
-    orden: Optional[int] = 0
-    ubicacion: str = Field(..., min_length=1, description="La ubicación en el almacén es obligatoria")
+
+    class Config:
+        # Esto permite que si el front envía "stock", Pydantic lo asigne a "stock"
+        # y si envía "cantidad", también funcione si lo mapeas.
+        populate_by_name = True
 
 class StockEditPayload(BaseModel):
     cantidad: int
