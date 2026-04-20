@@ -100,6 +100,10 @@ export class ListClientsComponent implements OnInit {
     return Math.ceil(this.totalItems / this.limit);
   }
 
+  irADetalle(id: number) {
+  this.router.navigate(['/clientes/detalle', id]);
+}
+
   irAEditar(id?: number) { 
     if (!id) {
       console.error("Error: Intentando editar un cliente sin ID");

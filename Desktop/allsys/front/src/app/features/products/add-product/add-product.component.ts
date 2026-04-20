@@ -377,10 +377,8 @@ productoVaAPublicarse(): boolean {
 
 
 
-
 private validarFormulario(): boolean {
   // 1. DETERMINAR ESTADO GLOBAL DE PUBLICACIÓN
-  // Usamos esta variable para saber si el nombre es obligatorio
   const vaAPublicarGlobal = this.productoVaAPublicarse();
 
   // 2. VALIDACIONES GLOBALES DEL PRODUCTO
@@ -396,25 +394,19 @@ private validarFormulario(): boolean {
     return this.lanzarError('Debes seleccionar una marca (o crear una nueva).');
   }
 
-  if (!this.marcaSeleccionada) {
-    return this.lanzarError('Debes seleccionar una marca (o crear una nueva).');
-  }
-
-  // ✨ NUEVA VALIDACIÓN VINTAGE
   if (this.esVintage && !this.epoca) {
     return this.lanzarError('Has indicado que la prenda es Vintage. Por favor, selecciona la Época/Década.');
   }
 
-  // Obtenemos el nombre del atributo maestro (Color, Material, etc.) según el tipo de producto
   const maestro = this.mapeoIdentidadPorCategoria;
 
   // 3. RECORRIDO DE VARIANTES (Colores/Estilos)
   for (let i = 0; i < this.variantes.length; i++) {
     const v = this.variantes[i];
-    const nV = i + 1; // Número de variante para el mensaje de error
+    const nV = i + 1;
 
     if (!v.identidad_variante) {
-      return this.lanzarError(`Variante ${nV}: El campo "${formatLabel(maestro)}" es obligatorio.`);
+      return this.lanzarError(`Variante ${nV}: El campo "${this.formatLabel(maestro)}" es obligatorio.`);
     }
 
     if (!v.descripcion || !v.descripcion.trim()) {
@@ -424,77 +416,82 @@ private validarFormulario(): boolean {
     // 4. RECORRIDO DE STOCKS (Tallas/Medidas dentro de la variante)
     for (let j = 0; j < v.stocks.length; j++) {
       const s = v.stocks[j];
-      const nS = j + 1; // Número de stock para el mensaje de error
+      const nS = j + 1;
 
       // A. Validación de Ubicación
       if (!s.ubicacion || !s.ubicacion.trim()) {
         return this.lanzarError(`Var ${nV}, Talla ${nS}: Indica la ubicación en el almacén.`);
       }
 
-      // B. ✨ LÓGICA DINÁMICA DE STOCK (CANTIDAD)
+      // B. LÓGICA DINÁMICA DE STOCK (CANTIDAD)
       if (!this.isEditMode) {
-        // CASO: CREACIÓN NUEVA -> El stock siempre debe ser mayor a 0
         if (s.stock <= 0) {
           return this.lanzarError(`Var ${nV}, Talla ${nS}: El stock inicial debe ser mayor a 0.`);
         }
       } else {
-        // CASO: MODO EDICIÓN
-        const esTallaNuevaEnEdicion = !s.id; // No tiene ID de base de datos aún
-
+        const esTallaNuevaEnEdicion = !s.id;
         if (esTallaNuevaEnEdicion && s.stock <= 0) {
-          // Si el usuario agrega una talla nueva durante la edición, debe traer mercancía
           return this.lanzarError(`Var ${nV}, Talla ${nS}: Al añadir una nueva talla, el stock debe ser mayor a 0.`);
         }
-
         if (!esTallaNuevaEnEdicion && s.stock < 0) {
-          // Si la talla ya existía, permitimos 0 (agotado), pero nunca negativo
           return this.lanzarError(`Var ${nV}, Talla ${nS}: El stock no puede ser un número negativo.`);
         }
       }
 
-      // C. Validaciones Logísticas Obligatorias
-      if (s.precio_compra <= 0) {
-        return this.lanzarError(`Var ${nV}, Talla ${nS}: El precio de compra debe ser mayor a 0.`);
+      // =================================================================
+      // C. ✨ LÓGICA INTELIGENTE DE PROVEEDOR Y PRECIO (CONSIGNACIÓN VS ALLSYS)
+      // =================================================================
+      
+      if (!s.propietario_id) {
+        // 🏢 CASO 1: INVENTARIO PROPIO (ALLSYS)
+        // Tú compraste la mercancía. Exigimos Proveedor y Precio > 0.
+        if (s.precio_compra <= 0) {
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: Al ser Inventario Propio (Allsys), el precio de compra debe ser mayor a 0.`);
+        }
+        if (!s.proveedor_id && !s.proveedor) {
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: Al ser Inventario Propio, debes seleccionar o escribir un proveedor.`);
+        }
+      } else {
+        // 👤 CASO 2: CONSIGNACIÓN (CLIENTE COMO DUEÑO)
+        // El cliente te dejó la prenda. El precio puede ser 0 y NO se exige proveedor.
+        if (s.precio_compra < 0) {
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: El precio de compra/depósito no puede ser negativo.`);
+        }
+        
+        // (Opcional pero recomendado) Limpiamos el proveedor por si había escrito algo sin querer
+        s.proveedor = '';
+        s.proveedor_id = null;
       }
 
-      if (!s.proveedor_id && !s.proveedor) {
-        return this.lanzarError(`Var ${nV}, Talla ${nS}: Selecciona o escribe un proveedor.`);
-      }
-
+      // Validar la Fecha (Para consignación sirve como "Fecha de Recepción" del artículo)
       if (!s.fecha_compra) {
-        return this.lanzarError(`Var ${nV}, Talla ${nS}: La fecha de compra es obligatoria.`);
+        return this.lanzarError(`Var ${nV}, Talla ${nS}: La fecha de ingreso es obligatoria.`);
       }
 
-      // 5. VALIDACIONES DE PUBLICACIÓN (Solo si algún canal está activo en este stock)
+      // 5. VALIDACIONES DE PUBLICACIÓN
       const vaAPublicarEsteStock = s.publicar_web || s.publicar_vinted || s.publicar_wallapop;
 
       if (vaAPublicarEsteStock) {
-        // Verificar imágenes en la variante padre
         if (!v.imagenes || v.imagenes.length === 0) {
           return this.lanzarError(`Variante ${nV}: Debes subir al menos una foto para poder publicar este artículo.`);
         }
 
-        // Verificar precio de venta
         if (s.precio_venta <= 0) {
           return this.lanzarError(`Var ${nV}, Talla ${nS}: Para publicar, el precio de venta debe ser mayor a 0.`);
         }
 
-        // Verificar peso (esencial para envíos automáticos)
         const pesoAttr = s.atributos.find(a => a.nombre === 'peso_kg');
         const pesoValor = pesoAttr ? pesoAttr.valor : null;
         
-        if (pesoValor === null || pesoValor === undefined || pesoValor <= 0) {
-          return this.lanzarError(`Var ${nV}, Talla ${nS}: El peso es obligatorio para calcular los costos de envío.`);
+        if (pesoValor === null || pesoValor === undefined || Number(pesoValor) <= 0) {
+          return this.lanzarError(`Var ${nV}, Talla ${nS}: El peso (kg) es obligatorio para calcular los costos de envío automáticos.`);
         }
       }
     }
   }
 
-  // Si llegamos hasta aquí, todo está en orden
   return true;
 }
-
-
 
 
 
@@ -695,7 +692,11 @@ private construirFormData(): FormData {
             ubicacion: s.ubicacion,
             etiqueta: etiquetaCompuesta,
             atributos: atributosBlindados,
-            propietario_id: s.propietario_id
+            propietario_id: s.propietario_id,
+            // ✨ LA LIMPIEZA MÁGICA PARA PYDANTIC
+            sku: s.sku || 'TEMP', // Si está vacío, le ponemos TEMP
+            proveedor: s.proveedor || "", // Si está vacío, le mandamos null en vez de ""
+            proveedor_nombre_nuevo: (s as any).proveedor_nombre_nuevo || ""
           };
         })
       };

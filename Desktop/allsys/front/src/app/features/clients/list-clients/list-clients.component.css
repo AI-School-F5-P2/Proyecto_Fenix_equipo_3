@@ -1,76 +1,68 @@
-/* =========================================
-   CONTENEDOR PRINCIPAL Y CABECERA
-   ========================================= */
+/* CONTENEDOR PRINCIPAL */
 .page-container {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
-  animation: fadeIn 0.3s ease-in-out;
+  font-family: inherit;
 }
 
+/* CABECERA */
 .header-section {
   margin-bottom: 25px;
 }
 
 .header-section h2 {
-  font-size: 1.8rem;
+  margin: 0 0 5px 0;
   color: var(--ap-text-main, #2c3e50);
-  margin-bottom: 5px;
+  font-size: 1.8rem;
 }
 
 .header-section p {
-  color: var(--ap-text-muted, #7f8c8d);
-  font-size: 1rem;
   margin: 0;
+  color: var(--ap-text-muted, #7f8c8d);
+  font-size: 0.95rem;
 }
 
-/* =========================================
-   TARJETA DE FILTROS Y BÚSQUEDA
-   ========================================= */
+/* FILTROS */
 .filters-card {
-  background: var(--ap-bg-main, #ffffff);
+  background: var(--card-bg, #ffffff);
+  padding: 15px 20px;
   border-radius: var(--ap-radius-lg, 12px);
-  padding: 20px;
-  box-shadow: var(--ap-shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
-  margin-bottom: 25px;
-  border: 1px solid var(--ap-border-light, #eaedf1);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
+  border: 1px solid var(--border-color, #e0e6ed);
+  margin-bottom: 20px;
 }
 
-.search-box:focus-within {
-  border-color: var(--vinted-teal, #007782) !important;
-  box-shadow: 0 0 0 3px rgba(0, 119, 130, 0.1);
+.search-box input {
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--ap-text-main, #2c3e50);
+  width: 100%;
 }
 
 .filter-group select {
   padding: 8px 12px;
-  border: 1px solid var(--ap-border-base, #e0e6ed);
   border-radius: var(--ap-radius-md, 8px);
-  background-color: var(--ap-bg-main, #ffffff);
+  border: 1px solid var(--ap-border-base, #e0e6ed);
+  background: var(--card-bg, #ffffff);
+  font-family: inherit;
   color: var(--ap-text-main, #2c3e50);
-  font-size: 0.95rem;
   outline: none;
-  transition: var(--transition, all 0.2s);
-}
-
-.filter-group select:focus {
-  border-color: var(--vinted-teal, #007782);
+  cursor: pointer;
 }
 
 .btn-clear:hover {
-  background-color: var(--ap-bg-variant, #fafbfc) !important;
-  color: var(--danger, #e74c3c);
-  border-color: var(--danger, #e74c3c) !important;
+  background: var(--bg-body, #f4f6f8) !important;
 }
 
-/* =========================================
-   TABLA DE CLIENTES
-   ========================================= */
+/* TABLA */
 .table-container {
-  background: var(--ap-bg-main, #ffffff);
+  background: var(--card-bg, #ffffff);
   border-radius: var(--ap-radius-lg, 12px);
-  box-shadow: var(--ap-shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
+  border: 1px solid var(--border-color, #e0e6ed);
   overflow-x: auto;
-  border: 1px solid var(--ap-border-light, #eaedf1);
+  margin-bottom: 20px;
 }
 
 .ap-table {
@@ -80,120 +72,133 @@
 }
 
 .ap-table th {
-  background-color: var(--ap-bg-variant, #fafbfc);
-  color: var(--ap-text-muted, #7f8c8d);
-  font-weight: 600;
-  padding: 15px 20px;
+  background: var(--ap-bg-variant, #fafbfc);
+  padding: 15px;
   font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid var(--ap-border-light, #eaedf1);
+  color: var(--ap-text-muted, #7f8c8d);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color, #e0e6ed);
+  white-space: nowrap;
 }
 
 .ap-table td {
-  padding: 15px 20px;
-  border-bottom: 1px solid var(--ap-border-light, #eaedf1);
-  color: var(--ap-text-main, #2c3e50);
+  padding: 15px;
   vertical-align: middle;
+  border-bottom: 1px solid var(--border-color, #e0e6ed);
+  color: var(--ap-text-main, #2c3e50);
 }
 
 .ap-table tbody tr {
-  transition: var(--transition, all 0.2s);
+  transition: background 0.2s;
 }
 
 .ap-table tbody tr:hover {
-  background-color: var(--ap-bg-variant, #fafbfc);
+  background: var(--bg-body, #f4f6f8);
 }
 
 .text-muted {
   color: var(--ap-text-muted, #7f8c8d);
 }
 
-/* =========================================
-   ACCIONES Y BOTONES
-   ========================================= */
+/* ACCIONES (BOTONES DE LA TABLA) */
 .actions-col {
   text-align: center;
-  width: 80px;
+  width: 120px;
 }
 
 .actions-cell {
-  text-align: center;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
 }
 
 .btn-icon {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: var(--transition, all 0.2s);
-  display: inline-flex;
+  background: var(--bg-body, #f4f6f8);
+  border: 1px solid var(--border-color, #e0e6ed);
+  border-radius: 6px;
+  width: 34px;
+  height: 34px;
+  display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.1rem;
 }
 
 .btn-icon:hover {
-  background-color: var(--vinted-teal-light, #e6f2f3);
-  transform: scale(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* =========================================
-   ESTADO VACÍO (EMPTY STATE)
-   ========================================= */
+/* Color específico al pasar el ratón por el botón de Ver */
+.view-btn:hover {
+  background: var(--vinted-teal-light, #e6f2f3);
+  border-color: var(--vinted-teal, #007782);
+}
+
+/* Color específico al pasar el ratón por el botón de Editar */
+.edit-btn:hover {
+  background: #fff3e0;
+  border-color: #f39c12;
+}
+
+/* ESTADO VACÍO (SIN RESULTADOS) */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  background: var(--ap-bg-main, #ffffff);
+  padding: 50px 20px;
+  background: var(--card-bg, #ffffff);
   border-radius: var(--ap-radius-lg, 12px);
-  border: 1px dashed var(--ap-border-base, #e0e6ed);
+  border: 1px solid var(--border-color, #e0e6ed);
   color: var(--ap-text-muted, #7f8c8d);
-  margin-top: 20px;
 }
 
 .empty-state h3 {
+  margin: 0 0 10px 0;
   color: var(--ap-text-main, #2c3e50);
-  margin-bottom: 10px;
 }
 
-/* =========================================
-   PAGINACIÓN
-   ========================================= */
+.empty-state p {
+  margin: 0;
+}
+
+/* PAGINACIÓN */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 15px;
-  margin-top: 25px;
-  padding: 15px;
+  margin-top: 20px;
+  padding-bottom: 20px;
 }
 
 .pagination button {
   padding: 8px 16px;
-  border: 1px solid var(--ap-border-base, #e0e6ed);
-  background: var(--ap-bg-main, #ffffff);
-  color: var(--ap-text-main, #2c3e50);
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e0e6ed);
   border-radius: var(--ap-radius-md, 8px);
+  color: var(--ap-text-main, #2c3e50);
   cursor: pointer;
-  font-weight: 600;
-  transition: var(--transition, all 0.2s);
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-.pagination button:hover:not([disabled]) {
-  background: var(--vinted-teal-light, #e6f2f3);
-  border-color: var(--vinted-teal, #007782);
-  color: var(--vinted-teal, #007782);
+.pagination button:not(:disabled):hover {
+  background: var(--bg-body, #f4f6f8);
+  border-color: var(--primary, #007782);
+  color: var(--primary, #007782);
 }
 
-.pagination button[disabled] {
+.pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--ap-bg-variant, #fafbfc);
+  background: var(--bg-body, #f4f6f8);
 }
 
-/* Animación suave de entrada */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.pagination span {
+  color: var(--ap-text-muted, #7f8c8d);
+  font-size: 0.95rem;
+  font-weight: 500;
 }

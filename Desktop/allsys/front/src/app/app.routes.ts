@@ -22,6 +22,7 @@ import { StatisticsComponent } from './features/statistics/statistics.component'
 import { ListClientsComponent } from './features/clients/list-clients/list-clients.component';
 import { EditClientsComponent } from './features/clients/edit-clients/edit-clients.component';
 import { AddClientsComponent } from './features/clients/add-clients/add-clients.component';
+import { ClientDetailComponent } from './features/clients/client-detail/client-detail.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -62,6 +63,7 @@ export const routes: Routes = [
       { path: 'clientes', component: ListClientsComponent },
       { path: 'clientes/nuevo', component: AddClientsComponent },
       { path: 'clientes/editar/:id', component: AddClientsComponent },
+      { path: 'clientes/detalle/:id', component: ClientDetailComponent },
     ],
   },
 

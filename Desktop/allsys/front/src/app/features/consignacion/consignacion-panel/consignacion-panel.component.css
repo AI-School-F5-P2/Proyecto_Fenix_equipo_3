@@ -1,0 +1,206 @@
+.consignacion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px 0;
+}
+
+/* GRIDS Y TARJETAS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ap-radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stat-card .amount {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--text-main);
+  margin-bottom: 5px;
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stat-card.highlight {
+  border-color: var(--danger);
+  background: var(--ap-color-danger-bg);
+}
+
+.highlight-text {
+  color: var(--danger) !important;
+}
+
+.success-text {
+  color: var(--ap-color-success) !important;
+}
+
+.inventory-info {
+  display: flex;
+  gap: 15px;
+  font-size: 1rem;
+  color: var(--text-main);
+  margin-bottom: 5px;
+}
+
+/* LAYOUT FORMULARIO E HISTORIAL */
+.action-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .action-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.payment-form-card, .history-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ap-radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--primary);
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+/* CAMPOS DE FORMULARIO */
+.field {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.field input, .field select, .field textarea {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 119, 130, 0.1);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--ap-color-primary-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* HISTORIAL LISTA */
+.payments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.payment-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-body);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.payment-icon {
+  font-size: 1.5rem;
+  margin-right: 15px;
+}
+
+.payment-details {
+  flex-grow: 1;
+}
+
+.payment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.payment-method {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.payment-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.payment-ref {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.payment-amount {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--ap-color-success);
+  margin-left: 15px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 30px;
+  font-style: italic;
+}

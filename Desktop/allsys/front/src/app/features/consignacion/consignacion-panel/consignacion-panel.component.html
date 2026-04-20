@@ -1,0 +1,101 @@
+<div class="consignacion-container" *ngIf="!cargando && stats">
+  
+  <div class="stats-grid">
+    <div class="stat-card highlight">
+      <h4>Saldo Pendiente</h4>
+      <div class="amount highlight-text">{{ stats.saldo_pendiente | currency:'EUR' }}</div>
+      <p>Lo que debes pagarle al cliente</p>
+    </div>
+
+    <div class="stat-card">
+      <h4>Dinero Generado (PVP)</h4>
+      <div class="amount">{{ stats.dinero_generado_ventas | currency:'EUR' }}</div>
+      <p>Ventas totales brutas</p>
+    </div>
+
+    <div class="stat-card">
+      <h4>Beneficio Plataforma</h4>
+      <div class="amount success-text">{{ stats.beneficio_plataforma | currency:'EUR' }}</div>
+      <p>Tu ganancia neta</p>
+    </div>
+
+    <div class="stat-card">
+      <h4>Inventario del Cliente</h4>
+      <div class="inventory-info">
+        <span><b>{{ stats.prendas_en_stock }}</b> en stock</span>
+        <span><b>{{ stats.prendas_vendidas }}</b> vendidas</span>
+      </div>
+      <p>Total entregadas: {{ stats.total_prendas_entregadas }}</p>
+    </div>
+  </div>
+
+  <div class="action-layout">
+    <div class="payment-form-card">
+      <h3>💸 Registrar Nuevo Pago</h3>
+      
+      <div class="field">
+        <label>Monto a pagar (€)</label>
+        <input type="number" step="0.01" [(ngModel)]="nuevoPago.monto" [max]="stats.saldo_pendiente">
+      </div>
+
+      <div class="field">
+        <label>Método de Pago</label>
+        <select [(ngModel)]="nuevoPago.metodo_pago">
+          <option *ngFor="let metodo of metodosPago" [value]="metodo">{{ metodo }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Referencia (Opcional)</label>
+        <input type="text" [(ngModel)]="nuevoPago.referencia" placeholder="Ej: Transf. ES82...">
+      </div>
+
+      <div class="field">
+        <label>Notas internas</label>
+        <textarea [(ngModel)]="nuevoPago.notas" rows="2" placeholder="Ej: Pago de las ventas de marzo..."></textarea>
+      </div>
+
+      <button 
+        type="button" 
+        class="btn-primary" 
+        (click)="procesarPago()" 
+        [disabled]="isSubmitting || nuevoPago.monto <= 0">
+        {{ isSubmitting ? 'Procesando...' : 'Registrar Pago' }}
+      </button>
+    </div>
+
+    <div class="history-card">
+      <h3>📜 Historial de Pagos</h3>
+      
+      <div class="empty-state" *ngIf="pagos.length === 0">
+        No hay pagos registrados para este cliente.
+      </div>
+
+      <div class="payments-list" *ngIf="pagos.length > 0">
+        <div class="payment-item" *ngFor="let p of pagos">
+          <div class="payment-icon">
+            <span *ngIf="p.metodo_pago === 'Bizum'">📱</span>
+            <span *ngIf="p.metodo_pago === 'Efectivo'">💵</span>
+            <span *ngIf="p.metodo_pago !== 'Bizum' && p.metodo_pago !== 'Efectivo'">🏦</span>
+          </div>
+          <div class="payment-details">
+            <div class="payment-header">
+              <span class="payment-method">{{ p.metodo_pago }}</span>
+              <span class="payment-date">{{ p.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="payment-ref" *ngIf="p.referencia || p.notas">
+              {{ p.referencia }} <span *ngIf="p.referencia && p.notas">-</span> {{ p.notas }}
+            </div>
+          </div>
+          <div class="payment-amount">
+            {{ p.monto | currency:'EUR' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="cargando">
+  Cargando panel de consignación...
+</div>

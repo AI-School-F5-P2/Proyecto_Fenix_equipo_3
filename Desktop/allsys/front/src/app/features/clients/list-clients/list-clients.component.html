@@ -104,8 +104,10 @@
           </td>
 
           <td class="actions-cell">
-            <button class="btn-icon" (click)="irAEditar(cliente.id!)" title="Ver o Editar Ficha">✏️</button>
+            <button class="btn-icon view-btn" (click)="irADetalle(cliente.id!)" title="Ver Perfil y Finanzas">👁️</button>
+            <button class="btn-icon edit-btn" (click)="irAEditar(cliente.id!)" title="Editar Ficha">✏️</button>
           </td>
+
         </tr>
       </tbody>
     </table>

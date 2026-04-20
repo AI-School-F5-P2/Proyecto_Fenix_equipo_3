@@ -1,0 +1,97 @@
+<div class="page-container" *ngIf="!cargando && cliente">
+  
+  <div class="client-header">
+    <div class="header-info">
+      <button class="btn-icon back-btn" (click)="volver()" title="Volver a la lista">←</button>
+      <div>
+        <h2 class="client-name">
+          {{ cliente.nombre }} {{ cliente.apellidos || '' }}
+          <span class="vip-badge" *ngIf="cliente.es_vip">🌟 VIP</span>
+        </h2>
+        <p class="client-id" *ngIf="cliente.id">ID de Cliente: #{{ cliente.id }}</p>
+      </div>
+    </div>
+    <button class="btn-outline-primary" (click)="editarCliente()">✏️ Editar Perfil</button>
+  </div>
+
+  <div class="info-grid">
+    
+    <div class="info-card">
+      <h3>📞 Contacto</h3>
+      <div class="info-row">
+        <span class="info-label">Email:</span>
+        <span class="info-value" *ngIf="cliente.email">
+          <a [href]="'mailto:' + cliente.email">{{ cliente.email }}</a>
+        </span>
+        <span class="info-value empty" *ngIf="!cliente.email">No registrado</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Teléfono:</span>
+        <span class="info-value">{{ cliente.telefono || 'No registrado' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">DNI/NIE:</span>
+        <span class="info-value">{{ cliente.dni_nie || 'No registrado' }}</span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>🛍️ Plataformas</h3>
+      <div class="info-row">
+        <span class="info-label">Vinted:</span>
+        <span class="info-value" *ngIf="cliente.usuario_vinted">
+          <a [href]="'https://www.vinted.es/member/' + cliente.usuario_vinted" target="_blank">
+            &#64;{{ cliente.usuario_vinted }}
+          </a>
+        </span>
+        <span class="info-value empty" *ngIf="!cliente.usuario_vinted">No registrado</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Wallapop:</span>
+        <span class="info-value" *ngIf="cliente.usuario_wallapop">&#64;{{ cliente.usuario_wallapop }}</span>
+        <span class="info-value empty" *ngIf="!cliente.usuario_wallapop">No registrado</span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>📍 Dirección de Envío</h3>
+      <div class="address-block">
+        <p *ngIf="cliente.direccion">{{ cliente.direccion }}</p>
+        <p *ngIf="cliente.ciudad || cliente.codigo_postal || cliente.provincia">
+          {{ cliente.codigo_postal }} {{ cliente.ciudad }}
+          <span *ngIf="cliente.provincia">({{ cliente.provincia }})</span>
+        </p>
+        <p class="country-tag">🇪🇸 {{ cliente.pais || 'España' }}</p>
+        <p class="empty" *ngIf="!cliente.direccion && !cliente.ciudad">No hay dirección guardada.</p>
+      </div>
+    </div>
+
+    <div class="info-card notes-card" *ngIf="cliente.notas_internas">
+      <h3>📝 Notas Internas</h3>
+      <p class="notes-text">{{ cliente.notas_internas }}</p>
+    </div>
+
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="consignacion-section">
+    <div class="section-title-wrapper">
+      <h2>Finanzas e Inventario</h2>
+      <p class="section-subtitle">Gestión de pagos y ventas delegadas de este cliente.</p>
+    </div>
+    
+    <app-consignacion-panel [clienteId]="cliente.id!"></app-consignacion-panel>
+  </div>
+
+</div>
+
+<div class="loading-state" *ngIf="cargando">
+  <div class="spinner">⏳</div>
+  <p>Cargando ficha del cliente...</p>
+</div>
+
+<div class="error-state" *ngIf="error">
+  <p>⚠️ {{ error }}</p>
+  <button class="btn-outline-primary" (click)="volver()">Volver a la lista</button>
+</div>
