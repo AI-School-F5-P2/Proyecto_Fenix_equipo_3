@@ -12,6 +12,7 @@ class Stock(Base):
     id = Column(Integer, primary_key=True)
     variante_id = Column(Integer, ForeignKey("variantes.id", ondelete="CASCADE"))
     proveedor_id = Column(Integer, ForeignKey("proveedores.id"), nullable=True)
+    propietario_id = Column(Integer, ForeignKey("clientes.id", ondelete="SET NULL"), nullable=True)
     activo = Column(Boolean, default=True)
     etiqueta = Column(String(100)) # Ej: "Talla M", "256GB"
     fecha_compra = Column(Date, nullable=True)
@@ -30,7 +31,7 @@ class Stock(Base):
     # --- RELACIONES ---
     # Relación directa con los valores de los atributos (EAV)
     valores = relationship("ValorAtributo", back_populates="stock", cascade="all, delete-orphan")
-    
+    propietario = relationship("Cliente")
     # Relación con su variante padre (Color)
     variante = relationship("Variante", back_populates="stocks")
     

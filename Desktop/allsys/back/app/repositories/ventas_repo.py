@@ -4,8 +4,10 @@ import string
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import desc, or_, cast, String, func
 from fastapi import HTTPException
-
+from app.models.categorias_model import Categoria
 # Modelos y Schemas
+from app.models.clientes_model import Cliente
+from app.models.producto_model import Producto
 from app.models.ventas_model import Venta, DetalleVenta
 from app.models.stock_model import Stock
 from app.models.variantes_model import Variante
@@ -36,14 +38,21 @@ def generar_codigo_venta(db: Session) -> str:
 # =====================================================
 # REGISTRO DE VENTA 💰
 # =====================================================
+# =====================================================
+# REGISTRO DE VENTA 💰
+# =====================================================
 def registrar_venta(db: Session, data: VentaCreate):
     try:
         # 1. Calcular Totales
         subtotal = sum(d.cantidad * d.precio_unitario for d in data.detalles)
         total_final = (subtotal + data.costo_envio) - data.descuento_total
 
-        # ✨ 2. DELEGAR AL SERVICIO DE CLIENTES (Adiós a la función Dios)
-        # Le pasamos toda la data y él nos devuelve el ID del cliente o None
+        # ✨ BLOQUEO ESTRICTO DE NOMBRE: Capturamos lo que escribió el usuario.
+        # Si está vacío, forzamos a que sea None. Así evitamos que la lógica del CRM 
+        # copie el @usuario o el teléfono aquí por accidente.
+        nombre_real_estricto = data.nombre_cliente.strip() if data.nombre_cliente and data.nombre_cliente.strip() else None
+
+        # 2. DELEGAR AL SERVICIO DE CLIENTES
         cliente_id = procesar_cliente_omnicanal(db=db, data=data)
 
         # 3. CREACIÓN DE LA VENTA PADRE
@@ -55,9 +64,9 @@ def registrar_venta(db: Session, data: VentaCreate):
             metodo_pago=data.metodo_pago,
             estado_venta=data.estado_venta,
             estado_pago=data.estado_pago,
-            
+            pais=data.pais,
             cliente_id=cliente_id, 
-            nombre_cliente=data.nombre_cliente, # Guardamos cómo se llamó en ESTE pedido
+            nombre_cliente=nombre_real_estricto, # 👈 AQUÍ USAMOS LA VARIABLE PROTEGIDA
             email_cliente=data.email_cliente,
             
             subtotal=subtotal,
@@ -71,6 +80,8 @@ def registrar_venta(db: Session, data: VentaCreate):
         
         db.add(nueva_venta)
         db.flush() 
+        
+        # ... (El resto del código de gestión de stock queda exactamente igual) ...
 
         # 4. GESTIÓN DE STOCK (Detalles de la venta)
         for item in data.detalles:
@@ -110,9 +121,13 @@ def registrar_venta(db: Session, data: VentaCreate):
 # =====================================================
 # OBTENER UNA VENTA DETALLADA 📄
 # =====================================================
+# =====================================================
+# OBTENER UNA VENTA DETALLADA 📄
+# =====================================================
 def obtener_venta_por_id(db: Session, venta_id: int):
     venta = db.query(Venta).options(
-        joinedload(Venta.detalles)
+        joinedload(Venta.detalles),
+        joinedload(Venta.cliente) # ✨ CLAVE: Cargamos el perfil del CRM
     ).filter(Venta.id == venta_id).first()
     return venta
 
@@ -126,8 +141,10 @@ def actualizar_venta(db: Session, venta_id: int, datos: dict):
         raise HTTPException(status_code=404, detail="Venta no encontrada.")
 
     estado_anterior = venta.estado_venta
+    estado_pago_anterior = venta.estado_pago
+    estado_envio_anterior = venta.estado_envio
 
-    # 1. Actualizar campos
+    # 1. Actualizar campos simples
     for key, value in datos.items():
         if hasattr(venta, key) and value is not None:
             if key in ["total", "subtotal", "costo_envio", "descuento_total"]:
@@ -139,7 +156,18 @@ def actualizar_venta(db: Session, venta_id: int, datos: dict):
     if "total" in datos:
         venta.subtotal = float(datos["total"]) - (venta.costo_envio or 0) + (venta.descuento_total or 0)
 
-    # 3. Lógica de devolución/resta de stock según estado
+    # ✨ 3. LÓGICA DE FECHAS AUTOMÁTICAS
+    # Si pasa a Pagado y no tiene fecha_pago, pon la fecha actual
+    if venta.estado_pago == "pagado" and estado_pago_anterior != "pagado":
+        if not venta.fecha_pago:
+            venta.fecha_pago = datetime.utcnow()
+            
+    # Si pasa a Enviado o Entregado y no tiene fecha_envio, pon la fecha actual
+    if venta.estado_envio in ["enviado", "entregado"] and estado_envio_anterior not in ["enviado", "entregado"]:
+        if not venta.fecha_envio:
+            venta.fecha_envio = datetime.utcnow()
+
+    # 4. Lógica de devolución/resta de stock según estado
     nuevo_estado = datos.get("estado_venta")
     if nuevo_estado and nuevo_estado != estado_anterior:
         
@@ -180,32 +208,108 @@ def actualizar_venta(db: Session, venta_id: int, datos: dict):
 # LISTAR VENTAS CON PAGINACIÓN Y FILTROS 📊
 # =====================================================
 def obtener_ventas_paginadas(
-    db: Session, page: int = 1, limit: int = 10, search: str = None,
+    db: Session, page: int = 1, limit: int = 10, 
+    search_producto: str = None, tipo_busqueda_prod: str = "sku",
+    search_codigo: str = None, 
+    search_cliente: str = None, tipo_busqueda_cliente: str = "nombre", 
     estado_venta: str = None, canal: str = None, fecha_inicio: str = None,
-    fecha_fin: str = None, vendedor: str = None, comprador: str = None
+    fecha_fin: str = None, vendedor: str = None, 
+    marca_id: int = None, categoria_id: int = None
 ):
     offset = (page - 1) * limit
     query = db.query(Venta)
 
-    # Filtros
-    if search and search.strip():
-        term = f"%{search.strip()}%"
-        query = query.filter(
-            or_(
-                Venta.codigo_venta.ilike(term),
-                Venta.nombre_cliente.ilike(term),
-                Venta.email_cliente.ilike(term),
-                cast(Venta.id, String).ilike(term)
+    # =====================================================
+    # 1. FILTROS DE INVENTARIO (MAGIA DE JOINS Y RECURSIVIDAD)
+    # =====================================================
+    if marca_id or categoria_id:
+        query = query.join(DetalleVenta, Venta.id == DetalleVenta.venta_id)\
+                     .join(Stock, DetalleVenta.stock_id == Stock.id)\
+                     .join(Variante, Stock.variante_id == Variante.id)\
+                     .join(Producto, Variante.producto_id == Producto.id)
+
+        if marca_id: query = query.filter(Producto.marca_id == marca_id)
+            
+        if categoria_id:
+            todas_categorias = db.query(Categoria.id, Categoria.parent_id).all()
+            ids_a_buscar = set([categoria_id])
+            ids_para_procesar = set([categoria_id])
+            
+            while ids_para_procesar:
+                hijos = set([c.id for c in todas_categorias if c.parent_id in ids_para_procesar and c.id not in ids_a_buscar])
+                ids_a_buscar.update(hijos)
+                ids_para_procesar = hijos
+                
+            query = query.filter(Producto.categoria_id.in_(list(ids_a_buscar)))
+            
+        query = query.distinct()
+
+    # =====================================================
+    # 2. CAJA 1: BÚSQUEDA POR PRODUCTO (SKU o ID)
+    # =====================================================
+    if search_producto and search_producto.strip():
+        term_str = search_producto.strip()
+        
+        if tipo_busqueda_prod == "sku":
+            term = f"%{term_str}%"
+            query = query.filter(Venta.detalles.any(DetalleVenta.stock.has(Stock.sku.ilike(term))))
+            
+        elif tipo_busqueda_prod == "id_producto":
+            if term_str.isdigit():
+                query = query.filter(Venta.detalles.any(DetalleVenta.stock_id == int(term_str)))
+            else:
+                query = query.filter(False) # Forzar vacío si escriben letras en ID
+
+    # =====================================================
+    # 3. CAJA 2: BÚSQUEDA POR CÓDIGO DE VENTA (VEN-...)
+    # =====================================================
+    if search_codigo and search_codigo.strip():
+        term_codigo = f"%{search_codigo.strip()}%"
+        query = query.filter(Venta.codigo_venta.ilike(term_codigo))
+
+    # =====================================================
+    # 4. CAJA 3: BÚSQUEDA POR CLIENTE (Con Selector) 
+    # =====================================================
+    if search_cliente and search_cliente.strip():
+        term_cliente = f"%{search_cliente.strip()}%"
+
+        if tipo_busqueda_cliente == "nombre":
+            query = query.filter(
+                or_(
+                    Venta.nombre_cliente.ilike(term_cliente),
+                    Venta.cliente.has(Cliente.nombre.ilike(term_cliente)),
+                    Venta.cliente.has(Cliente.apellidos.ilike(term_cliente)),
+                    Venta.cliente.has(Cliente.usuario_vinted.ilike(term_cliente)),
+                    Venta.cliente.has(Cliente.usuario_wallapop.ilike(term_cliente))
+                )
             )
-        )
+            
+        elif tipo_busqueda_cliente == "email":
+            query = query.filter(
+                or_(
+                    Venta.email_cliente.ilike(term_cliente),
+                    Venta.cliente.has(Cliente.email.ilike(term_cliente))
+                )
+            )
+            
+        elif tipo_busqueda_cliente == "telefono":
+            query = query.filter(Venta.cliente.has(Cliente.telefono.ilike(term_cliente)))
+            
+        elif tipo_busqueda_cliente == "documento":
+            query = query.filter(Venta.cliente.has(Cliente.dni_nie.ilike(term_cliente)))
+
+    # =====================================================
+    # 5. FILTROS BÁSICOS Y FECHAS
+    # =====================================================
     if estado_venta: query = query.filter(Venta.estado_venta == estado_venta)
     if canal: query = query.filter(Venta.canal == canal)
     if vendedor: query = query.filter(Venta.vendedor == vendedor)
-    if comprador: query = query.filter(Venta.nombre_cliente.ilike(f"%{comprador}%"))
     if fecha_inicio: query = query.filter(Venta.fecha >= fecha_inicio)
     if fecha_fin: query = query.filter(Venta.fecha <= f"{fecha_fin} 23:59:59")
 
-    # Cálculos globales
+    # =====================================================
+    # 6. CÁLCULOS FINANCIEROS
+    # =====================================================
     total_recaudado = query.with_entities(func.sum(Venta.total)).scalar() or 0
     total_costo = (
         db.query(func.sum(DetalleVenta.cantidad * Stock.precio_compra))
@@ -216,14 +320,14 @@ def obtener_ventas_paginadas(
     )
     total_beneficio = float(total_recaudado) - float(total_costo)
 
-    # Paginación
+    # =====================================================
+    # 7. EJECUCIÓN CON PAGINACIÓN
+    # =====================================================
     total_count = query.count()
     ventas_db = (
         query.options(
-            selectinload(Venta.detalles)
-            .selectinload(DetalleVenta.stock)
-            .selectinload(Stock.variante)
-            .selectinload(Variante.imagenes)
+            selectinload(Venta.detalles).selectinload(DetalleVenta.stock).selectinload(Stock.variante).selectinload(Variante.imagenes),
+            selectinload(Venta.cliente) # ✨ AÑADIDO: Carga los datos del CRM de forma optimizada
         )
         .order_by(desc(Venta.fecha))
         .offset(offset)
@@ -236,38 +340,113 @@ def obtener_ventas_paginadas(
     for venta in ventas_db:
         imagen_cover = None
         nombres_productos = []
-
         for detalle in venta.detalles:
             nombres_productos.append(detalle.nombre_producto_snapshot)
             if not imagen_cover and detalle.stock and detalle.stock.variante and detalle.stock.variante.imagenes:
                 imgs = sorted(detalle.stock.variante.imagenes, key=lambda x: x.orden or 0)
-                if imgs:
-                    imagen_cover = imgs[0].url
+                if imgs: imagen_cover = imgs[0].url
 
-        if len(nombres_productos) > 1:
-            resumen = f"{nombres_productos[0]} y {len(nombres_productos) - 1} más"
-        elif len(nombres_productos) == 1:
-            resumen = nombres_productos[0]
-        else:
-            resumen = "Sin productos"
+        resumen = f"{nombres_productos[0]} y {len(nombres_productos) - 1} más" if len(nombres_productos) > 1 else (nombres_productos[0] if len(nombres_productos) == 1 else "Sin productos")
+
+        # ✨ NUEVA LÓGICA: Extraer el mejor identificador posible del CRM
+        identificador_crm = "Anónimo"
+        if venta.cliente:
+            if venta.canal == "vinted" and venta.cliente.usuario_vinted:
+                identificador_crm = f"@{venta.cliente.usuario_vinted}" # 👈 Saca @usuario
+            elif venta.canal == "wallapop" and venta.cliente.usuario_wallapop:
+                identificador_crm = f"@{venta.cliente.usuario_wallapop}" # 👈 Saca @usuario
+            elif venta.cliente.telefono:
+                identificador_crm = venta.cliente.telefono # 👈 Saca Teléfono
+            elif venta.cliente.email:
+                identificador_crm = venta.cliente.email # 👈 Saca Email
+            elif venta.cliente.dni_nie:
+                identificador_crm = venta.cliente.dni_nie
+        elif venta.email_cliente:
+            identificador_crm = venta.email_cliente
 
         resultados.append({
-            "id": venta.id,
+            "id": venta.id, 
             "codigo_venta": venta.codigo_venta,
             "fecha": venta.fecha.isoformat() if venta.fecha else None,
-            "nombre_cliente": venta.nombre_cliente,
+            
+            # Mandamos ambos datos: El nombre real (si lo hay) y el identificador
+            "nombre_cliente": venta.nombre_cliente, 
+            "identificador_cliente": identificador_crm, # ✨ NUEVO CAMPO ENVIADO AL FRONT
+            
             "canal": venta.canal,
-            "vendedor": venta.vendedor,
+            "vendedor": venta.vendedor, 
             "metodo_pago": venta.metodo_pago,
-            "estado_venta": venta.estado_venta,
+            "estado_venta": venta.estado_venta, 
             "total": float(venta.total),
-            "imagen_cover": imagen_cover,
-            "resumen_productos": resumen
+            "imagen_cover": imagen_cover, 
+            "resumen_productos": resumen,
+            "pais": venta.pais,
         })
 
     return {
-        "total": total_count,
-        "items": resultados,
-        "suma_recaudado": float(total_recaudado),
-        "suma_beneficio": float(total_beneficio)
+        "total": total_count, "items": resultados,
+        "suma_recaudado": float(total_recaudado), "suma_beneficio": float(total_beneficio)
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def contar_compras_cliente(db: Session, identificador: str):
+    identificador = identificador.strip()
+    
+    # Buscamos al cliente ignorando mayúsculas/minúsculas
+    cliente = db.query(Cliente).filter(
+        or_(
+            Cliente.email.ilike(identificador),
+            Cliente.telefono.ilike(identificador),
+            Cliente.usuario_vinted.ilike(identificador.replace("@", "")), # Quitamos el @ por si acaso
+            Cliente.usuario_wallapop.ilike(identificador.replace("@", "")),
+            Cliente.dni_nie.ilike(identificador)
+        )
+    ).first()
+
+    if not cliente:
+        print(f"🔍 CRM: No se encontró ficha para {identificador}")
+        return 0
+    
+    # Contamos ventas
+    total = db.query(func.count(Venta.id)).filter(Venta.cliente_id == cliente.id).scalar()
+    print(f"📈 CRM: {identificador} tiene {total} ventas.")
+    return total
+
+
+
+
+
+
+
+
+# def desactivar_cliente(db: Session, cliente_id: int):
+#     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
+#     if not cliente:
+#         raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+#     # Simplemente lo marcamos como inactivo
+#     cliente.activo = False
+#     db.commit()
+#     return {"message": "Cliente desactivado. Sus datos se mantienen por historial pero no aparecerá en búsquedas activas."}

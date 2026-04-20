@@ -18,7 +18,8 @@ from app.api.v1.gastos import gastos_router
 from app.api.v1.dashboard import dashboard_router
 # from app.api.v1.analilytics import analytics_router
 from app.api.v1.statistics import router_statistics
-
+from app.api.v1.cliente import router as cliente_router
+from app.api.v1.consignacion import router as consignacion_router
 
 # from app.api.v1.analilytics import analytics_router  # Corregido el nombre
 # from app.api.v1.statistics import router as stats_router
@@ -83,6 +84,9 @@ app.include_router(proveedores_router, prefix="/api/v1")
 app.include_router(gastos_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(router_statistics, prefix="/api/v1")
+app.include_router(cliente_router, prefix="/api/v1")
+app.include_router(consignacion_router, prefix="/api/v1/consignacion")
+
 
 
 # app.include_router(analytics_router, prefix="/api/v1")

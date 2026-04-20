@@ -6,6 +6,7 @@ from app.db.database import get_session
 from app.schemas.ventas_schema import VentaCreate, VentaUpdate
 from app.repositories import ventas_repo
 from app.repositories.producto_repo import obtener_stock_detalle
+from app.repositories.ventas_repo import contar_compras_cliente
 
 venta_router = APIRouter(
     prefix="/ventas",
@@ -38,29 +39,23 @@ def crear_venta(
 
 @venta_router.get("/")
 def listar_ventas(
-    page: int = 1,
-    limit: int = 10,
-    search: Optional[str] = None,
-    estado: Optional[str] = None,
-    canal: Optional[str] = None,
-    fecha_inicio: Optional[str] = None, # 👈 NUEVO
-    fecha_fin: Optional[str] = None,
-    vendedor: Optional[str] = None,   # 👈 NUEVO
-    comprador: Optional[str] = None,  # 👈 NUEVO
+    page: int = 1, limit: int = 10,
+    search_producto: Optional[str] = None, tipo_busqueda_prod: Optional[str] = "sku",
+    search_codigo: Optional[str] = None,
+    search_cliente: Optional[str] = None, tipo_busqueda_cliente: Optional[str] = "nombre", # ✨ NUEVO
+    estado: Optional[str] = None, canal: Optional[str] = None,
+    fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None,
+    vendedor: Optional[str] = None, marca_id: Optional[int] = None, categoria_id: Optional[int] = None,
     db: Session = Depends(get_session)
 ):
-    """Obtiene el historial de ventas paginado y filtrado."""
     try:
         resultados = ventas_repo.obtener_ventas_paginadas(
-            db=db, 
-            page=page, 
-            limit=limit, 
-            search=search, 
-            estado_venta=estado, 
-            canal=canal,
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
-            vendedor=vendedor, comprador=comprador
+            db=db, page=page, limit=limit,
+            search_producto=search_producto, tipo_busqueda_prod=tipo_busqueda_prod,
+            search_codigo=search_codigo, 
+            search_cliente=search_cliente, tipo_busqueda_cliente=tipo_busqueda_cliente, # ✨ PASAMOS A REPO
+            estado_venta=estado, canal=canal, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin,
+            vendedor=vendedor, marca_id=marca_id, categoria_id=categoria_id
         )
         return resultados
     except Exception as e:
@@ -114,3 +109,20 @@ def editar_venta(venta_id: int, data: VentaUpdate, db: Session = Depends(get_ses
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    
+
+
+
+
+
+
+
+
+
+@venta_router.get("/historial-cliente/{identificador}")
+def obtener_conteo_compras(identificador: str, db: Session = Depends(get_session)):
+    try:
+        total = contar_compras_cliente(db, identificador)
+        return {"compras_totales": total}
+    except Exception as e:
+        return {"compras_totales": 0}

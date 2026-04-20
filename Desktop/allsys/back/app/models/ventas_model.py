@@ -9,7 +9,9 @@ class Venta(Base):
     id = Column(Integer, primary_key=True)
     codigo_venta = Column(String(50), unique=True, nullable=False) 
     fecha = Column(DateTime, default=datetime.utcnow)
-    
+    fecha_pago = Column(DateTime, nullable=True)                  # ✨ NUEVO: Cuándo recibiste el dinero
+    fecha_envio = Column(DateTime, nullable=True)
+    pais = Column(String(50), nullable=True)
     
     # --- FINANZAS DETALLADAS ---
     subtotal = Column(Float, nullable=False)

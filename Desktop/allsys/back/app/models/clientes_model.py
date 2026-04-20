@@ -7,12 +7,12 @@ class Cliente(Base):
     __tablename__ = "clientes"
 
     id = Column(Integer, primary_key=True, index=True)
-    
+    activo = Column(Boolean, default=True)
     # --- IDENTIFICADORES OMNICANAL (Todos opcionales, pero claves para buscar) ---
     email = Column(String(150), unique=True, index=True, nullable=True)
-    telefono = Column(String(20), index=True, nullable=True)
-    usuario_vinted = Column(String(100), index=True, nullable=True)
-    usuario_wallapop = Column(String(100), index=True, nullable=True)
+    telefono = Column(String(20), unique=True, index=True, nullable=True)
+    usuario_vinted = Column(String(100), unique=True, index=True, nullable=True)
+    usuario_wallapop = Column(String(100), unique=True, index=True, nullable=True)
     
     # --- DATOS PERSONALES Y FACTURACIÓN ---
     nombre = Column(String(100), nullable=True)

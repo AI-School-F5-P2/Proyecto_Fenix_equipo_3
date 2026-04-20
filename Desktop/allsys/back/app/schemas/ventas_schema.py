@@ -12,15 +12,21 @@ class VentaCreate(BaseModel):
     canal: str 
     vendedor: str 
     metodo_pago: str 
-    
+    pais: Optional[str] = "España"
     # ✨ NUEVOS CAMPOS
     estado_venta: str = "completada" 
     estado_pago: str = "pagado"
+
+    fecha_pago: Optional[datetime] = None  # ✨ NUEVO
+    fecha_envio: Optional[datetime] = None # ✨ NUEVO
     
     # Datos opcionales del cliente
     nombre_cliente: Optional[str] = None
     email_cliente: Optional[str] = None
     identificador_cliente: Optional[str] = None
+    tipo_identificador: Optional[str] = "telefono" 
+    prefijo_telefono: Optional[str] = "+34"
+    tipo_documento: Optional[str] = "DNI"
     
     # Costos extra
     costo_envio: float = 0.0
@@ -47,7 +53,8 @@ class VentaUpdate(BaseModel):
     empresa_transporte: Optional[str] = None
     numero_seguimiento: Optional[str] = None
     notas_internas: Optional[str] = None
-    
+    fecha_pago: Optional[datetime] = None  # ✨ NUEVO
+    fecha_envio: Optional[datetime] = None # ✨ NUEVO
     # ✨ ESTOS CAMPOS DEBEN ESTAR AQUÍ PARA QUE FASTAPI LOS DEJE PASAR
     total: Optional[float] = None
     subtotal: Optional[float] = None
