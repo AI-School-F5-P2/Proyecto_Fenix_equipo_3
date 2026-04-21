@@ -5,7 +5,7 @@
       <button type="button" class="btn-back" (click)="volver()">←</button>
       <h2 class="title">{{ isEditMode ? '✏️ Editar Cliente' : '✨ Nuevo Cliente' }}</h2>
     </div>
-    <span *ngIf="cliente.es_vip" class="vip-badge">⭐ CLIENTE VIP</span>
+    <span *ngIf="cliente.exento_gastos_gestion" class="vip-badge" style="background: #27ae60; color: white;">⭐ Exento de Tarifas (VIP)</span>
   </header>
 
   <div *ngIf="errorMessage" class="alert-box error">
@@ -38,9 +38,9 @@
         </div>
         <div class="field toggle-field">
           <label class="toggle-switch">
-            <input type="checkbox" [(ngModel)]="cliente.es_vip" name="esVip" />
+            <input type="checkbox" [(ngModel)]="cliente.exento_gastos_gestion" name="exentoGastos" />
             <span class="slider"></span>
-            <span class="label-text">Cliente VIP</span>
+            <span class="label-text">VIP (Exento de tarifas fijas y devolución)</span>
           </label>
         </div>
       </div>

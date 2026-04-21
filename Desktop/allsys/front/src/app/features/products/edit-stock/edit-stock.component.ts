@@ -41,7 +41,9 @@ export class EditStockComponent implements OnInit {
     fecha_compra: '',
     proveedor_id: null,
     publicar_web: false,
-    atributos: [] 
+    atributos: [],
+    donar_ganancias: false,
+    estado_gestion: 'en_stock',
   };
 
   contexto: any = {};
@@ -162,6 +164,9 @@ export class EditStockComponent implements OnInit {
           publicar_web: data.canales?.web || false,
           atributos: this.hidratarAtributos(data.atributos_extra, this.tipoProducto),
           material: this.contexto.material,
+          donar_ganancias: data.donar_ganancias || false, // ✨ NUEVO
+          propietario_id: data.propietario_id || null, // ✨ Asegúrate de traerlo para el HTML
+          estado_gestion: data.estado_gestion || 'en_stock',
         };
         console.log('Stock cargado:', this.stockData);
         this.cargandoDatos = false;

@@ -1,10 +1,18 @@
 <div class="consignacion-container" *ngIf="!cargando && stats">
   
+  <div class="vip-badge" *ngIf="stats.exento_gastos_gestion" style="background-color: var(--ap-color-success-bg); color: var(--ap-color-success); padding: 8px 12px; border-radius: var(--ap-radius-md); margin-bottom: 16px; display: inline-block; font-weight: bold;">
+    ⭐ Cliente VIP (Exento de tarifas fijas de gestión)
+  </div>
+
   <div class="stats-grid">
     <div class="stat-card highlight">
       <h4>Saldo Pendiente</h4>
       <div class="amount highlight-text">{{ stats.saldo_pendiente | currency:'EUR' }}</div>
       <p>Lo que debes pagarle al cliente</p>
+      
+      <p *ngIf="stats.deuda_por_devoluciones > 0" style="color: var(--danger); font-size: 0.85em; margin-top: 5px;">
+        (Se restaron -{{ stats.deuda_por_devoluciones | currency:'EUR' }} por devoluciones)
+      </p>
     </div>
 
     <div class="stat-card">
@@ -21,9 +29,13 @@
 
     <div class="stat-card">
       <h4>Inventario del Cliente</h4>
-      <div class="inventory-info">
-        <span><b>{{ stats.prendas_en_stock }}</b> en stock</span>
-        <span><b>{{ stats.prendas_vendidas }}</b> vendidas</span>
+      <div class="inventory-info" style="display: flex; flex-direction: column; gap: 4px; font-size: 0.9em; margin-bottom: 10px;">
+        <span>🟢 <b>{{ stats.prendas_en_stock }}</b> en stock</span>
+        <span>🛍️ <b>{{ stats.prendas_vendidas }}</b> vendidas</span>
+        
+        <span *ngIf="stats.prendas_devueltas > 0">🔙 <b>{{ stats.prendas_devueltas }}</b> devueltas al dueño</span>
+        <span *ngIf="stats.prendas_donadas > 0">💖 <b>{{ stats.prendas_donadas }}</b> donadas a ONG</span>
+        <span *ngIf="stats.prendas_extraviadas > 0">⚠️ <b>{{ stats.prendas_extraviadas }}</b> extraviadas (pagadas)</span>
       </div>
       <p>Total entregadas: {{ stats.total_prendas_entregadas }}</p>
     </div>

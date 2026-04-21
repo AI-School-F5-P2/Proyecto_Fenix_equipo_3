@@ -144,7 +144,8 @@ export class AddProductComponent implements OnInit {
                 ubicacion: sDB.ubicacion || '',
                 propietario_id: sDB.propietario_id,
                 talla: tallaVisual, 
-                atributos: this.hidratarAtributos(sDB.atributos)
+                atributos: this.hidratarAtributos(sDB.atributos),
+                donar_ganancias: sDB.donar_ganancias || false
              }
           })
         }));
@@ -299,7 +300,7 @@ private capitalizar(s: string): string {
         id_manual: null, sku: '', atributos: this.getAtributosVacios(), stock: 1, precio_compra: 0, ubicacion: '',
         precio_venta: 0, descuento: 0, proveedor: '', proveedor_id: null, 
         fecha_compra: '', publicar_vinted: false, publicar_wallapop: false, publicar_web: false, temp_id: generarTempId(),
-        talla: null, propietario_id: null // Inicializamos
+        talla: null, propietario_id: null, donar_ganancias: false
     };
   }
 
@@ -333,6 +334,7 @@ private capitalizar(s: string): string {
       nuevoStock.precio_venta = ultimoStock.precio_venta || 0;
       nuevoStock.fecha_compra = ultimoStock.fecha_compra || '';
       nuevoStock.propietario_id = ultimoStock.propietario_id || null;
+      nuevoStock.donar_ganancias = ultimoStock.donar_ganancias || false;
       
       // 3. Copiar Ubicación
       nuevoStock.ubicacion = ultimoStock.ubicacion || ''; 
@@ -696,7 +698,8 @@ private construirFormData(): FormData {
             // ✨ LA LIMPIEZA MÁGICA PARA PYDANTIC
             sku: s.sku || 'TEMP', // Si está vacío, le ponemos TEMP
             proveedor: s.proveedor || "", // Si está vacío, le mandamos null en vez de ""
-            proveedor_nombre_nuevo: (s as any).proveedor_nombre_nuevo || ""
+            proveedor_nombre_nuevo: (s as any).proveedor_nombre_nuevo || "",
+            donar_ganancias: s.donar_ganancias || false
           };
         })
       };

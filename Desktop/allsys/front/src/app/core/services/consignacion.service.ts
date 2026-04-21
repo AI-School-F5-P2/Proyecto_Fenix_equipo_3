@@ -6,6 +6,13 @@ export interface EstadisticasConsignacion {
   total_prendas_entregadas: number;
   prendas_vendidas: number;
   prendas_en_stock: number;
+  // ✨ NUEVOS CAMPOS AÑADIDOS
+  prendas_devueltas: number;
+  prendas_donadas: number;
+  prendas_extraviadas: number;
+  exento_gastos_gestion: boolean;
+  deuda_por_devoluciones: number;
+  // FIN NUEVOS CAMPOS
   dinero_generado_ventas: number;
   dinero_para_cliente: number;
   beneficio_plataforma: number;
@@ -29,7 +36,6 @@ export interface PagoRead extends PagoCreate {
   providedIn: 'root'
 })
 export class ConsignacionService {
-  // Ajusta la URL base a donde apunte tu backend (ej: environment.apiUrl)
   private apiUrl = 'http://localhost:8000/api/v1/consignacion'; 
 
   constructor(private http: HttpClient) {}

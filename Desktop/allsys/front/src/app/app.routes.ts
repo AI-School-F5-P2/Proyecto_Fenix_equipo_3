@@ -20,7 +20,7 @@ import { StatisticsComponent } from './features/statistics/statistics.component'
 // ✨ NUEVAS IMPORTACIONES DEL CRM DE CLIENTES ✨
 // (Ajusta estas rutas dependiendo de en qué carpeta generaste los componentes)
 import { ListClientsComponent } from './features/clients/list-clients/list-clients.component';
-import { EditClientsComponent } from './features/clients/edit-clients/edit-clients.component';
+// import { EditClientsComponent } from './features/clients/edit-clients/edit-clients.component';
 import { AddClientsComponent } from './features/clients/add-clients/add-clients.component';
 import { ClientDetailComponent } from './features/clients/client-detail/client-detail.component';
 

@@ -13,7 +13,7 @@ export interface Categoria {
 export interface AtributoBackend { id?: number; nombre: string; valor: any; }
 
 export interface StockBackend {
-  propietario_id: any;
+  propietario_id: any; donar_ganancias?: boolean;
   id: number; sku: string; cantidad: number; precio_compra: number;
   precio_venta: number; fecha_compra: string; proveedor_id?: number | null;
   proveedor?: { id: number; nombre_proveedor: string };
@@ -36,7 +36,7 @@ export interface ProductoBackend {
 
 export interface StockVariante {
   id?: number; sku: string; atributos: any[]; stock: number; talla?: string | null | any;
-  precio_compra: number; precio_venta: number; descuento: number;
+  precio_compra: number; precio_venta: number; descuento: number; donar_ganancias?: boolean;
   proveedor: string; proveedor_id?: number | null; fecha_compra: string;
   publicar_vinted: boolean; publicar_wallapop: boolean; publicar_web: boolean;
   etiqueta?: string; ubicacion: string; temp_id?: string; id_manual?: number | null; propietario_id?: number | null;

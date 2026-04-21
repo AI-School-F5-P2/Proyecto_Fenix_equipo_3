@@ -1,8 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ConsignacionService } from '../../../core/services/consignacion.service';
-import { EstadisticasConsignacion, PagoCreate, PagoRead } from '../../../core/services/consignacion.service';
+import { ConsignacionService, EstadisticasConsignacion, PagoCreate, PagoRead } from '../../../core/services/consignacion.service';
 
 @Component({
   selector: 'app-consignacion-panel',
@@ -12,14 +11,13 @@ import { EstadisticasConsignacion, PagoCreate, PagoRead } from '../../../core/se
   styleUrls: ['./consignacion-panel.component.css']
 })
 export class ConsignacionPanelComponent implements OnInit {
-  @Input() clienteId!: number; // Lo recibe del componente padre
+  @Input() clienteId!: number; 
 
   stats: EstadisticasConsignacion | null = null;
   pagos: PagoRead[] = [];
   cargando = false;
   isSubmitting = false;
 
-  // Formulario para el nuevo pago
   nuevoPago: PagoCreate = {
     monto: 0,
     metodo_pago: 'Transferencia',
@@ -32,7 +30,6 @@ export class ConsignacionPanelComponent implements OnInit {
   constructor(private consignacionService: ConsignacionService) {}
 
   ngOnInit() {
-    
     if (this.clienteId) {
       this.cargarDatos();
     }
@@ -40,11 +37,9 @@ export class ConsignacionPanelComponent implements OnInit {
 
   cargarDatos() {
     this.cargando = true;
-    // Cargamos stats y pagos al mismo tiempo
+    
     this.consignacionService.getStats(this.clienteId).subscribe(res => {
-      console.log('Estadísticas de consignación:', res);
       this.stats = res;
-      // Pre-rellenamos el monto con lo que se le debe por defecto
       if (this.stats.saldo_pendiente > 0) {
         this.nuevoPago.monto = this.stats.saldo_pendiente;
       }
@@ -68,11 +63,9 @@ export class ConsignacionPanelComponent implements OnInit {
         alert('✅ Pago registrado con éxito');
         this.isSubmitting = false;
         
-        // Limpiamos formulario
         this.nuevoPago.referencia = '';
         this.nuevoPago.notas = '';
         
-        // Refrescamos los datos para que el saldo baje y la tabla se actualice
         this.cargarDatos();
       },
       error: (err) => {

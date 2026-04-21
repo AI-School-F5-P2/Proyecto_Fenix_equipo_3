@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
- // Ajusta la ruta a tu env
 
 export interface ClienteData {
   id?: number;
@@ -18,12 +17,11 @@ export interface ClienteData {
   provincia?: string;
   pais?: string;
   notas_internas?: string;
-  es_vip?: boolean;
+  exento_gastos_gestion?: boolean; // ✨ CAMBIADO AQUÍ
   total_ventas?: number;
   fecha_registro?: string;
 }
 
-// Campos base
 export interface ClienteBase {
   nombre: string;
   apellidos?: string;
@@ -38,13 +36,11 @@ export interface ClienteBase {
   provincia?: string;
   pais: string;
   notas_internas?: string;
-  es_vip: boolean;
+  exento_gastos_gestion: boolean; // ✨ CAMBIADO AQUÍ
 }
 
-// Para CREAR y EDITAR (No necesitamos el ID dentro del objeto enviado)
 export interface ClienteCreate extends ClienteBase {}
 
-// Para LEER (Lo que viene del servidor con ID y cálculos)
 export interface ClienteRead extends ClienteBase {
   id: number;
   total_ventas: number;
@@ -70,7 +66,6 @@ export class ClientesService {
 
     return this.http.get<any>(`${this.apiUrl}/`, { params });
   }
-
   
   actualizarCliente(id: number, data: ClienteData): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, data);
@@ -84,7 +79,6 @@ export class ClientesService {
   }
 
   desactivarCliente(id: number): Observable<any> {
-    // Usamos patch para ser fieles a la semántica del backend
     return this.http.patch<any>(`${this.apiUrl}/${id}/desactivar`, {});
   }
 }

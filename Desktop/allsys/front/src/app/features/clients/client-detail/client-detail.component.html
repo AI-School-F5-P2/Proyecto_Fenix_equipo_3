@@ -6,7 +6,7 @@
       <div>
         <h2 class="client-name">
           {{ cliente.nombre }} {{ cliente.apellidos || '' }}
-          <span class="vip-badge" *ngIf="cliente.es_vip">🌟 VIP</span>
+          <span class="vip-badge" *ngIf="cliente.exento_gastos_gestion" title="No paga la tarifa de 1.50€ por gestión">🌟 VIP (Gestión Gratis)</span>
         </h2>
         <p class="client-id" *ngIf="cliente.id">ID de Cliente: #{{ cliente.id }}</p>
       </div>

@@ -37,7 +37,8 @@ export class AddClientsComponent implements OnInit {
     nombre: '', apellidos: '', email: '', telefono: '',
     usuario_vinted: '', usuario_wallapop: '', dni_nie: '',
     direccion: '', ciudad: '', codigo_postal: '', provincia: '',
-    pais: 'España', notas_internas: '', es_vip: false
+    pais: 'España', notas_internas: '', 
+    exento_gastos_gestion: false // ✨ CAMBIADO AQUÍ
   };
 
   constructor(

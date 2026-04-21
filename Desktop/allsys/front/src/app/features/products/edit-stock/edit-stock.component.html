@@ -42,6 +42,15 @@
         <h3>Identificación del Artículo</h3>
       </div>
       <div class="grid-4">
+
+        <div class="field full-width mt-3" *ngIf="stockData.propietario_id" style="background: #eafaf1; padding: 12px; border-radius: 8px; border: 1px solid #27ae60;">
+          <label class="toggle-switch" style="margin: 0;">
+            <input type="checkbox" [(ngModel)]="stockData.donar_ganancias" name="donar_ganancias" />
+            <span class="slider"></span>
+            <span class="toggle-label" style="color: #27ae60; font-weight: bold;">🎁 El cliente dona el 100% de la venta a Allsys</span>
+          </label>
+        </div>
+
         <div class="field">
           <label>Color / Estilo</label>
           <div class="display-pill readonly-field">
@@ -189,6 +198,34 @@
     </div>
   </form>
 </div>
+
+
+<section class="card-section info-card" style="border: 2px solid #e0e6ed; border-left: 4px solid #f1c40f;">
+        <div class="section-header">
+          <h3>🚦 Estado Físico y Resolución</h3>
+          <p class="text-muted" style="font-size: 0.85em; margin-top: -5px;">Cambiar esto afectará a la contabilidad del cliente.</p>
+        </div>
+        
+        <div class="field full-width mt-2">
+          <label>¿Dónde está esta prenda actualmente?</label>
+          <div class="custom-select">
+            <select [(ngModel)]="stockData.estado_gestion" name="estado_gestion" style="font-weight: bold;">
+              <option value="en_stock">✅ En Almacén / Activo</option>
+              <option value="devuelto">🔙 Devuelto al dueño (Cobra 1.50€)</option>
+              <option value="donado">💖 Donado a ONG (Saldo 0€)</option>
+              <option value="extraviado">⚠️ Extraviado / Perdido (Indemnizar al cliente)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="alert-box-info mt-2" *ngIf="stockData.estado_gestion === 'extraviado'" style="background: #fceceb; color: #e74c3c; padding: 10px; border-radius: 6px; font-size: 0.9em;">
+          <strong>¡Atención!</strong> Al guardar como extraviado, el sistema asumirá que es culpa de Allsys y se le abonará el dinero al cliente en su próximo pago.
+        </div>
+        
+        <div class="alert-box-info mt-2" *ngIf="stockData.estado_gestion === 'devuelto'" style="background: #eafaf1; color: #27ae60; padding: 10px; border-radius: 6px; font-size: 0.9em;">
+          Se le restará la tarifa de gestión (1.50€) al saldo del cliente por devolverle esta prenda (salvo que sea VIP).
+        </div>
+      </section>
 
 <ng-template #loadingTemplate>
   <div class="page-container loading-container">
