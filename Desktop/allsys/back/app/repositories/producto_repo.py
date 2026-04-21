@@ -234,6 +234,8 @@ def crear_producto(
                 variante_id=nueva_variante.id,
                 proveedor_id=p_id,
                 propietario_id=propietario_id, # ✨ ASIGNACIÓN DEL DUEÑO
+                donar_ganancias=getattr(s_data, 'donar_ganancias', False), # ✨ NUEVO
+                estado_gestion=getattr(s_data, 'estado_gestion', 'en_stock'),
                 ubicacion=s_data.ubicacion,
                 etiqueta=s_data.etiqueta,
                 cantidad=s_data.stock,
@@ -944,6 +946,8 @@ def obtener_stock_detalle(db: Session, stock_id: int):
         "precio_venta": float(s.precio_venta),
         "descuento": float(s.descuento or 0),
         "ubicacion_almacen": s.ubicacion,
+        "donar_ganancias": getattr(s, 'donar_ganancias', False),
+        "estado_gestion": getattr(s, 'estado_gestion', 'en_stock'),
         
         # ✨ LOS DATOS FALTANTES QUE AHORA SÍ LLEGARÁN AL FORMULARIO:
         # Forzamos el formato YYYY-MM-DD para que Angular/HTML lo entienda
@@ -981,6 +985,12 @@ def actualizar_stock_individual(db: Session, stock_id: int, datos_nuevos: dict):
     if "ubicacion" in datos_nuevos: stock.ubicacion = datos_nuevos["ubicacion"]
     if "fecha_compra" in datos_nuevos and datos_nuevos["fecha_compra"]: 
         stock.fecha_compra = datos_nuevos["fecha_compra"]
+
+    # ✨ NUEVO: Guardamos el estado y la donación si vienen en el payload
+    if "donar_ganancias" in datos_nuevos: 
+        stock.donar_ganancias = datos_nuevos["donar_ganancias"]
+    if "estado_gestion" in datos_nuevos: 
+        stock.estado_gestion = datos_nuevos["estado_gestion"]
     
     # Switches
     if "publicar_web" in datos_nuevos: stock.publicar_web = datos_nuevos["publicar_web"]
@@ -1186,6 +1196,8 @@ def editar_producto_completo(
                     so.publicar_web = s_data.get("publicar_web", False)
                     so.orden = indice_s 
                     so.activo = True
+                    so.donar_ganancias = s_data.get("donar_ganancias", getattr(so, 'donar_ganancias', False))
+                    so.estado_gestion = s_data.get("estado_gestion", getattr(so, 'estado_gestion', 'en_stock'))
             else:
                 # ✨ NUEVA LÓGICA DE ID MANUAL PARA STOCKS NUEVOS EN EDICIÓN
                 raw_id_manual = s_data.get("id_manual")
@@ -1200,6 +1212,8 @@ def editar_producto_completo(
                     id=id_forzado, 
                     variante_id=nv.id, 
                     proveedor_id=p_id,
+                    donar_ganancias=s_data.get("donar_ganancias", False),
+                    estado_gestion=s_data.get("estado_gestion", "en_stock"),
                     etiqueta=s_data.get("etiqueta", "Única"),
                     ubicacion=s_data.get("ubicacion", ""),
                     cantidad=s_data.get("cantidad", 0) or s_data.get("stock", 0),

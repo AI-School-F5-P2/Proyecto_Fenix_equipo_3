@@ -15,3 +15,5 @@ class PagoConsignacion(Base):
     notas = Column(Text, nullable=True) 
     
     cliente = relationship("Cliente")
+
+

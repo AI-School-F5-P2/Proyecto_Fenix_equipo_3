@@ -13,7 +13,7 @@ class Cliente(Base):
     telefono = Column(String(20), unique=True, index=True, nullable=True)
     usuario_vinted = Column(String(100), unique=True, index=True, nullable=True)
     usuario_wallapop = Column(String(100), unique=True, index=True, nullable=True)
-    
+    exento_gastos_gestion = Column(Boolean, default=False)
     # --- DATOS PERSONALES Y FACTURACIÓN ---
     nombre = Column(String(100), nullable=True)
     apellidos = Column(String(150), nullable=True)

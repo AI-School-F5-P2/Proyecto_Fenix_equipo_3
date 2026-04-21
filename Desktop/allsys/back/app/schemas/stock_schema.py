@@ -10,8 +10,9 @@ class StockSchema(BaseModel):
     temp_id: Optional[str] = None # ✨ Necesario para que coincida con el Front
     id_manual: Optional[int] = None
     
-    # Dueño (Consignación)
+    # Dueño y Consignación
     propietario_id: Optional[int] = None # ✨ CRUCIAL: Aquí es donde entra Merlina
+    donar_ganancias: Optional[bool] = False # ✨ NUEVO: Si la clienta te cede el 100% de la venta
     
     # Inventario y Costos
     stock: int = Field(..., ge=0, description="Las unidades no pueden ser negativas")
@@ -27,6 +28,7 @@ class StockSchema(BaseModel):
     ubicacion: str = Field(default="", description="Ubicación en almacén") # ✨ Quitamos el min_length=1 por seguridad
     etiqueta: str = Field(default="Única")
     orden: Optional[int] = 0
+    estado_gestion: Optional[str] = "en_stock" # ✨ NUEVO: en_stock, devuelto, donado, extraviado
     
     # Venta y Canales
     precio_venta: float = Field(default=0.0)
@@ -52,6 +54,11 @@ class StockEditPayload(BaseModel):
     fecha_compra: Optional[str] = None
     proveedor_id: Optional[int] = None
     proveedor_nombre_nuevo: Optional[str] = None
+    
+    # ✨ NUEVOS CAMPOS PARA EDICIÓN RÁPIDA
+    donar_ganancias: Optional[bool] = False 
+    estado_gestion: Optional[str] = "en_stock" 
+    
     publicar_web: bool = False
     publicar_vinted: bool = False
     publicar_wallapop: bool = False

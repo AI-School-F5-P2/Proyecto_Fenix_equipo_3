@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_session
-from app.schemas.consignacion_schema import EstadisticasConsignacion, PagoCreate, PagoRead
+from app.schemas.consignacion_schema import EstadisticasConsignacion, PagoCreate, PagoRead, PrendaClienteDetalle
 from app.repositories import consignacion_repo
+from typing import List
 
 router = APIRouter(prefix="/consignacion", tags=["Consignación"])
 
@@ -17,3 +18,15 @@ def pay_client(cliente_id: int, data: PagoCreate, db: Session = Depends(get_sess
 @router.get("/cliente/{cliente_id}/pagos", response_model=list[PagoRead])
 def get_payments(cliente_id: int, db: Session = Depends(get_session)):
     return consignacion_repo.listar_pagos(db, cliente_id)
+
+from typing import Optional
+from fastapi import Query
+
+@router.get("/cliente/{cliente_id}/prendas")
+def get_client_items_detail(
+    cliente_id: int, 
+    page: int = Query(1, ge=1), 
+    limit: int = Query(20, ge=1), 
+    db: Session = Depends(get_session)
+):
+    return consignacion_repo.listar_prendas_detalle_cliente(db, cliente_id, page, limit)

@@ -28,6 +28,8 @@ class Stock(Base):
     fecha_registro = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     fecha_actualizacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     ubicacion = Column(String(200))
+    estado_gestion = Column(String(50), default="en_stock")
+    donar_ganancias = Column(Boolean, default=False)
     # --- RELACIONES ---
     # Relación directa con los valores de los atributos (EAV)
     valores = relationship("ValorAtributo", back_populates="stock", cascade="all, delete-orphan")
