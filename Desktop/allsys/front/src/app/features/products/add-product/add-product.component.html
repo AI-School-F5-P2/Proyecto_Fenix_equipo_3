@@ -1,7 +1,6 @@
 <div class="page-container">
   <div class="form-header">
     <h2 class="title">{{ isEditMode ? 'Editar' : 'Agregar' }} producto</h2>
-
     <button 
       type="button" 
       class="btn-text-danger delete-product-btn" 
@@ -75,7 +74,7 @@
           [(ngModel)]="descripcion" 
           name="descripcion" 
           rows="3"
-          placeholder="Describe la colección, inspiración o beneficios que comparten todas las variantes (Ej: Diseño artesanal, incluye empaque de regalo...)">
+          placeholder="Describe la colección, inspiración o beneficios que comparten todas las variantes...">
         </textarea>
       </div>
     </section>
@@ -90,12 +89,12 @@
       </app-category-selector>
     </section>
 
-    <div class="variants-container"  *ngIf="categoriaSeleccionadaFinal" cdkDropList [cdkDropListData]="variantes" (cdkDropListDropped)="onVariantDrop($event)">
+    <div class="variants-container" *ngIf="categoriaSeleccionadaFinal" cdkDropList [cdkDropListData]="variantes" (cdkDropListDropped)="onVariantDrop($event)">
       
       <div class="variant-card" [id]="'variante-' + v.id" *ngFor="let v of variantes; let i=index" cdkDrag>
         <div class="example-custom-placeholder" *cdkDragPlaceholder></div>
         
-        <div class="variant-header" cdkDragHandle> 
+        <div class="variant-header" style="display: flex; justify-content: space-between; align-items: center;" cdkDragHandle> 
           <div class="variant-title-group">
             <span class="drag-icon">⠿</span> 
             <h3 class="variant-title">Variante #{{i+1}}: 
@@ -103,226 +102,237 @@
             </h3>
             <span class="color-dot" *ngIf="v.hex_identidad && v.hex_identidad !== '#FFFFFF'" [style.background]="v.hex_identidad"></span>
           </div>
-          <p class="drag-hint">Arrastra desde aquí para reordenar los estilos.</p>
+          
+          <div class="status-badges">
+            <span class="badge badge-new" *ngIf="!v.id">✨ Estilo Nuevo</span>
+            <span class="badge badge-saved" *ngIf="v.id">✅ Estilo en BD</span>
+          </div>
+        </div>
+
+        <div class="variant-actions" style="border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 15px; text-align: right;">
+          <button type="button" class="btn-text-danger" (click)="eliminarVariante(i)">🗑️ Eliminar este estilo completo</button>
         </div>
 
         <div class="field full-width" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
           <label style="font-weight: 600; font-size: 1.1rem; color: #2c3e50; margin-bottom: 10px;">
             {{ ejeVariacion.label }} <span class="required-asterisk">*</span>
           </label>
-
-          <app-color-selector 
-            *ngIf="ejeVariacion.tipo === 'color'"
-            [initialHex]="v.hex_identidad" 
-            (colorChanged)="onVariantColorChanged(v, $event)">
-          </app-color-selector>
-
+          <app-color-selector *ngIf="ejeVariacion.tipo === 'color'" [initialHex]="v.hex_identidad" (colorChanged)="onVariantColorChanged(v, $event)"></app-color-selector>
           <div class="custom-select" *ngIf="ejeVariacion.tipo === 'dropdown'">
-            <select [(ngModel)]="v.identidad_variante" (ngModelChange)="onVariantDropdownChanged(v)" [name]="'var_ident_' + v.temp_id">
+            <select [(ngModel)]="v.identidad_variante" (change)="marcarVarianteModificada(v); onVariantDropdownChanged(v)" [name]="'var_ident_' + v.temp_id">
               <option value="" disabled selected>Selecciona el material principal...</option>
               <option *ngFor="let opt of ejeVariacion.opciones" [value]="opt">{{ opt }}</option>
             </select>
           </div>
-
-          <input 
-            *ngIf="ejeVariacion.tipo === 'texto'"
-            type="text" 
-            [(ngModel)]="v.identidad_variante" 
-            [name]="'var_ident_' + v.temp_id" 
-            [placeholder]="ejeVariacion.placeholder" />
+          <input *ngIf="ejeVariacion.tipo === 'texto'" type="text" [(ngModel)]="v.identidad_variante" (change)="marcarVarianteModificada(v)" [name]="'var_ident_' + v.temp_id" [placeholder]="ejeVariacion.placeholder" />
         </div>
 
         <div class="field image-upload-section">
-          
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
-            <label style="margin: 0;">
-              Fotos del estilo
-              <span class="required-web-asterisk" *ngIf="varianteVaAPublicarse(v)" title="Requerido para publicar">*</span>
-            </label>
-            
+            <label style="margin: 0;">Fotos del estilo <span class="required-web-asterisk" *ngIf="varianteVaAPublicarse(v)" title="Requerido para publicar">*</span></label>
             <div class="action-buttons" style="display: flex; gap: 8px;">
-              
-              <input 
-                type="file" 
-                accept="image/*" 
-                multiple
-                (change)="onFilesSelected($event, i)" 
-                #fileInput 
-                style="display: none;">
-              <button 
-                type="button" 
-                class="btn-outline-primary" 
-                style="padding: 4px 10px; font-size: 0.9em; display: flex; align-items: center; gap: 5px;"
-                (click)="fileInput.click()">
-                <span>📁</span> Subir fotos
-              </button>
-
-              <input 
-                type="file" 
-                accept="image/jpeg, image/png, image/jpg" 
-                capture="environment" 
-                (change)="onFilesSelected($event, i)" 
-                #cameraInput 
-                style="display: none;">
-              <button 
-                type="button" 
-                class="btn-outline-primary" 
-                style="padding: 4px 10px; font-size: 0.9em; display: flex; align-items: center; gap: 5px;"
-                (click)="cameraInput.click()">
-                <span>📸</span> Cámara
-              </button>
-
+              <input type="file" accept="image/*" multiple (change)="onFilesSelected($event, i)" #fileInput style="display: none;">
+              <button type="button" class="btn-outline-primary" style="padding: 4px 10px; font-size: 0.9em; display: flex; align-items: center; gap: 5px;" (click)="fileInput.click()"><span>📁</span> Subir fotos</button>
+              <input type="file" accept="image/jpeg, image/png, image/jpg" capture="environment" (change)="onFilesSelected($event, i)" #cameraInput style="display: none;">
+              <button type="button" class="btn-outline-primary" style="padding: 4px 10px; font-size: 0.9em; display: flex; align-items: center; gap: 5px;" (click)="cameraInput.click()"><span>📸</span> Cámara</button>
             </div>
           </div>
-
-          <app-image-manager
-            [variantId]="v.temp_id"
-            [imagenes]="v.imagenes"
-            [imagenesFiles]="v.imagenesFiles"
-            (imagesChanged)="v.imagenes = $event.imagenes; v.imagenesFiles = $event.files">
-          </app-image-manager>
-          
+          <app-image-manager [variantId]="v.temp_id" [imagenes]="v.imagenes" [imagenesFiles]="v.imagenesFiles" (imagesChanged)="v.imagenes = $event.imagenes; v.imagenesFiles = $event.files; v.isDirty = true"></app-image-manager>
         </div>
 
         <div class="field full-width">
           <label>Descripción específica de este estilo ({{ v.identidad_variante }})</label>
-          <textarea [(ngModel)]="v.descripcion" [name]="'desc_var_' + v.temp_id" rows="2" placeholder="Ej: estilo, color..."></textarea>
+          <textarea [(ngModel)]="v.descripcion" (change)="marcarVarianteModificada(v)" [name]="'desc_var_' + v.temp_id" rows="2" placeholder="Ej: estilo, color..."></textarea>
         </div>
 
         <div class="stock-section">
-          <h4 class="stock-title">Unidades en Inventario</h4>
+          <h4 class="stock-title">Lotes de Unidades Físicas</h4>
           
           <div class="stock-list" cdkDropList [cdkDropListData]="v.stocks" (cdkDropListDropped)="onStockDrop($event, i)">
             <div class="stock-item" *ngFor="let s of v.stocks; let j=index" cdkDrag>
               
-              <div class="stock-header" cdkDragHandle>
-                <span class="drag-icon">⠿</span> Medida/Talla #{{j+1}}
+              <div class="stock-header" style="display: flex; justify-content: space-between; align-items: center;" cdkDragHandle>
+                <div><span class="drag-icon">⠿</span> Lote de Medida/Talla #{{j+1}}</div>
+                <div class="status-badges">
+                  <span class="badge badge-new" *ngIf="!s.id">✨ Lote Nuevo</span>
+                  <span class="badge badge-saved" *ngIf="s.id">✅ Lote en BD</span>
+                </div>
               </div>
-              
-              <div class="grid-4">
-                
+
+              <div class="grid-4 mt-3">
                 <ng-container *ngFor="let attr of s.atributos; let k=index">
                   <div class="field" *ngIf="attr.nombre !== mapeoIdentidadPorCategoria">
+                    <label>{{ formatLabel(attr.nombre) }}</label>
                     
-                    <label>
-                      {{ formatLabel(attr.nombre) }}
-                      <span class="required-asterisk" *ngIf="attr.nombre === 'talla'" title="Requerido para inventario">*</span>
-                      <span class="required-web-asterisk" *ngIf="(s.publicar_web || s.publicar_vinted || s.publicar_wallapop) && attr.nombre === 'peso_kg'" title="Requerido para envíos">*</span>
-                    </label>
-
-                    <app-color-selector 
-                      *ngIf="attr.tipo === 'color-dropdown'"
-                      [initialHex]="getHexColor(attr.valor)" 
-                      (colorChanged)="attr.valor = $event.nombre">
-                    </app-color-selector>
-
-                    <input 
-                      *ngIf="attr.tipo !== 'color-dropdown' && attr.tipo !== 'select'" 
-                      [type]="attr.tipo" 
-                      [(ngModel)]="attr.valor" 
-                      [name]="'attr_' + s.temp_id + '_' + attr.nombre" 
-                      [placeholder]="getPlaceholder(attr.nombre)" />
-
+                    <input *ngIf="attr.tipo !== 'color-dropdown' && attr.tipo !== 'select'" 
+                           [type]="attr.tipo" 
+                           [(ngModel)]="attr.valor" 
+                           (change)="marcarModificado(s)" 
+                           [name]="'attr_' + s.temp_id + '_' + attr.nombre" 
+                           [placeholder]="getPlaceholder(attr.nombre)" />
+                    
                     <div class="custom-select" *ngIf="attr.tipo === 'select'">
-                      <select [(ngModel)]="attr.valor" [name]="'attr_' + s.temp_id + '_' + attr.nombre">
+                      <select [(ngModel)]="attr.valor" (change)="marcarModificado(s)" [name]="'attr_' + s.temp_id + '_' + attr.nombre">
                         <option [ngValue]="null" disabled selected>Selecciona...</option>
                         <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
                       </select>
                     </div>
-
                   </div>
                 </ng-container>
 
                 <div class="field">
-                  <label>Unidades / stocks <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="number" [(ngModel)]="s.stock" [name]="'stock_' + s.temp_id" />
+                  <label>Precio Compra (€) <span class="required-asterisk">*</span></label>
+                  <input type="number" step="any" [(ngModel)]="s.precio_compra" (change)="marcarModificado(s)" [name]="'pc_' + s.temp_id" />
                 </div>
-
+                <div class="field">
+                  <label>Precio Venta (€)</label>
+                  <input type="number" step="any" [(ngModel)]="s.precio_venta" (change)="marcarModificado(s)" [name]="'pv_' + s.temp_id" />
+                </div>
                 
-
-                <div class="field">
-                  <label>Precio Compra <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc_' + s.temp_id" />
-                </div>
-
                 <div class="field proveedor-autocomplete">
-                  <label>Proveedor <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <app-supplier-selector tipoProveedor="inventario" [proveedorInicialId]="s.proveedor_id" (supplierChanged)="onSupplierChanged($event, s)"></app-supplier-selector>
+                  <label>Dueño de la prenda <span class="required-asterisk" title="Requerido para inventario">*</span></label>
+                  <app-supplier-selector tipoProveedor="inventario" [proveedorInicialId]="s.proveedor_id" (supplierChanged)="onSupplierChanged($event, s); marcarModificado(s)"></app-supplier-selector>
                 </div>
-
-                <div class="field">
-                  <label>Fecha de Compra <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="date" [(ngModel)]="s.fecha_compra" [name]="'fecha_compra_' + s.temp_id" />
+          
+                <div class="field" style="grid-column: span 2;">
+                  <label>📍 Lugar de almacenamiento <span class="required-asterisk" title="Requerido para facilitar la búsqueda">*</span></label>
+                  <app-location-selector 
+                    [localizacionId]="s.localizacion_id" 
+                    (localizacionChange)="s.localizacion_id = $event; marcarModificado(s)">
+                  </app-location-selector>
                 </div>
-
-                <div class="field">
-                  <label>
-                    Precio Venta 
-                    <span class="required-web-asterisk" *ngIf="s.publicar_web || s.publicar_vinted || s.publicar_wallapop" title="Requerido para publicar">*</span>
-                  </label>
-                  <input type="number" step="0.01" [(ngModel)]="s.precio_venta" [name]="'pv_' + s.temp_id" />
+          
+                <div class="field advanced-id-field" *ngIf="!s.id && (!s.unidades || s.unidades.length === 0)">
+                  <label style="color: #e74c3c; font-size: 0.8rem;">⚠️ ID Manual Inicial</label>
+                  <input type="number" [(ngModel)]="s.id_manual" (change)="marcarModificado(s)" [name]="'id_manual_' + s.temp_id" placeholder="Dejar vacío por defecto" style="border-color: #fceceb; background-color: #fceceb; font-size: 0.8rem;" />
                 </div>
-
-                <div class="field">
-                  <label>Ubicación de almacenaje <span class="required-asterisk" title="Requerido para inventario">*</span></label>
-                  <input type="text" [(ngModel)]="s.ubicacion" [name]="'ubicacion_' + s.temp_id" placeholder="Pasillo A, Caja 2..." />
-                </div>
-
-                <div class="field advanced-id-field" *ngIf="!s.id">
-                  <label style="color: #e74c3c; font-size: 0.8rem;">⚠️ ID Manual (Solo Excel)</label>
-                  <input type="number" [(ngModel)]="s.id_manual" [name]="'id_manual_' + s.temp_id" placeholder="Dejar vacío por defecto" style="border-color: #fceceb; background-color: #fceceb; font-size: 0.8rem;" />
-                </div>
-
-                <div class="field">
-                  <label>Descuento %</label>
-                  <input type="number" [(ngModel)]="s.descuento" [name]="'desc_' + s.temp_id" />
-                </div>
-
-                <div class="field" style="position: relative; z-index: 100;">
-                  <label>Dueño de la prenda <span class="required-asterisk">*</span></label>
-                  <app-client-selector
-                    [clienteInicialId]="s.propietario_id"
-                    (clientSelected)="s.propietario_id = $event">
-                  </app-client-selector>
-                </div>
-
-                <div class="field">
-                  <label>
-                    {{ s.propietario_id ? 'Comisión para el Cliente' : 'Precio Compra' }} 
-                    <span class="required-asterisk" title="Requerido para inventario">*</span>
-                  </label>
-                  <input type="number" step="0.01" [(ngModel)]="s.precio_compra" [name]="'pc_' + s.temp_id" [placeholder]="s.propietario_id ? 'Ej: 5.00 o 0' : ''" />
-                </div>
-
-                <div class="field full-width" *ngIf="s.propietario_id" style="margin-top: 10px; background: #eafaf1; padding: 10px; border-radius: 8px;">
+          
+                <div class="field full-width" *ngIf="s.proveedor_id" style="margin-top: 10px; background: #eafaf1; padding: 10px; border-radius: 8px;">
                   <label class="toggle-switch" style="margin: 0;">
-                    <input type="checkbox" [(ngModel)]="s.donar_ganancias" [name]="'donar_' + s.temp_id" />
+                    <input type="checkbox" [(ngModel)]="s.donar_ganancias" (change)="marcarModificado(s)" [name]="'donar_' + s.temp_id" />
                     <span class="slider"></span>
                     <span class="toggle-label" style="color: #27ae60; font-weight: bold;">🎁 El cliente dona el 100% de la venta a Allsys</span>
                   </label>
                 </div>
+                </div>
 
-               
+              <div class="field mt-3 mb-3" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex-grow: 1; min-width: 200px;">
+                  <label style="font-size: 0.85rem; color: var(--ap-color-primary); margin-bottom: 5px;">
+                    {{ s.id ? 'Añadir MÁS prendas físicas a este lote existente' : 'Cantidad de prendas físicas iniciales a generar al guardar' }} 
+                    <span class="required-asterisk" *ngIf="!s.id">*</span>
+                  </label>
+                  <input type="number" [(ngModel)]="s.cantidad_agregar" (change)="marcarModificado(s)" [name]="'add_qty_' + s.temp_id" min="0" placeholder="Ej: 5" style="max-width: 100%; background: #fff; margin-bottom: 0;" />
+                </div>
+
+                <div style="flex-grow: 1; min-width: 200px;" *ngIf="!s.id || (s.cantidad_agregar ?? 0) > 0">
+                  <label style="font-size: 0.85rem; color: var(--ap-color-primary); margin-bottom: 5px;">
+                    Fecha ingreso para estas unidades
+                  </label>
+                  <input type="date" [(ngModel)]="$any(s).fecha_compra_lote_nuevo" (change)="marcarModificado(s)" [name]="'add_fecha_' + s.temp_id" style="background: #fff; margin-bottom: 0; width: 100%;" />
+                </div>
+                
+                <button *ngIf="s.id" type="button" class="btn-primary" [disabled]="(s.cantidad_agregar || 0) <= 0 || s.cargandoLote" (click)="generarUnidadesEnLote(s)" style="padding: 10px 15px; white-space: nowrap; height: fit-content;">
+                  <span *ngIf="s.cargandoLote">⏳ Generando...</span>
+                  <span *ngIf="!s.cargandoLote">+ Generar Directo</span>
+                </button>
               </div>
 
-              <div class="stock-footer">
+              <div class="units-management mt-3 mb-3" *ngIf="s.id && s.unidades && s.unidades.length > 0" style="grid-column: 1 / -1;">
+                <button type="button" class="btn-outline-primary btn-sm" (click)="s.mostrarUnidades = !s.mostrarUnidades" style="margin-bottom: 10px;">
+                  {{ s.mostrarUnidades ? '▲ Ocultar unidades' : '▼ Ver prendas físicas individuales (' + s.unidades.length + ')' }}
+                </button>
+
+                <div class="units-table-container" *ngIf="s.mostrarUnidades" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto;">
+                  <table class="ap-table" style="width: 100%; font-size: 0.9em; text-align: left; border-collapse: collapse; min-width: 600px;">
+                    <thead>
+                      <tr>
+                        <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">ID Físico (SKU)</th>
+                        <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">Fecha de Ingreso</th>
+                        <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1; text-align: center;">Venta Online</th>
+                        <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">Estado Gestión</th>
+                        <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let u of s.unidades; let uIdx = index" style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 10px 0;">
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong>#</strong>
+                            
+                            <!-- Modo Lectura -->
+                            <span *ngIf="!u.editandoId" style="font-weight: bold; font-size: 1.1em;">{{ u.id }}</span>
+                            <button type="button" *ngIf="!u.editandoId" (click)="intentarEditarId(u)" 
+                                    style="border: none; background: none; cursor: pointer; padding: 2px; font-size: 0.8rem; color: #64748b;" 
+                                    title="Editar ID manual">✏️</button>
+
+                            <!-- Modo Edición -->
+                            <div *ngIf="u.editandoId" style="display: flex; align-items: center; gap: 4px;">
+                              <input type="number" [(ngModel)]="u.id" [name]="'id_u_' + s.temp_id + '_' + uIdx" 
+                                     style="padding: 4px; font-weight: bold; font-size: 1em; width: 75px; border: 1px solid #007782; border-radius: 4px; background: #fff; outline: none;" 
+                                     (change)="u.is_dirty = true" />
+                              <button type="button" (click)="u.editandoId = false" 
+                                      style="border: none; background: none; cursor: pointer; color: #ef4444; font-size: 0.9rem; padding: 0;" 
+                                      title="Cancelar">❌</button>
+                            </div>
+                          </div>
+                          
+                          <small class="text-muted" style="font-size: 0.85em; display: block; margin-top: 2px;">{{ u.sku }}</small>
+                        </td>
+                        <td style="padding: 10px 5px;">
+                            <input type="date" [(ngModel)]="u.fecha_compra" (change)="u.is_dirty = true" [name]="'fecha_u_' + s.temp_id + '_' + uIdx" style="padding: 4px; font-size: 0.9em; max-width: 140px;" />
+                        </td>
+                        <td style="padding: 10px 5px; text-align: center;">
+                          <div style="display: flex; gap: 8px; justify-content: center;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Visible en Web">
+                              <input type="checkbox" [(ngModel)]="u.publicar_web" (change)="u.is_dirty = true" [name]="'w_u_' + s.temp_id + '_' + uIdx" />
+                              🌐
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Anunciado en Vinted">
+                              <input type="checkbox" [(ngModel)]="u.publicar_vinted" (change)="u.is_dirty = true" [name]="'v_u_' + s.temp_id + '_' + uIdx" />
+                              👗
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Anunciado en Wallapop">
+                              <input type="checkbox" [(ngModel)]="u.publicar_wallapop" (change)="u.is_dirty = true" [name]="'wa_u_' + s.temp_id + '_' + uIdx" />
+                              📦
+                            </label>
+                          </div>
+                        </td>
+                        <td style="padding: 10px 5px;">
+                          <div class="custom-select" style="max-width: 200px;">
+                            <select [(ngModel)]="u.estado_gestion" (change)="u.is_dirty = true" [name]="'estado_u_' + s.temp_id + '_' + uIdx" style="padding: 4px; font-size: 0.95em;" [disabled]="u.estado_gestion === 'vendido'">
+                              <option value="en_stock">✅ En stock</option>
+                              <option value="donado_a_ong">💖 Donado a ONG</option>
+                              <option value="devuelto_dueno">🔙 Devuelto al dueño</option>
+                              <option value="extraviado">⚠️ Extraviado</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td style="padding: 10px 0; display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                          <button type="button" class="btn-text-primary" *ngIf="u.estado_gestion !== 'vendido'" (click)="guardarCambiosUnidad(s, uIdx)" style="font-weight: 600; color: #007782; cursor: pointer; border: none; background: none;">💾 Guardar</button>
+                          <button type="button" class="btn-text-danger" *ngIf="u.estado_gestion !== 'vendido'" (click)="enviarUnidadPapelera(s, uIdx, u.id)" style="font-weight: 600;">🗑️ Eliminar</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- <div class="stock-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #eaedf1; padding-top: 15px;">
                 <div class="publish-options">
                   <label class="toggle-switch">
-                    <input type="checkbox" [(ngModel)]="s.publicar_web" [name]="'w_' + s.temp_id" />
+                    <input type="checkbox" [(ngModel)]="s.publicar_web" (change)="marcarModificado(s)" [name]="'w_' + s.temp_id" />
                     <span class="slider"></span>
-                    <span class="toggle-label">Publicar en Web</span>
+                    <span class="toggle-label">Publicar Lote</span>
                   </label>
                 </div>
-                <button type="button" class="btn-text-danger" (click)="eliminarStock(i,j)">Eliminar stock</button>
-              </div>
+                <button type="button" class="btn-text-danger" (click)="eliminarStockLocal(i, j)">🗑️ Quitar Lote Completo</button>
+              </div> -->
+              
             </div>
           </div>
 
-          <button type="button" class="btn-outline-primary" (click)="agregarStock(i)">+ Añadir otra medida/talla</button>
-        </div>
-
-        <div class="variant-actions">
-          <button type="button" class="btn-text-danger" (click)="eliminarVariante(i)">Eliminar este estilo completo</button>
+          <button type="button" class="btn-outline-primary" (click)="agregarStock(i)">+ Añadir nueva medida/talla</button>
         </div>
       </div>
 
@@ -337,3 +347,10 @@
     </div>
   </form>
 </div>
+
+<ng-template #loadingTemplate>
+  <div class="page-container loading-container">
+    <div class="spinner"></div>
+    <p>Cargando información del inventario...</p>
+  </div>
+</ng-template>

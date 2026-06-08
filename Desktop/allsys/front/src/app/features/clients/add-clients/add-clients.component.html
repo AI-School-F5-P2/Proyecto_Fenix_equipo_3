@@ -5,7 +5,7 @@
       <button type="button" class="btn-back" (click)="volver()">←</button>
       <h2 class="title">{{ isEditMode ? '✏️ Editar Cliente' : '✨ Nuevo Cliente' }}</h2>
     </div>
-    <span *ngIf="cliente.exento_gastos_gestion" class="vip-badge" style="background: #27ae60; color: white;">⭐ Exento de Tarifas (VIP)</span>
+   <span *ngIf="cliente.exento_comision || cliente.exento_tarifa_fija" class="vip-badge" style="background: #27ae60; color: white;">⭐ Exento de Tarifas (VIP)</span>
   </header>
 
   <div *ngIf="errorMessage" class="alert-box error">
@@ -26,50 +26,39 @@
       <div class="grid-2">
         <div class="field">
           <label>Nombre</label>
-          <input type="text" [(ngModel)]="cliente.nombre" name="nombre" placeholder="Nombre" />
+          <input type="text" [(ngModel)]="cliente.nombre" name="nombre" placeholder="Ej: María" />
         </div>
         <div class="field">
           <label>Apellidos</label>
-          <input type="text" [(ngModel)]="cliente.apellidos" name="apellidos" placeholder="Apellidos" />
-        </div>
-        <div class="field">
-          <label>DNI / NIE</label>
-          <input type="text" [(ngModel)]="cliente.dni_nie" name="dni" placeholder="12345678X" />
-        </div>
-        <div class="field toggle-field">
-          <label class="toggle-switch">
-            <input type="checkbox" [(ngModel)]="cliente.exento_gastos_gestion" name="exentoGastos" />
-            <span class="slider"></span>
-            <span class="label-text">VIP (Exento de tarifas fijas y devolución)</span>
-          </label>
+          <input type="text" [(ngModel)]="cliente.apellidos" name="apellidos" placeholder="Ej: Pérez Gómez" />
         </div>
       </div>
     </section>
 
     <section class="card-section">
-      <div class="section-title"><h3>🌐 Canales de Venta</h3></div>
+      <div class="section-title"><h3>🌐 Canales de Venta y Contacto</h3></div>
       <div class="grid-2">
         <div class="field">
           <label>👗 Usuario Vinted</label>
           <div class="input-addon">
             <span class="addon">&#64;</span>
-            <input type="text" [(ngModel)]="cliente.usuario_vinted" name="vinted" />
+            <input type="text" [(ngModel)]="cliente.usuario_vinted" name="vinted" placeholder="usuario_vinted" />
           </div>
         </div>
         <div class="field">
           <label>📦 Usuario Wallapop</label>
           <div class="input-addon">
             <span class="addon">&#64;</span>
-            <input type="text" [(ngModel)]="cliente.usuario_wallapop" name="wallapop" />
+            <input type="text" [(ngModel)]="cliente.usuario_wallapop" name="wallapop" placeholder="usuario_wallapop" />
           </div>
         </div>
         <div class="field">
           <label>📱 Teléfono</label>
-          <input type="tel" [(ngModel)]="cliente.telefono" name="telefono" />
+          <input type="tel" [(ngModel)]="cliente.telefono" name="telefono" placeholder="+34 600 000 000" />
         </div>
         <div class="field">
           <label>📧 Email</label>
-          <input type="email" [(ngModel)]="cliente.email" name="email" />
+          <input type="email" [(ngModel)]="cliente.email" name="email" placeholder="correo@ejemplo.com" />
         </div>
       </div>
     </section>
@@ -77,12 +66,18 @@
     <section class="card-section">
       <div class="section-title"><h3>📍 Dirección</h3></div>
       <div class="field full-width">
-        <label>Dirección</label>
-        <input type="text" [(ngModel)]="cliente.direccion" name="direccion" />
+        <label>Dirección Completa</label>
+        <input type="text" [(ngModel)]="cliente.direccion" name="direccion" placeholder="Calle, número, piso..." />
       </div>
       <div class="grid-3">
-        <div class="field"><label>C.P.</label><input type="text" [(ngModel)]="cliente.codigo_postal" name="cp" /></div>
-        <div class="field"><label>Ciudad</label><input type="text" [(ngModel)]="cliente.ciudad" name="ciudad" /></div>
+        <div class="field">
+          <label>C.P.</label>
+          <input type="text" [(ngModel)]="cliente.codigo_postal" name="cp" placeholder="28001" />
+        </div>
+        <div class="field">
+          <label>Ciudad</label>
+          <input type="text" [(ngModel)]="cliente.ciudad" name="ciudad" placeholder="Madrid" />
+        </div>
         <div class="field">
           <label>País</label>
           <select [(ngModel)]="cliente.pais" name="pais">
@@ -92,9 +87,31 @@
       </div>
     </section>
 
+    <section class="card-section" style="border: 2px solid #e0e6ed; border-left: 4px solid #f1c40f;">
+      <div class="section-title"><h3>🤝 Acuerdos Financieros (VIP)</h3></div>
+      
+      <div class="grid-3">
+        <div class="field toggle-field">
+          <label class="toggle-switch">
+            <input type="checkbox" [(ngModel)]="cliente.exento_comision" name="exentoComision" />
+            <span class="slider"></span>
+            <span class="label-text">Exento de Comisión (Ganancia 0%)</span>
+          </label>
+        </div>
+
+        <div class="field toggle-field">
+          <label class="toggle-switch">
+            <input type="checkbox" [(ngModel)]="cliente.exento_tarifa_fija" name="exentoFija" />
+            <span class="slider"></span>
+            <span class="label-text">Exento Tarifa Gestión (1.50€)</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
     <section class="card-section notes-section">
       <div class="section-title"><h3>📝 Notas Internas</h3></div>
-      <textarea [(ngModel)]="cliente.notas_internas" name="notas" rows="3"></textarea>
+      <textarea [(ngModel)]="cliente.notas_internas" name="notas" rows="3" placeholder="Información adicional sobre el cliente..."></textarea>
     </section>
 
     <div class="footer-actions">

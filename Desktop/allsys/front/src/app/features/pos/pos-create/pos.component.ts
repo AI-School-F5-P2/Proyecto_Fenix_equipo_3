@@ -1,27 +1,30 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { VentasService, VentaData } from '../../../core/services/ventas.service';
+import { SafeUrlPipe } from '../../../shared/pipes/safe-url.pipe';
 
 @Component({
   selector: 'app-pos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SafeUrlPipe],
   templateUrl: './pos.component.html',
   styleUrls: ['./pos.component.css']
 })
 export class PosComponent {
   codigoBusqueda: string = '';
   procesando: boolean = false;
+  cargando: boolean = false; // ✨ NUEVO: Para búsquedas
   
-  // Novedad: Historial del cliente
   comprasPreviasCliente: number | null = null;
-
   carrito: any[] = [];
   subtotal: number = 0;
   total: number = 0;
 
-  // Listas para los desplegables de Tienda Física
+  // ✨ Variables de validación de etiqueta
+  estadoEtiqueta: 'vacio' | 'cargando' | 'valida' | 'invalida' = 'vacio';
+
   prefijosPaises = [
     { codigo: '+34', pais: 'España (+34)' },
     { codigo: '+58', pais: 'Venezuela (+58)' },
@@ -32,16 +35,6 @@ export class PosComponent {
     { codigo: '+39', pais: 'Italia (+39)' }
   ];
 
-  tiposDocumentos = [
-    { id: 'DNI', nombre: 'DNI (España)' },
-    { id: 'NIE', nombre: 'NIE (España)' },
-    { id: 'CEDULA', nombre: 'Cédula (Vzla/Col)' },
-    { id: 'PASAPORTE', nombre: 'Pasaporte' },
-    { id: 'RFC', nombre: 'RFC/CURP (México)' },
-    { id: 'OTRO', nombre: 'Otro Documento' }
-  ];
-
-  // Lista plana de países
   listaPaises = [
     { nombre: 'España', bandera: '🇪🇸' },
     { nombre: 'Francia', bandera: '🇫🇷' },
@@ -51,15 +44,7 @@ export class PosComponent {
     { nombre: 'Alemania', bandera: '🇩🇪' },
     { nombre: 'Países Bajos', bandera: '🇳🇱' },
     { nombre: 'Reino Unido', bandera: '🇬🇧' },
-    { nombre: 'Luxemburgo', bandera: '🇱🇺' },
-    { nombre: 'Austria', bandera: '🇦🇹' },
-    { nombre: 'Polonia', bandera: '🇵🇱' },
-    { nombre: 'República Checa', bandera: '🇨🇿' },
-    { nombre: 'Suecia', bandera: '🇸🇪' },
-    { nombre: 'Dinamarca', bandera: '🇩🇰' },
-    { nombre: 'Finlandia', bandera: '🇫🇮' },
     { nombre: 'EE.UU.', bandera: '🇺🇸' },
-    { nombre: 'Canadá', bandera: '🇨🇦' },
     { nombre: 'Otros', bandera: '🌍' }
   ];
 
@@ -68,51 +53,81 @@ export class PosComponent {
     canal: 'vinted',
     vendedor: '', 
     metodo_pago: 'vinted',
-    estado_venta: 'procesando',
     estado_pago: 'pendiente',  
-    pais: '', // Queda vacío por defecto para forzar que lo elijan
-    
-    // ✨ Campos Estructurados
-    tipo_identificador: 'telefono', // Por defecto
-    prefijo_telefono: '+34',        // Por defecto
-    tipo_documento: 'DNI',          // Por defecto
+    estado_envio: 'pendiente_envio',
+    pais: '',
+    tipo_identificador: 'telefono',
+    prefijo_telefono: '+34',
+    tipo_documento: 'DNI',
     identificador_cliente: '',
     nombre_cliente: '',
-    
     descuento_total: 0,
     costo_envio: 0,
     empresa_transporte: '',
     numero_seguimiento: '',
+    etiqueta_url: '',
+    etiqueta_imprimida: false,
     detalles: []
   };
 
-  constructor(private ventasService: VentasService) {
+  constructor(private ventasService: VentasService, private http: HttpClient) {
     this.onCanalChange();
   }
 
-  // ==========================================
-  // LÓGICA DE CANALES Y ESTADOS AUTOMÁTICOS
-  // ==========================================
+  // ✨ NUEVA FUNCIÓN: Verifica la URL cuando el usuario la pega
+  validarUrlEtiqueta() {
+    let url = this.datosVenta.etiqueta_url?.trim();
+    if (!url) {
+      this.estadoEtiqueta = 'vacio';
+      return;
+    }
+
+    if (!url.startsWith('http') && !url.startsWith('https')) {
+      url = 'https://' + url;
+      this.datosVenta.etiqueta_url = url;
+    }
+
+    this.estadoEtiqueta = 'cargando';
+    const proxyUrl = this.ventasService.obtenerUrlProxyEtiqueta(url);
+
+    this.http.get(proxyUrl, { responseType: 'blob' }).subscribe({
+      next: () => {
+        this.estadoEtiqueta = 'valida';
+      },
+      error: () => {
+        this.estadoEtiqueta = 'invalida';
+      }
+    });
+  }
+
+  fixUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    let fixed = url.trim();
+    if (!fixed.startsWith('http://') && !fixed.startsWith('https://')) {
+      fixed = 'https://' + fixed;
+    }
+    if (fixed.toLowerCase().includes('pdf') || !fixed.includes('#')) {
+       if (!fixed.includes('toolbar=')) {
+         fixed += '#toolbar=0&navpanes=0&view=FitH';
+       }
+    }
+    return fixed;
+  }
+
   onCanalChange() {
     if (this.datosVenta.canal === 'tienda_fisica') {
-      this.datosVenta.estado_venta = 'completada';
       this.datosVenta.estado_pago = 'pagado';
       this.datosVenta.metodo_pago = 'efectivo';
-      this.datosVenta.pais = 'España'; // En tienda física, casi siempre será España
+      this.datosVenta.pais = 'España';
     } else {
-      this.datosVenta.estado_venta = 'procesando';
       this.datosVenta.estado_pago = 'pendiente';
       this.datosVenta.metodo_pago = this.datosVenta.canal === 'web' ? 'plataforma' : this.datosVenta.canal;
     }
   }
 
-  // ==========================================
-  // LÓGICA DEL CLIENTE (HISTORIAL)
-  // ==========================================
   buscarHistorialCliente() {
     let idParaBuscar = this.datosVenta.identificador_cliente?.trim();
 
-    // Si es teléfono, le pegamos el prefijo para buscar el número completo
     if (this.datosVenta.canal === 'tienda_fisica' && this.datosVenta.tipo_identificador === 'telefono') {
       idParaBuscar = `${this.datosVenta.prefijo_telefono}${idParaBuscar}`;
     }
@@ -122,68 +137,49 @@ export class PosComponent {
       return;
     }
 
-    // LLAMADA REAL AL BACKEND
     this.ventasService.obtenerConteoCompras(idParaBuscar).subscribe({
       next: (res) => {
         this.comprasPreviasCliente = res.compras_totales;
-        console.log(`El cliente tiene ${res.compras_totales} compras.`);
       },
       error: () => this.comprasPreviasCliente = 0
     });
   }
 
-  // ==========================================
-  // LÓGICA DEL CARRITO
-  // ==========================================
   buscarYAgregarProducto() {
     if (!this.codigoBusqueda.trim()) return;
 
-    const stockId = Number(this.codigoBusqueda);
-    if (isNaN(stockId)) {
-      alert('Por ahora ingresa el ID numérico del stock');
-      return;
-    }
+    const query = this.codigoBusqueda.trim();
+    this.cargando = true; // ✨ Activar loader
 
-    this.ventasService.buscarProductoPorStock(stockId).subscribe({
+    this.ventasService.buscarProductoPorStock(query).subscribe({
       next: (res) => {
+        this.cargando = false; // ✨ Desactivar loader
         if (res.alerta) {
           alert(res.alerta);
           return;
         }
 
-        const existe = this.carrito.find(item => item.stock_id === res.stock_id);
+        const existe = this.carrito.find(item => item.stock_unit_id === res.stock_unit_id);
         if (existe) {
-          if (existe.cantidad_venta < res.stock_disponible) {
-            existe.cantidad_venta += 1;
-          } else {
-            alert('No hay más stock disponible de este artículo.');
-          }
-        } else {
-          this.carrito.push({
-            ...res,
-            cantidad_venta: 1,
-            precio_unitario: res.precio_venta
-          });
+          alert(`⚠️ Este ítem físico (ID #${res.stock_unit_id}) ya está en el carrito.`);
+          this.codigoBusqueda = '';
+          return;
         }
+
+        this.carrito.push({
+          ...res,
+          cantidad_venta: 1,
+          precio_unitario: res.precio_venta
+        });
+        
         this.codigoBusqueda = '';
         this.calcularTotales();
       },
-      error: (err) => alert('No se encontró el producto.')
+      error: () => {
+        this.cargando = false; // ✨ Desactivar loader
+        alert('No se encontró la unidad física.');
+      }
     });
-  }
-
-  cambiarCantidad(index: number, cambio: number) {
-    const item = this.carrito[index];
-    const nuevaCantidad = item.cantidad_venta + cambio;
-
-    if (nuevaCantidad > 0 && nuevaCantidad <= item.stock_disponible) {
-      item.cantidad_venta = nuevaCantidad;
-      this.calcularTotales();
-    } else if (nuevaCantidad === 0) {
-      this.eliminarDelCarrito(index);
-    } else {
-      alert(`Solo hay ${item.stock_disponible} unidades en stock.`);
-    }
   }
 
   eliminarDelCarrito(index: number) {
@@ -192,50 +188,43 @@ export class PosComponent {
   }
 
   calcularTotales() {
-    this.subtotal = this.carrito.reduce((acc, item) => acc + (item.cantidad_venta * item.precio_unitario), 0);
+    this.subtotal = this.carrito.reduce((acc, item) => acc + (1 * Number(item.precio_unitario)), 0);
     let d = Number(this.datosVenta.descuento_total) || 0;
     let e = Number(this.datosVenta.costo_envio) || 0;
     this.total = (this.subtotal + e) - d;
     if (this.total < 0) this.total = 0;
   }
 
-  // ==========================================
-  // COMPLETAR LA VENTA
-  // ==========================================
   completarVenta() {
     if (this.carrito.length === 0) return;
 
-    // ✨ VALIDACIONES ESTRICTAS (Obligatorios)
     if (!this.datosVenta.fecha) {
-      alert('⚠️ La Fecha de Venta es obligatoria.');
-      return;
+      alert('⚠️ La Fecha de Venta es obligatoria.'); return;
     }
-
     if (!this.datosVenta.vendedor) {
-      alert('⚠️ Seleccionar el Vendedor es obligatorio.');
-      return;
+      alert('⚠️ Seleccionar el Vendedor es obligatorio.'); return;
     }
 
-    if (!this.datosVenta.identificador_cliente?.trim()) {
-      alert('⚠️ El Identificador del Cliente (Usuario, Email o Teléfono) es OBLIGATORIO.');
-      return;
+    const canalesQueExigenCliente = ['vinted', 'wallapop', 'web'];
+    if (canalesQueExigenCliente.includes(this.datosVenta.canal)) {
+      if (!this.datosVenta.identificador_cliente || this.datosVenta.identificador_cliente.trim() === '') {
+        alert(`⚠️ Para ventas en ${this.datosVenta.canal.toUpperCase()}, el identificador del cliente es OBLIGATORIO.`);
+        return;
+      }
     }
 
     if (!this.datosVenta.pais) {
-      alert('⚠️ El País de Compra es obligatorio.');
-      return;
+      alert('⚠️ El País de Compra es obligatorio.'); return;
     }
-
     if (this.total <= 0) {
-      alert('⚠️ Error: El TOTAL de la venta debe ser mayor a 0 €.\nPor favor, revisa los precios o descuentos aplicados.');
-      return;
+      alert('⚠️ Error: El TOTAL de la venta debe ser mayor a 0 €.'); return;
     }
 
     this.procesando = true;
 
     this.datosVenta.detalles = this.carrito.map(item => ({
-      stock_id: item.stock_id,
-      cantidad: item.cantidad_venta,
+      stock_id: item.stock_unit_id,
+      cantidad: 1,
       precio_unitario: Number(item.precio_unitario)
     }));
 
@@ -245,8 +234,13 @@ export class PosComponent {
         this.limpiarCaja();
       },
       error: (err) => {
-        alert('❌ Error al registrar la venta: ' + (err.error?.detail || 'Desconocido'));
-        this.procesando = false;
+        this.procesando = false; 
+        const mensaje = err.error?.detail || 'Ocurrió un error inesperado al procesar la venta.';
+        if (err.status === 400) {
+          alert(`⚠️ ERROR DE ESTADO DE STOCK:\n\n${mensaje}`);
+        } else {
+          alert(`❌ Error al registrar la venta: ${mensaje}`);
+        }
       }
     });
   }
@@ -256,11 +250,13 @@ export class PosComponent {
     this.datosVenta.identificador_cliente = '';
     this.datosVenta.nombre_cliente = '';
     this.datosVenta.apellidos_cliente = '';
-    this.datosVenta.pais = ''; // Reseteamos país
+    this.datosVenta.pais = '';
     this.datosVenta.descuento_total = 0;
     this.datosVenta.costo_envio = 0;
     this.datosVenta.numero_seguimiento = '';
     this.datosVenta.empresa_transporte = '';
+    this.datosVenta.etiqueta_url = '';
+    this.estadoEtiqueta = 'vacio';
     this.comprasPreviasCliente = null;
     this.datosVenta.fecha = new Date().toISOString().split('T')[0];
     this.onCanalChange(); 

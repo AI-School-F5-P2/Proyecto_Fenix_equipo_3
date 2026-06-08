@@ -4,7 +4,7 @@ import { CommonModule, TitleCasePipe } from '@angular/common';
 import { RouterLink } from "@angular/router";
 import { FormsModule } from '@angular/forms';
 import { CategorySelectionEvent, CategorySelectorComponent } from '../../../shared/components/selectors/category-selector/category-selector.component';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ColorSelectorComponent } from "../../../shared/components/selectors/color-selector/color-selector.component";
 import { Color } from '../add-product/product-form.config';
@@ -12,11 +12,13 @@ import { InventoryTableComponent } from "./components/inventory-table/inventory-
 import { CatalogGridComponent } from "./components/catalog-grid/catalog-grid.component";
 import { ProviderSelectorComponent } from "../components/provider-selector/provider-selector.component";
 import { DateSelectorComponent } from "../../../shared/components/selectors/date-selector/date-selector.component";
-import { Subscription } from 'rxjs';
+import { ClientSelectorComponent } from "../add-product/components/client-selector/client-selector.component";
+import { LocationSelectorComponent } from "../../../shared/components/selectors/location-selector/location-selector.component";
+import { LocalizacionesService, Localizacion } from "../../../core/services/localizaciones.service";
 
 export interface MisFiltros {
   search: string;
-  tipo_busqueda: 'producto_id' | 'stock_id';
+  tipo_busqueda: 'producto_id' | 'stock_unit_id'; // ✨ ACTUALIZADO
   categoria_id: number | null;
   marca_id: number | null;
   estado: string;
@@ -25,38 +27,41 @@ export interface MisFiltros {
   ordenar_por: string;
   color: string | null;
   talla: string | null;
-  proveedores_ids : number[],
+  proveedores_ids: number[];
   fecha_inicio: string | null;
   fecha_fin: string | null;
   disponibilidad: 'todos' | 'en_stock' | 'agotado';
+  propietario_id?: number | null; // ✨ CAMBIADO A ID
+  localizacion_id?: number | null; // ✨ AÑADIDO
 }
 
 @Component({
   selector: 'app-products-list',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe, RouterLink, FormsModule, CategorySelectorComponent, ColorSelectorComponent, InventoryTableComponent, CatalogGridComponent, ProviderSelectorComponent, DateSelectorComponent],
+  imports: [CommonModule, FormsModule, CategorySelectorComponent, ColorSelectorComponent, InventoryTableComponent, CatalogGridComponent, ProviderSelectorComponent, DateSelectorComponent, ClientSelectorComponent, LocationSelectorComponent],
   templateUrl: './products-list.component.html',
   styleUrl: './products-list.component.css'
 })
 export class ProductsListComponent implements OnInit {
 
   stocks: any[] = []; 
-  vistaActual: 'catalogo' | 'inventario' = 'catalogo'; // ✨ Cambiado a catálogo por defecto (mejor UX)
+  vistaActual: 'catalogo' | 'inventario' = 'catalogo'; 
   productosPadre: any[] = []; 
   pagina: number = 1;       
   limite: number = 10;
-  private querySubscription?: Subscription; // 2. Variable para controlar la petición activa
+  private querySubscription?: Subscription; 
   cargando: boolean = false;
   sinMasResultados: boolean = false;
-  totalStocks: number = 0; 
-  // En tu clase ProductsListComponent
-  totalResultados: number = 0; // Este es el total de la vista activa
-  totalCatalogo: number = 0;    // ✨ Nuevo: Total específico de catálogo
-  totalInventario: number = 0;  // ✨ Nuevo: Total específico de inventario
+  
+  totalResultados: number = 0; 
+  totalCatalogo: number = 0;    
+  totalInventario: number = 0;  
+  
+  listaLocalizaciones: Localizacion[] = [];
 
   filtros: MisFiltros = {
     search: '',
-    tipo_busqueda: 'producto_id', // ✨ Sincronizado con vistaActual: 'catalogo'
+    tipo_busqueda: 'producto_id', 
     color: null,
     talla: null,
     categoria_id: null,
@@ -72,15 +77,14 @@ export class ProductsListComponent implements OnInit {
   };
 
   private searchSubject = new Subject<string>();
-
-  constructor(private productsService: ProductsService) {}
+  listaFiltrosActivos: any[] = [];
 
   ngOnInit(): void {
-    // 💡 Recuperar vista preferida del usuario si existe en localStorage
     const savedView = localStorage.getItem('vinted_pref_vista');
     if (savedView === 'inventario' || savedView === 'catalogo') {
       this.vistaActual = savedView;
       this.limite = this.vistaActual === 'catalogo' ? 10 : 20;
+      this.filtros.tipo_busqueda = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_unit_id';
     }
 
     this.searchSubject.pipe(
@@ -91,11 +95,34 @@ export class ProductsListComponent implements OnInit {
       this.aplicarFiltros();
     });
 
+    this.cargarLocalizaciones(); // ✨ AÑADIDO
     this.cargarDatos();
   }
 
-  cargarDatos(): void {
-    // Si ya hay una petición en curso, la cancelamos para que no se mezclen los datos
+  constructor(private productsService: ProductsService, private localizacionesService: LocalizacionesService) {} // ✨ AÑADIDO
+
+  cargarLocalizaciones(): void {
+    this.localizacionesService.obtenerLocalizaciones().subscribe({
+      next: (data) => {
+        let flat: Localizacion[] = [];
+        data.forEach(root => {
+          if (root.hijos && root.hijos.length > 0) {
+            root.hijos.forEach(h => flat.push(h));
+          } else {
+            flat.push(root);
+          }
+        });
+        this.listaLocalizaciones = flat;
+      }
+    });
+  }
+
+  onPropietarioSelected(clienteId: number | null | undefined): void {
+    this.filtros.propietario_id = clienteId;
+    this.aplicarFiltros();
+  }
+
+  cargarDatos() {
     if (this.querySubscription) {
       this.querySubscription.unsubscribe();
     }
@@ -103,37 +130,28 @@ export class ProductsListComponent implements OnInit {
     if (this.sinMasResultados) return; 
     this.cargando = true;
 
-    // Guardamos la suscripción
     if (this.vistaActual === 'inventario') {
       this.querySubscription = this.productsService.obtenerInventarioIndividual(this.pagina, this.limite, this.filtros)
         .subscribe({
-          next: (res: any) => {
-            this.procesarRespuesta(res.items, res.total, this.stocks);
-          },
-          error: (err) => { this.cargando = false; }
+          next: (res: any) => this.procesarRespuesta(res.items, res.total, this.stocks),
+          error: () => this.cargando = false
         });
     } else {
       this.querySubscription = this.productsService.obtenerProductos(this.pagina, this.limite, this.filtros)
         .subscribe({
-          next: (res: any) => {
-            this.procesarRespuesta(res.items, res.total, this.productosPadre);
-          },
-          error: (err) => { this.cargando = false; }
+          next: (res: any) => this.procesarRespuesta(res.items, res.total, this.productosPadre),
+          error: () => this.cargando = false
         });
     }
   }
 
   private procesarRespuesta(nuevosItems: any[], total: number, arrayDestino: any[]) {
     this.totalResultados = total;
-  
-  // ✨ Guardamos el conteo específico para cada pestaña
     if (this.vistaActual === 'catalogo') {
       this.totalCatalogo = total;
     } else {
       this.totalInventario = total;
     }
-
-    console.log(nuevosItems)
     
     if (nuevosItems.length === 0) {
       this.sinMasResultados = true;
@@ -146,24 +164,21 @@ export class ProductsListComponent implements OnInit {
   }
 
   onProveedoresSelected(ids: number[]) {
-    console.log(ids)
     this.filtros.proveedores_ids = ids;
     this.aplicarFiltros();
   }
 
-
-  // 1. Añade esta variable arriba, con el resto de tus variables
-  listaFiltrosActivos: any[] = [];
-
-  // 2. Crea esta función que recalcula los chips SOLO cuando tú se lo pides
   actualizarChipsDeFiltros() {
     const activos = [];
     if (this.filtros.search) {
       let labelBusqueda = `Búsqueda: ${this.filtros.search}`;
       if (this.filtros.tipo_busqueda === 'producto_id') labelBusqueda = `ID Prod: #${this.filtros.search}`;
-      if (this.filtros.tipo_busqueda === 'stock_id') labelBusqueda = `ID Stock: #${this.filtros.search}`;
+      if (this.filtros.tipo_busqueda === 'stock_unit_id') labelBusqueda = `ID Lote: #${this.filtros.search}`; // ✨ CORREGIDO
       activos.push({ id: 'search', label: labelBusqueda });
     }
+    if (this.filtros.propietario_id) activos.push({ id: 'propietario_id', label: `Dueño Filtrado` });
+    if (this.filtros.localizacion_id) activos.push({ id: 'localizacion_id', label: `Sede: #${this.filtros.localizacion_id}` });
+
     if (this.filtros.proveedores_ids && this.filtros.proveedores_ids.length > 0) {
       activos.push({ id: 'proveedores', label: `${this.filtros.proveedores_ids.length} Proveedor(es)` });
     }
@@ -184,10 +199,8 @@ export class ProductsListComponent implements OnInit {
     if (this.filtros.estado) activos.push({ id: 'estado', label: `Estado: ${this.filtros.estado}` });
     if (this.filtros.color) activos.push({ id: 'color', label: 'Color', isColor: true, hex: this.filtros.color });
     
-    // Guardamos en la variable fija
     this.listaFiltrosActivos = activos;
   }
-
 
   onFechasSelected(fechas: {inicio: string | null, fin: string | null}) {
     this.filtros.fecha_inicio = fechas.inicio;
@@ -196,42 +209,40 @@ export class ProductsListComponent implements OnInit {
   }
 
   cambiarVista(nuevaVista: 'catalogo' | 'inventario') {
-  if (this.vistaActual === nuevaVista) return;
-  
-  this.vistaActual = nuevaVista;
-  this.cargando = false; // ✨ Desbloqueamos el cargando
-  this.filtros.search = '';
-  
-  this.aplicarFiltros(); 
-}
+    if (this.vistaActual === nuevaVista) return;
+    this.vistaActual = nuevaVista;
+    this.cargando = false; 
+    this.filtros.search = '';
+    // Limpiamos los filtros no compatibles con el catálogo
+    if (nuevaVista === 'catalogo') {
+      if (this.filtros.ordenar_por.includes('precio_compra')) {
+        this.filtros.ordenar_por = 'fecha_desc';
+      }
+    }
+    localStorage.setItem('vinted_pref_vista', nuevaVista);
+    this.aplicarFiltros(); 
+  }
 
   onSearchInput(event: any): void {
-    const valor = event.target.value;
-    this.searchSubject.next(valor);
+    this.searchSubject.next(event.target.value);
   }
 
   aplicarFiltros() {
     this.actualizarChipsDeFiltros();
-    // ✨ ELIMINADO EL AUTO-SWITCHING. AHORA LA PESTAÑA MANDA.
-    // Solo nos aseguramos de que el tipo de búsqueda coincida con la pestaña actual
     this.querySubscription?.unsubscribe();
-    this.filtros.tipo_busqueda = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_id';
+    this.filtros.tipo_busqueda = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_unit_id'; // ✨ CORREGIDO
 
     this.pagina = 1;
     this.stocks = [];
     this.productosPadre = [];
     this.sinMasResultados = false;
-    
     this.limite = this.vistaActual === 'catalogo' ? 10 : 20;
     
     this.cargarDatos();
   }
 
   limpiarFiltros() {
-    this.actualizarChipsDeFiltros();
-    // ✨ Mantenemos el tipo_busqueda de la pestaña actual al limpiar
-    const tipoBusquedaActual = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_id';
-    
+    const tipoBusquedaActual = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_unit_id'; // ✨ CORREGIDO
     this.filtros = {
       search: '',
       tipo_busqueda: tipoBusquedaActual,
@@ -242,6 +253,8 @@ export class ProductsListComponent implements OnInit {
       fecha_inicio: null,
       fecha_fin: null,
       disponibilidad: 'todos',
+      propietario_id: null,
+      localizacion_id: null
     };
     this.aplicarFiltros();
   }
@@ -251,96 +264,34 @@ export class ProductsListComponent implements OnInit {
     this.aplicarFiltros();
   }
   
-
-
-
-
-
-
-
-
-
-
-
-
- onColorSelected(event: Color | null): void {
-    console.log('🎨 [FRONTEND] Evento de color recibido desde el selector:', event);
-    
+  onColorSelected(event: Color | null): void {
     if (event) {
-      // Le quitamos el hashtag y lo forzamos a mayúsculas
-      const hexLimpio = event.hex.replace('#', '').toUpperCase();
-      this.filtros.color = hexLimpio;
-      console.log(`🎨 [FRONTEND] Guardado en filtros.color (listo para URL): '${this.filtros.color}'`);
+      this.filtros.color = event.hex.replace('#', '').toUpperCase();
     } else {
       this.filtros.color = null;
-      console.log('🎨 [FRONTEND] Filtro de color limpiado (null).');
     }
-    
     this.aplicarFiltros(); 
   }
 
-
-
-
-
-
-  
-
-  get filtrosActivos() {
-    const activos = [];
-    if (this.filtros.search) {
-      let labelBusqueda = `Búsqueda: ${this.filtros.search}`;
-      if (this.filtros.tipo_busqueda === 'producto_id') labelBusqueda = `ID Prod: #${this.filtros.search}`;
-      if (this.filtros.tipo_busqueda === 'stock_id') labelBusqueda = `ID Stock: #${this.filtros.search}`;
-      activos.push({ id: 'search', label: labelBusqueda });
-    }
-    if (this.filtros.proveedores_ids && this.filtros.proveedores_ids.length > 0) {
-      activos.push({ id: 'proveedores', label: `${this.filtros.proveedores_ids.length} Proveedor(es)` });
-    }
-    if (this.filtros.disponibilidad !== 'todos') {
-      const label = this.filtros.disponibilidad === 'en_stock' ? 'Solo en Stock' : 'Solo Agotados';
-      activos.push({ id: 'disponibilidad', label: label });
-    }
-    if (this.filtros.fecha_inicio || this.filtros.fecha_fin) {
-      let label = 'Fecha: ';
-      if (this.filtros.fecha_inicio && this.filtros.fecha_fin) label += `${this.filtros.fecha_inicio} al ${this.filtros.fecha_fin}`;
-      else if (this.filtros.fecha_inicio) label += `Desde ${this.filtros.fecha_inicio}`;
-      else label += `Hasta ${this.filtros.fecha_fin}`;
-      activos.push({ id: 'fechas', label: label });
-    }
-    if (this.filtros.categoria_id) activos.push({ id: 'categoria_id', label: 'Categoría seleccionada' });
-    if (this.filtros.precio_min) activos.push({ id: 'precio_min', label: `Desde $${this.filtros.precio_min}` });
-    if (this.filtros.precio_max) activos.push({ id: 'precio_max', label: `Hasta $${this.filtros.precio_max}` });
-    if (this.filtros.estado) activos.push({ id: 'estado', label: `Estado: ${this.filtros.estado}` });
-    if (this.filtros.color) activos.push({ id: 'color', label: 'Color', isColor: true, hex: this.filtros.color });
-    return activos;
-  }
-
-
-
   eliminarFiltro(id: string) {
-  if (id === 'search') {
-    this.filtros.search = '';
-    this.filtros.tipo_busqueda = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_id';
-  }
-  if (id === 'proveedores') {
-    this.filtros.proveedores_ids = [];
-  }
-  // 👇 ESTO DEBE ESTAR DENTRO DE SU PROPIO IF
-  if (id === 'fechas') {
-    this.filtros.fecha_inicio = null;
-    this.filtros.fecha_fin = null;
-  }
-  
-  if (id === 'categoria_id') this.filtros.categoria_id = null;
-  if (id === 'precio_min') this.filtros.precio_min = null;
-  if (id === 'precio_max') this.filtros.precio_max = null;
-  if (id === 'estado') this.filtros.estado = '';
-  if (id === 'color') this.filtros.color = null;
-  if (id === 'disponibilidad') this.filtros.disponibilidad = 'todos';
+    if (id === 'search') {
+      this.filtros.search = '';
+      this.filtros.tipo_busqueda = this.vistaActual === 'catalogo' ? 'producto_id' : 'stock_unit_id';
+    }
+    if (id === 'propietario_id') this.filtros.propietario_id = null;
+    if (id === 'localizacion_id') this.filtros.localizacion_id = null;
+    if (id === 'proveedores') this.filtros.proveedores_ids = [];
+    if (id === 'fechas') {
+      this.filtros.fecha_inicio = null;
+      this.filtros.fecha_fin = null;
+    }
+    if (id === 'categoria_id') this.filtros.categoria_id = null;
+    if (id === 'precio_min') this.filtros.precio_min = null;
+    if (id === 'precio_max') this.filtros.precio_max = null;
+    if (id === 'estado') this.filtros.estado = '';
+    if (id === 'color') this.filtros.color = null;
+    if (id === 'disponibilidad') this.filtros.disponibilidad = 'todos';
 
-  this.aplicarFiltros();
-}
-
-  
+    this.aplicarFiltros();
+  }
 }

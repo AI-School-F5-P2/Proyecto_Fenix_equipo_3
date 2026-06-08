@@ -20,6 +20,8 @@ from app.api.v1.dashboard import dashboard_router
 from app.api.v1.statistics import router_statistics
 from app.api.v1.cliente import router as cliente_router
 from app.api.v1.consignacion import router as consignacion_router
+from app.api.v1.localizaciones import router as localizaciones_router
+from app.api.v1.auditoria import router as auditoria_router
 
 # from app.api.v1.analilytics import analytics_router  # Corregido el nombre
 # from app.api.v1.statistics import router as stats_router
@@ -28,17 +30,22 @@ from app.api.v1.consignacion import router as consignacion_router
 # MODELS (Nomenclatura Limpia)
 # Importarlos aquí asegura que Base.metadata.create_all los encuentre
 # =========================
-from app.models.producto_model import Producto  # Cambiado de producto_model
+from app.models.producto_model import Producto  
 from app.models.variantes_model import Variante
-from app.models.stock_model import Stock
-from app.models.atributo_model import Atributo, ValorAtributo   # Nuevo archivo de atributos
+from app.models.lotes_model import StockConfig, StockUnit  
+from app.models.atributo_model import Atributo, ValorAtributo   
+from app.models.atributo_categoria_model import AtributoCategoria # ✨ AÑADIDO
 from app.models.categorias_model import Categoria
 from app.models.marcas_model import Marca
 from app.models.variante_imagen_model import Imagen
 from app.models.ventas_model import Venta, DetalleVenta
-from app.models.proveedores_model import Proveedor          # Cambiado de Proveedores (Singular)
+from app.models.proveedores_model import Proveedor          
 from app.models.gastos_model import Gasto
-from app.models.clientes_model import Cliente  # Nuevo modelo para clientes
+from app.models.localizaciones_model import Localizacion
+from app.models.auditoria_model import Auditoria # ✨ AÑADIDO
+from app.models.clientes_model import Cliente  
+from app.models.pagos_consignacion_model import PagoConsignacion # ✨ AÑADIDO
+from app.models.cupon_model import Cupon # ✨ AÑADIDO POR SEGURIDAD
 
 
 
@@ -76,7 +83,7 @@ app.add_middleware(
 # =========================
 # Nota: Si cambiaste los archivos de router, asegúrate que los nombres coincidan
 app.include_router(auth_routers, prefix="/api/v1")
-app.include_router(producto_routers, prefix="/api/v1")
+app.include_router(producto_routers, prefix="/api/v1/productos")
 app.include_router(categorias_routers, prefix="/api/v1")
 app.include_router(marcas_router, prefix="/api/v1")
 app.include_router(venta_router, prefix="/api/v1")
@@ -86,6 +93,8 @@ app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(router_statistics, prefix="/api/v1")
 app.include_router(cliente_router, prefix="/api/v1")
 app.include_router(consignacion_router, prefix="/api/v1")
+app.include_router(localizaciones_router, prefix="/api/v1")
+app.include_router(auditoria_router, prefix="/api/v1")
 
 
 

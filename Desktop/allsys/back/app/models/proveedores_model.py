@@ -10,6 +10,6 @@ class Proveedor(Base):
     
     # ✨ Banderas independientes
     es_inventario = Column(Boolean, default=False) # Para ropa, neveras, perfumes, etc.
-    es_gasto = Column(Boolean, default=False)      # Para luz, alquiler, bolsas, etc.lse)
+    es_gasto = Column(Boolean, default=False)      # Para luz, alquiler, bolsas, etc.
 
-    stocks = relationship("Stock", back_populates="proveedor")
+    stock_configs = relationship("StockConfig", back_populates="proveedor")

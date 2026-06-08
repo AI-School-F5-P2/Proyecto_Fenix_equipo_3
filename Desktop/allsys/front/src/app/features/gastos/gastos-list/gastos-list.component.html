@@ -15,11 +15,15 @@
         <label>Categoría</label>
         <select [(ngModel)]="filtros.categoria" (change)="aplicarFiltros()">
           <option value="">Todas</option>
-          <option value="mercancia">Mercancía</option>
-          <option value="servicios">Servicios</option>
-          <option value="alquiler">Alquiler</option>
-          <option value="sueldos">Sueldos</option>
-          <option value="otros">Otros</option>
+          <option value="mercancia">🛍️ Ropa/Mercancía</option>
+          <option value="envios">📦 Sobres y Empaques</option>
+          <option value="regalos_clientes">🎁 Regalos y Detalles para Clientes</option>
+          <option value="local">🏠 Local y Servicios</option>
+          <option value="sueldos">👔 Sueldos / Staff</option>
+          <option value="publicidad">📢 Publicidad (Ads)</option>
+          <option value="devoluciones_reembolsos">🔙 Devoluciones</option>
+          <option value="oficina">📎 Oficina</option>
+          <option value="otros">⚙️ Otros</option>
         </select>
       </div>
 

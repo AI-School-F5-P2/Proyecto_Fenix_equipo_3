@@ -6,7 +6,7 @@
         <span class="icon">🔍</span>
         <input 
           type="text" 
-          placeholder="Escanea el código de barras o teclea el ID del Stock..." 
+          placeholder="Escanea el código de barras o teclea el ID Físico Único..." 
           [(ngModel)]="codigoBusqueda"
           (keyup.enter)="buscarYAgregarProducto()"
           autofocus>
@@ -14,26 +14,26 @@
       <button class="btn-primary" (click)="buscarYAgregarProducto()">Añadir</button>
     </div>
 
-    <div class="cart-items">
+    <div class="cart-items" *ngIf="!cargando">
       <div class="empty-cart" *ngIf="carrito.length === 0">
         <span class="empty-icon">🛒</span>
-        <p>El carrito está vacío. Escanea un producto para empezar.</p>
+        <p>El carrito está vacío. Escanea el ID único de un ítem para empezar.</p>
       </div>
 
       <div class="cart-item-card" *ngFor="let item of carrito; let i = index">
-        <img [src]="item.imagen_cover || 'assets/no-image.png'" alt="Producto" class="item-img">
+        <img [src]="item.imagen_cover || 'assets/img/default-product.png'" alt="Producto" class="item-img">
         <div class="item-details">
           <h4>{{ item.producto_nombre }}</h4>
           <p class="text-muted">
-            Talla: <strong>{{ item.talla || item.etiqueta }}</strong> | 
-            Color: <span class="color-dot" [style.background]="item.hex_identidad"></span>
+            ID: <strong>#{{item.stock_unit_id}}</strong> | Talla: <strong>{{ item.talla || item.etiqueta }}</strong>
           </p>
         </div>
-        <div class="item-quantity">
-          <button (click)="cambiarCantidad(i, -1)">-</button>
-          <span>{{ item.cantidad_venta }}</span>
-          <button (click)="cambiarCantidad(i, 1)">+</button>
+        
+        <!-- ✨ LA CANTIDAD ES SIEMPRE 1 PORQUE CADA ÍTEM ES FÍSICAMENTE ÚNICO ✨ -->
+        <div class="item-quantity" style="background: #f4f6f8; padding: 5px 15px; border-radius: 8px; font-weight: bold; color: #2c3e50;">
+          1 ud.
         </div>
+        
         <div class="item-price">
           <input type="number" [(ngModel)]="item.precio_unitario" (ngModelChange)="calcularTotales()">
           <span class="currency">€</span>
@@ -41,10 +41,14 @@
         <button class="btn-delete" (click)="eliminarDelCarrito(i)" title="Quitar">🗑️</button>
       </div>
     </div>
+
+    <div class="ap-loader-container" *ngIf="cargando" style="flex: 1; height: 100%;">
+      <div class="ap-spinner"></div>
+      <p class="ap-loader-text">Buscando producto...</p>
+    </div>
   </div>
 
   <div class="checkout-section">
-    
     <div class="checkout-card">
       <div class="grid-2" style="margin-bottom: 12px;">
         <div class="field">
@@ -81,13 +85,17 @@
         </div>
       </div>
 
-      <div class="field">
-        <label>Estado del Pedido</label>
-        <select [(ngModel)]="datosVenta.estado_venta">
-          <option value="completada">✅ Completada</option>
-          <option value="procesando">📦 Procesando</option>
-          <option value="enviada">🚚 Enviada</option>
-        </select>
+      <div class="grid-2">
+        <div class="field" *ngIf="datosVenta.canal !== 'tienda_fisica'">
+          <label>Fase del Envío</label>
+          <select [(ngModel)]="datosVenta.estado_envio">
+            <option value="pendiente_envio">⏳ Pendiente de Envío</option>
+            <option value="empaquetado">📦 Empaquetado</option>
+            <option value="listo_envio">🚚 Listo Envío</option>
+            <option value="enviado">🚀 Enviado</option>
+            <option value="entregado">📬 Entregado</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -167,16 +175,8 @@
       <div class="field" style="border-top: 1px solid #f0f2f5; margin-top: 10px; padding-top: 10px;">
         <label>Nombre y Apellidos Reales <span class="text-muted">(Factura/Envío)</span></label>
         <div style="display: flex; gap: 10px; margin-bottom: 5px;">
-          <input 
-            type="text" 
-            [(ngModel)]="datosVenta.nombre_cliente" 
-            placeholder="Nombre" 
-            style="flex: 1;">
-          <input 
-            type="text" 
-            [(ngModel)]="datosVenta.apellidos_cliente" 
-            placeholder="Apellidos" 
-            style="flex: 1;">
+          <input type="text" [(ngModel)]="datosVenta.nombre_cliente" placeholder="Nombre" style="flex: 1;">
+          <input type="text" [(ngModel)]="datosVenta.apellidos_cliente" placeholder="Apellidos" style="flex: 1;">
         </div>
         
         <div style="margin-top: 10px;">
@@ -202,7 +202,7 @@
     </div>
 
     <div class="checkout-card" *ngIf="datosVenta.canal !== 'tienda_fisica'">
-      <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #7f8c8d;">📦 Logística</h4>
+      <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #7f8c8d;">📦 Logística y Etiqueta</h4>
       <div class="grid-2">
         <div class="field">
           <label>Transportista</label>
@@ -217,6 +217,31 @@
         <div class="field">
           <label>Nº Seguimiento</label>
           <input type="text" [(ngModel)]="datosVenta.numero_seguimiento" placeholder="Seguimiento...">
+        </div>
+      </div>
+
+      <div class="field mt-2">
+        <label>URL / Foto de Etiqueta</label>
+        <input type="text" [(ngModel)]="datosVenta.etiqueta_url" 
+               (blur)="validarUrlEtiqueta()"
+               (keyup.enter)="validarUrlEtiqueta()"
+               placeholder="Pega el link del PDF o foto de la etiqueta...">
+        <small class="text-muted">Si son varias prendas, el lote compartirá esta etiqueta.</small>
+
+        <!-- ✨ MENSAJES DE VALIDACIÓN DE ETIQUETA Y VISOR -->
+        <div *ngIf="estadoEtiqueta === 'cargando'" style="margin-top: 8px; font-size: 0.85rem; color: #f39c12;">
+          ⏳ Verificando enlace...
+        </div>
+        <div *ngIf="estadoEtiqueta === 'invalida'" style="margin-top: 8px; font-size: 0.85rem; color: #e74c3c; font-weight: bold; background: #fadbd8; padding: 8px; border-radius: 6px; border: 1px solid #e74c3c;">
+          ❌ El enlace introducido está roto, caducado o no es un documento válido.
+        </div>
+        <div *ngIf="estadoEtiqueta === 'valida'" style="margin-top: 15px;">
+          <div style="font-size: 0.85rem; color: #27ae60; font-weight: bold; margin-bottom: 8px;">
+            ✅ Enlace correcto. Previsualización de la etiqueta:
+          </div>
+          <div style="height: 250px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #f8fafc; position: relative;">
+             <embed [src]="fixUrl(datosVenta.etiqueta_url) | safeUrl" type="application/pdf" width="100%" height="100%" />
+          </div>
         </div>
       </div>
     </div>
@@ -265,6 +290,5 @@
       (click)="completarVenta()">
       {{ procesando ? '⏳ Procesando...' : '💰 COMPLETAR VENTA' }}
     </button>
-
   </div>
 </div>

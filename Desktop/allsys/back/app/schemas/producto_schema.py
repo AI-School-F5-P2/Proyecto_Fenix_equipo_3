@@ -1,8 +1,12 @@
-from typing import List, Optional
-from pydantic import BaseModel
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
 
+# ✨ IMPORTAMOS EL NUEVO ESQUEMA DE STOCK (Asegúrate de que el archivo stock_schema.py exista)
+from app.schemas.lote_schema import StockConfigSchema
+
+# ==========================================
+# ESQUEMAS BÁSICOS DE CREACIÓN (Legacy / UI)
+# ==========================================
 class TallaCreate(BaseModel):
     talla: str
     stock: int
@@ -22,14 +26,16 @@ class ProductoCreate(BaseModel):
     marca_id: int
     variantes: List[VarianteCreate]
 
-
-# Un esquema genérico para Categoría y Marca (solo id y nombre)
+# ==========================================
+# ESQUEMAS DE LISTADO Y REFERENCIAS
+# ==========================================
 class SimpleRef(BaseModel):
+    """Un esquema genérico para Categoría y Marca (solo id y nombre)"""
     id: int
     nombre: str
 
-# El esquema de un producto individual en la lista
 class ProductoItemList(BaseModel):
+    """El esquema de un producto individual en la lista de la tabla principal"""
     id: int
     nombre: str
     sku: str
@@ -38,67 +44,32 @@ class ProductoItemList(BaseModel):
     marca: Optional[SimpleRef] = None
     imagen: Optional[str] = None
     stock_total: int
-    precio_compra: float  # ✨ CAMBIO: Antes era precio_min
-    precio_venta: float   # ✨ CAMBIO: Antes era precio_max
-    colores: List[str] = []  # <--- Al poner = [] ya no es obligatorio que el repo lo envíe
+    precio_compra: float  
+    precio_venta: float   
+    colores: List[str] = []  
     tallas: List[str] = []
     canales: Optional[dict] = None
 
-# El esquema final paginado
 class PaginatedProductosResponse(BaseModel):
+    """El esquema final paginado para los productos"""
     total: int
     items: List[ProductoItemList]
 
-
-
-
-class StockIndividualItemList(BaseModel):
-    # IDs y SKUs
-    stock_id: int
-    stock_sku: str
-    variante_id: int
-    producto_id: int
-    producto_nombre: str
+# ==========================================
+# ESQUEMAS DE EDICIÓN Y VALIDACIÓN DE JSON
+# ==========================================
+class VarianteSchema(BaseModel):
+    """
+    Esquema utilizado para validar el JSON string de variantes 
+    que llega en el form-data al crear o editar productos.
+    """
+    temp_id: Optional[str] = None
+    id: Optional[int] = None 
+    identidad_variante: str = Field(..., min_length=1)
+    hex_identidad: str = Field(..., min_length=1)
+    descripcion: str
+    imagenes: List[str] = []
+    orden: Optional[int] = 0
     
-    # Categoría y Marca
-    categoria: Optional[Dict[str, Any]]
-    marca: Optional[Dict[str, Any]]
-    
-    # Identidad visual (El estilo/color)
-    hex_identidad: str
-    identidad_variante: str
-    imagen_cover: Optional[str]
-    
-    # El corazón del stock (Tallas, etc)
-    etiqueta: Optional[str]
-    talla: Optional[str] # Extraído directamente de los atributos
-    atributos_extra: Dict[str, str] # Otros atributos (peso, formato, etc.)
-    
-    # Cantidades y Dinero
-    stock_disponible: int
-    precio_compra: float
-    precio_venta: float
-    descuento: float
-    
-    # Ubicación física y digital
-    ubicacion_almacen: Optional[str]
-    canales: Dict[str, bool]
-
-class PaginatedStockResponse(BaseModel):
-    total: int
-    items: List[StockIndividualItemList]
-
-
-
-    
-    # cantidad: int
-    
-    # precio_compra: float
-    # precio_venta: float
-    # descuento: float = 0
-    # ubicacion: Optional[str] = ""
-    # proveedor_id: Optional[int] = None
-    # proveedor_nombre_nuevo: Optional[str] = None
-    # publicar_web: bool = False
-    # publicar_vinted: bool = False
-    # publicar_wallapop: bool = False
+    # ✨ CAMBIO CLAVE: Reemplaza "lotes" por "stock_configs"
+    stock_configs: List[StockConfigSchema] = Field(..., min_items=1)

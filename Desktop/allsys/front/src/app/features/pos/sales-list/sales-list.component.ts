@@ -24,13 +24,13 @@ export class SalesListComponent implements OnInit {
 
   // ✨ VARIABLES DE BÚSQUEDA (Las 3 Cajas)
   searchProducto = '';
-  tipoBusquedaProd = 'id_producto'; 
+  tipoBusquedaProd = 'stock_unit_id'; 
   searchCodigo = '';
   searchCliente = '';
   tipoBusquedaCliente = 'nombre'; // 👈 NUEVO: Selector de cliente
 
   // Otros filtros
-  filtroEstado = '';
+  filtroEstadoPago = ''; // ✨ REEMPALZA filtroEstado
   filtroCanal = '';
   fechaInicio: string | null = null;
   fechaFin: string | null = null;
@@ -67,18 +67,23 @@ export class SalesListComponent implements OnInit {
   cargarVentas() {
     this.cargando = true;
     this.ventasService.listarVentas(
-      this.page, this.limit, 
+      this.page, this.limit,
       this.searchProducto, this.tipoBusquedaProd,         // Caja 1
       this.searchCodigo,                                  // Caja 2
       this.searchCliente, this.tipoBusquedaCliente,       // Caja 3 ✨
-      this.filtroEstado, this.filtroCanal, 
+      undefined,                                          // cliente_id
+      this.filtroEstadoPago || undefined,                 // ✨ estado_pago
+      undefined,                                          // estado_envio
+      this.filtroCanal, 
       this.fechaInicio || undefined, this.fechaFin || undefined, 
       this.filtroVendedor,
       this.filtroMarca || undefined,        
-      this.filtroCategoria || undefined
+      this.filtroCategoria || undefined,
+      'creacion',                                         // tipo_fecha
+      false,                                              // solo_online
+      true                                                // ✨ include_details (Para SKU/IDs)
     ).subscribe({
       next: (res) => {
-        console.log('Respuesta del backend:', res); // Para depuración
         this.ventas = res.items;
         this.totalItems = res.total;
         this.totalRecaudado = res.suma_recaudado;
@@ -105,12 +110,12 @@ export class SalesListComponent implements OnInit {
 
   limpiarFiltros() {
     this.searchProducto = '';
-    this.tipoBusquedaProd = 'id_producto';
+    this.tipoBusquedaProd = 'stock_unit_id';
     this.searchCodigo = '';
     this.searchCliente = '';
     this.tipoBusquedaCliente = 'nombre';
     
-    this.filtroEstado = '';
+    this.filtroEstadoPago = '';
     this.filtroCanal = '';
     this.filtroVendedor = ''; 
     this.fechaInicio = null; 
@@ -118,6 +123,23 @@ export class SalesListComponent implements OnInit {
     this.filtroMarca = '';
     this.filtroCategoria = null; 
     this.buscar();
+  }
+
+  generarDevolucion(venta: any) {
+    const confirma = confirm(`¿Estás seguro de que quieres generar una DEVOLUCIÓN TOTAL para la venta ${venta.codigo_venta}?\n\n- Se reembolsará el total: ${venta.total}€\n- Todas las prendas volverán al inventario.`);
+    if (!confirma) return;
+
+    this.ventasService.editarVenta(venta.id, {
+      estado_pago: 'reembolsado'
+    }).subscribe({
+      next: () => {
+        alert('✅ Devolución procesada correctamente. El stock ha sido liberado.');
+        this.cargarVentas();
+      },
+      error: (err) => {
+        alert('❌ Error al procesar devolución: ' + (err.error?.detail || 'Desconocido'));
+      }
+    });
   }
 
   cambiarPagina(nuevaPagina: number) {

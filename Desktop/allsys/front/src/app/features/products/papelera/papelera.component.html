@@ -70,18 +70,35 @@
             </tr>
 
             <ng-container *ngIf="expandedVariants.has(v.id)">
-              <tr class="row-stock" *ngFor="let s of v.stocks">
+              
+              <!-- Mostrar Configs/Lotes Borrados -->
+              <tr class="row-stock" *ngFor="let c of v.stock_configs_borradas">
                 <td colspan="2" class="stock-cell">
                   <span class="indent-2"></span>
-                  <span class="size-badge">{{ s.etiqueta }}</span>
-                  <small class="location">Ubic: {{ s.ubicacion || 'Sin asignar' }}</small>
+                  <span class="size-badge">{{ c.etiqueta }}</span>
+                  <small class="location">Ubic: {{ c.ubicacion || 'Sin asignar' }}</small>
                 </td>
-                <td>{{ s.cantidad }} uds.</td>
+                <td>{{ c.cantidad }} uds. dentro</td>
                 <td class="actions-cell">
-                  <button class="btn-text success" (click)="restaurar('stock', s.id)">Restaurar</button>
-                  <button class="btn-text danger" (click)="destruir('stock', s.id)">Destruir</button>
+                  <button class="btn-text success" (click)="restaurar('stock-config', c.id)">♻️ Restaurar Lote</button>
+                  <small class="text-muted" style="margin-left: 5px;">(Restaura el lote y sus prendas)</small>
                 </td>
               </tr>
+
+              <!-- Mostrar Unidades Físicas Borradas Individualmente -->
+              <tr class="row-stock" *ngFor="let u of v.stock_units_borradas">
+                <td colspan="2" class="stock-cell">
+                  <span class="indent-2"></span>
+                  <span style="font-family: monospace; font-size: 0.85em; color: #7f8c8d;">{{ u.sku }}</span>
+                  <small class="location">Estado: {{ u.estado_gestion }}</small>
+                </td>
+                <td>1 ud. (Física)</td>
+                <td class="actions-cell">
+                  <button class="btn-text success" (click)="restaurar('stock-unit', u.id)">♻️ Restaurar Prenda</button>
+                  <button class="btn-text danger" (click)="destruir('stock-unit', u.id)">💥 Destruir</button>
+                </td>
+              </tr>
+              
             </ng-container> </ng-container>
         </ng-container> </ng-container> </table>
   </div>

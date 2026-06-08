@@ -5,7 +5,7 @@
     <p>Gestiona los tickets, devoluciones y envíos de tu negocio.</p>
   </div>
 
-  <div class="summary-stats" *ngIf="!cargando">
+  <!-- <div class="summary-stats" *ngIf="!cargando">
     <div class="stat-card recaudado">
       <div class="stat-label">Total Recaudado (Filtro)</div>
       <div class="stat-value">{{ totalRecaudado | currency:'EUR' }}</div>
@@ -14,7 +14,7 @@
       <div class="stat-label">Beneficio Real (Filtro)</div>
       <div class="stat-value">{{ totalBeneficio | currency:'EUR' }}</div>
     </div>
-  </div>
+  </div> -->
 
   <div class="filters-card">
     
@@ -23,9 +23,10 @@
       <div class="search-box" style="flex: 1; min-width: 250px; display: flex; background: white; border-radius: var(--ap-radius-md); border: 1px solid var(--ap-border-base); overflow: hidden;">
         <select [(ngModel)]="tipoBusquedaProd" style="border: none; background-color: var(--ap-bg-variant); padding: 8px 12px; font-weight: bold; color: var(--ap-text-main); outline: none; border-radius: 0; border-right: 1px solid var(--ap-border-base);">
           <option value="sku">🏷️ SKU Prenda</option>
-          <option value="id_producto">🔢 ID Exacto (Escáner)</option>
+          <option value="stock_unit_id">🧵 ID Físico (Escáner)</option>
+          <option value="id_producto">🔢 ID Prod. Padre</option>
         </select>
-        <input type="text" placeholder="Buscar producto..." [(ngModel)]="searchProducto" (keyup.enter)="buscar()" style="flex: 1; border: none; padding: 8px 12px; outline: none; background: transparent;">
+        <input type="text" placeholder="Buscar prenda o producto..." [(ngModel)]="searchProducto" (keyup.enter)="buscar()" style="flex: 1; border: none; padding: 8px 12px; outline: none; background: transparent;">
       </div>
 
       <div class="search-box" style="flex: 1; min-width: 180px; display: flex; background: white; border-radius: var(--ap-radius-md); border: 1px solid var(--ap-border-base); overflow: hidden;">
@@ -68,28 +69,38 @@
     </div>
 
     <div class="filter-group">
-      <select [(ngModel)]="filtroVendedor">
-        <option value="">Vendedor...</option>
-        <option value="Yenny">Yenny</option>
-        <option value="Maikol">Maikol</option>
-        <option value="Paola">Paola</option>
-      </select>
-      <select [(ngModel)]="filtroEstado">
-        <option value="">Todos los estados</option>
-        <option value="completada">✅ Completada</option>
-        <option value="procesando">⏳ Procesando</option>
-        <option value="enviada">🚚 Enviada</option>
-        <option value="devuelta">↩️ Devuelta</option>
-        <option value="cancelada">❌ Cancelada</option>
-      </select>
-      <select [(ngModel)]="filtroCanal">
-        <option value="">Todos los canales</option>
-        <option value="tienda_fisica">🏪 Tienda Física</option>
-        <option value="web">🌐 Web Propia</option>
-        <option value="vinted">👗 Vinted</option>
-        <option value="wallapop">📦 Wallapop</option>
-      </select>
-      <button class="btn-clear" (click)="limpiarFiltros()">Limpiar</button>
+      <div class="filter-item">
+        <label>Vendedor</label>
+        <select [(ngModel)]="filtroVendedor" (change)="buscar()">
+          <option value="">Todos...</option>
+          <option value="Yenny">Yenny</option>
+          <option value="Maikol">Maikol</option>
+          <option value="Paola">Paola</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Estado del Pago</label>
+        <select [(ngModel)]="filtroEstadoPago" (change)="buscar()">
+          <option value="">Cualquier estado</option>
+          <option value="pendiente">⏳ Solo Pagos Pendientes</option>
+          <option value="pagado">💰 Pagados / Cobrados</option>
+          <option value="reembolsado">💸 Reembolsados (Anulados)</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Canal de Venta</label>
+        <select [(ngModel)]="filtroCanal" (change)="buscar()">
+          <option value="">Todos los canales</option>
+          <option value="tienda_fisica">🏠 Casa (Tienda Física)</option>
+          <option value="web">🌐 Web Propia</option>
+          <option value="vinted">👗 Vinted</option>
+          <option value="wallapop">📦 Wallapop</option>
+        </select>
+      </div>
+      
+      <button class="btn-clear" (click)="limpiarFiltros()" style="margin-top: 20px;">Limpiar Filtros</button>
     </div>
 
    
@@ -99,56 +110,77 @@
     <table class="ap-table">
       <thead>
         <tr>
-          <th>Código</th>
-          <th>Artículos</th> 
-          <th>Fecha</th>
-          <th>Cliente</th>
-          <th>Canal / Pago</th>
-          <th>Estado</th>
+          <th>Fecha de la Venta</th>
+          <th>ID / SKU Venta</th>
+          <th>Comprador</th>
+          <th>País</th>
+          <th>Canal de Venta</th>
+          <th>Estado del Pago</th>
+          <th>Vendedor</th>
           <th>Total</th>
           <th class="actions-col">Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let venta of ventas">
-          <td><strong>{{ venta.codigo_venta }}</strong></td>
-          
           <td>
-            <div class="product-info-cell">
-              <img [src]="venta.imagen_cover || 'assets/no-image.png'" alt="Prenda" class="mini-thumb">
-              <span class="text-resumen" [title]="venta.resumen_productos">
-                {{ venta.resumen_productos }}
-              </span>
-            </div>
+             <div style="font-weight: 600;">{{ venta.fecha | date:'dd/MM/yyyy' }}</div>
+             <small class="text-muted">{{ venta.fecha | date:'HH:mm' }}</small>
           </td>
 
-          <td>{{ venta.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img [src]="venta.imagen_cover || 'assets/img/default-product.png'" alt="Imagen" 
+                   style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <div style="line-height: 1.2;">
+                <div style="color: var(--primary); font-weight: 800;">#{{ venta.codigo_venta }}</div>
+                <div *ngFor="let item of venta.detalles" style="font-size: 0.75rem; color: #64748b;">
+                  <span style="font-family: monospace;">[{{ item.stock_unit_id }}]</span> {{ item.sku }}
+                </div>
+              </div>
+            </div>
+          </td>
           
           <td>
             <div style="line-height: 1.3;">
-              <strong>{{ venta.nombre_cliente || 'Sin nombre registrado' }}</strong>
-              <br>
-              
-              <small class="text-muted">{{ venta.identificador_cliente }}</small>
-              <br *ngIf="venta.pais">
-              
-              <span *ngIf="venta.pais" style="font-size: 0.8rem; color: #7f8c8d;">📍 {{ venta.pais }}</span>
+              <strong style="color: #2c3e50;">{{ venta.nombre_cliente || 'Anónimo' }}</strong>
+              <div style="font-size: 0.8rem; color: #7f8c8d;">{{ venta.identificador_cliente }}</div>
+              <div style="font-size: 0.75rem; color: #94a3b8;" *ngIf="venta.email_cliente">{{ venta.email_cliente }}</div>
             </div>
           </td>
+
+          <td>
+            <span *ngIf="venta.pais" style="font-size: 0.9rem;">📍 {{ venta.pais }}</span>
+            <span *ngIf="!venta.pais" class="text-muted">-</span>
+          </td>
+
           <td>
             <div class="channel-info">
-              <span class="badge-canal">{{ venta.canal }}</span>
-              <small class="text-muted">{{ venta.metodo_pago }}</small>
+              <span class="badge-canal" 
+                    [style.background]="venta.canal === 'tienda_fisica' ? '#f1f5f9' : '#e0f2f1'"
+                    [style.color]="venta.canal === 'tienda_fisica' ? '#475569' : '#00796b'">
+                {{ venta.canal === 'tienda_fisica' ? '🏠 CASA' : (venta.canal | uppercase) }}
+              </span>
+              <small class="text-muted" style="text-transform: capitalize;">💳 {{ venta.metodo_pago }}</small>
             </div>
           </td>
+
           <td>
-            <span class="status-badge" [ngClass]="venta.estado_venta">
-              {{ venta.estado_venta | uppercase }}
+            <span class="status-badge" [ngClass]="venta.estado_pago" title="Estado del dinero"
+                  [style.background]="venta.estado_pago === 'pagado' ? '#eafaf1' : (venta.estado_pago === 'pendiente' ? '#fef5e7' : '#fceceb')"
+                  [style.color]="venta.estado_pago === 'pagado' ? '#27ae60' : (venta.estado_pago === 'pendiente' ? '#e67e22' : '#c0392b')">
+              {{ (venta.estado_pago === 'pagado' ? 'COBRADO' : (venta.estado_pago === 'pendiente' ? 'PENDIENTE' : 'REEMBOLSADO')) }}
             </span>
           </td>
+
+          <td><span style="font-weight: 500;">{{ venta.vendedor }}</span></td>
+
           <td class="price-cell">{{ venta.total | number:'1.2-2' }} €</td>
+
           <td class="actions-cell">
-            <button class="btn-icon" (click)="irAEditar(venta.id)" title="Ver o Editar Detalles">👁️ / ✏️</button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-icon" (click)="irAEditar(venta.id)" title="Ver / Editar">✏️</button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -160,7 +192,12 @@
     <p>Prueba cambiando los filtros de búsqueda.</p>
   </div>
 
-  <div class="pagination" *ngIf="totalItems > limit">
+  <div class="ap-loader-container" *ngIf="cargando">
+    <div class="ap-spinner"></div>
+    <p class="ap-loader-text">Cargando listado de ventas...</p>
+  </div>
+
+  <div class="pagination" *ngIf="!cargando && totalItems > limit">
     <button [disabled]="page === 1" (click)="cambiarPagina(page - 1)">« Anterior</button>
     <span>Página {{ page }} de {{ totalPages }}</span>
     <button [disabled]="page === totalPages" (click)="cambiarPagina(page + 1)">Siguiente »</button>

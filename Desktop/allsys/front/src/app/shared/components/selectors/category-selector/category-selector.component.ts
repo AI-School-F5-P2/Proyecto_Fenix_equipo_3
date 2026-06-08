@@ -29,8 +29,14 @@ export class CategorySelectorComponent implements OnInit {
       this.rutaCategorias = [];
       this.categoriaActual = this.todasLasCategorias.filter((c: any) => c.parent_id === null);
       this.dropdownAbierto = false;
-    } else if (id && this.todasLasCategorias.length > 0) {
-      this.reconstruirRutaDesdeId(id, false);
+    } else if (id) {
+      // Si las categorías ya llegaron, reconstruye la ruta
+      if (this.todasLasCategorias.length > 0) {
+        this.reconstruirRutaDesdeId(id, false);
+      } else {
+        // ✨ EL CABLE QUE FALTABA: Guardar el ID en la sala de espera
+        this.idPendiente = id;
+      }
     }
   }
 
@@ -49,6 +55,7 @@ export class CategorySelectorComponent implements OnInit {
   private cargarCategorias(): void {
     this.productsService.cargarCategorias().subscribe({
       next: (data) => {
+        console.log('Categorías cargadas:', data);
         this.todasLasCategorias = data;
         if (this.rutaCategorias.length === 0) {
           this.categoriaActual = data.filter((c: any) => c.parent_id === null);
@@ -111,15 +118,23 @@ export class CategorySelectorComponent implements OnInit {
     }
   }
 
+  // ✨ NUEVA FUNCIÓN: Obtiene la categoría padre de los elementos que se están mostrando actualmente
+  getCategoriaNavegacion(): any {
+    if (this.categoriaActual.length > 0) {
+      const parentId = this.categoriaActual[0].parent_id;
+      if (parentId) {
+        return this.todasLasCategorias.find(c => c.id === parentId);
+      }
+    }
+    return null;
+  }
+
   // ✨ NUEVA FUNCIÓN: Para cuando el usuario hace clic en "Todo en..."
   confirmarSeleccionTodo(): void {
-    if (this.rutaCategorias.length > 0) {
-      const categoriaPadre = this.rutaCategorias[this.rutaCategorias.length - 1];
+    const parent = this.getCategoriaNavegacion();
+    if (parent) {
       this.dropdownAbierto = false;
-      this.categorySelected.emit({
-        categoriaId: categoriaPadre.id,
-        rutaCategorias: [...this.rutaCategorias]
-      });
+      this.reconstruirRutaDesdeId(parent.id, true);
     }
   }
 

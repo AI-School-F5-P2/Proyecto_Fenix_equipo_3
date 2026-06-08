@@ -14,6 +14,7 @@ import { ClientesService } from '../../../../../core/services/clientes.service';
 })
 export class ClientSelectorComponent implements OnInit, OnChanges {
   @Input() clienteInicialId: number | null | undefined = null;
+  @Input() defaultLabel: string = 'Allsy (Propio)';
   @Output() clientSelected = new EventEmitter<number | null | undefined>();
 
   searchTerm: string = '';
@@ -21,6 +22,7 @@ export class ClientSelectorComponent implements OnInit, OnChanges {
   isOpen: boolean = false;
   cargando: boolean = false;
   clienteSeleccionadoId: number | null = null;
+  searchType: string = 'todos'; // ✨ NUEVO
 
   private searchSubject = new Subject<string>();
 
@@ -56,7 +58,7 @@ export class ClientSelectorComponent implements OnInit, OnChanges {
         }
       });
     } else {
-      this.searchTerm = 'Allsy';
+      this.searchTerm = this.defaultLabel;
       this.clienteSeleccionadoId = null;
     }
   }
@@ -69,10 +71,15 @@ export class ClientSelectorComponent implements OnInit, OnChanges {
 
   buscarClientes(term: string) {
     // ✨ EL ESCUDO ANTI-ERROR 500:
-    const busquedaLimpia = term.includes('Allsy') ? '' : term;
+    const busquedaLimpia = term.includes(this.defaultLabel) ? '' : term;
 
     this.cargando = true;
-    this.clientesService.obtenerClientes({ page: 1, limit: 10, search: busquedaLimpia }).subscribe({
+    this.clientesService.obtenerClientes({ 
+      page: 1, 
+      limit: 10, 
+      search: busquedaLimpia,
+      search_type: this.searchType // ✨ PASAMOS EL TIPO DE BÚSQUEDA
+    }).subscribe({
       next: (res: any) => {
         this.clientes = res.items || [];
         this.cargando = false;
@@ -85,7 +92,7 @@ export class ClientSelectorComponent implements OnInit, OnChanges {
   seleccionar(cliente: any | null) {
     if (cliente === null) {
       this.clienteSeleccionadoId = null;
-      this.searchTerm = 'Allsy';
+      this.searchTerm = this.defaultLabel;
       this.clientSelected.emit(null);
     } else {
       this.clienteSeleccionadoId = cliente.id;
@@ -122,7 +129,7 @@ export class ClientSelectorComponent implements OnInit, OnChanges {
     this.isOpen = true;
     
     // Si no hay ID seleccionado o el texto es Allsy, limpiamos para escribir
-    if (!this.clienteSeleccionadoId || this.searchTerm.includes('Allsy')) {
+    if (!this.clienteSeleccionadoId || this.searchTerm.includes(this.defaultLabel)) {
       this.searchTerm = '';
     }
     

@@ -4,20 +4,29 @@ import { Observable } from 'rxjs';
 
 export interface EstadisticasConsignacion {
   total_prendas_entregadas: number;
-  prendas_vendidas: number;
   prendas_en_stock: number;
-  // ✨ NUEVOS CAMPOS AÑADIDOS
-  prendas_devueltas: number;
-  prendas_donadas: number;
+  
+  // Desglose logístico exacto
+  prendas_procesando: number;
+  prendas_enviada: number;
+  prendas_entregado: number;
+  prendas_completada: number;
+  prendas_cancelada: number;
+  prendas_devueltas_tienda: number;
+  prendas_devueltas_dueno: number; 
+  prendas_donado_a_ong: number;
   prendas_extraviadas: number;
+  ingresos_en_transito: number;
+  // Finanzas
   exento_gastos_gestion: boolean;
   deuda_por_devoluciones: number;
-  // FIN NUEVOS CAMPOS
   dinero_generado_ventas: number;
   dinero_para_cliente: number;
   beneficio_plataforma: number;
+  beneficio_en_transito: number;
   dinero_ya_pagado: number;
   saldo_pendiente: number;
+  saldo_en_transito: number;
 }
 
 export interface PagoCreate {
@@ -25,11 +34,15 @@ export interface PagoCreate {
   metodo_pago: string;
   referencia?: string | null;
   notas?: string | null;
+  stock_unit_ids?: number[]; // ✨ TRAZABILIDAD
 }
 
 export interface PagoRead extends PagoCreate {
   id: number;
   fecha: string;
+  estado: string; // ✨ NUEVO
+  motivo_anulacion?: string; // ✨ NUEVO
+  items_pagados?: any[]; 
 }
 
 @Injectable({
@@ -50,5 +63,26 @@ export class ConsignacionService {
 
   getPagos(clienteId: number): Observable<PagoRead[]> {
     return this.http.get<PagoRead[]>(`${this.apiUrl}/cliente/${clienteId}/pagos`);
+  }
+
+  actualizarPago(pagoId: number, pago: Partial<PagoCreate>) {
+    return this.http.put<PagoRead>(`${this.apiUrl}/pago/${pagoId}`, pago);
+  }
+
+  anularPago(pagoId: number, motivo: string) {
+    return this.http.put(`${this.apiUrl}/pago/${pagoId}/anular?motivo=${encodeURIComponent(motivo)}`, {});
+  }
+
+  getPrendasPendientesPago(clienteId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/cliente/${clienteId}/pendientes-pago`);
+  }
+
+  // Añadir dentro de ConsignacionService
+  getPrendasCliente(clienteId: number, page: number = 1, limit: number = 10, estado: string = '') {
+    let url = `${this.apiUrl}/cliente/${clienteId}/prendas?page=${page}&limit=${limit}`;
+    if (estado) {
+      url += `&estado=${estado}`;
+    }
+    return this.http.get<any>(url);
   }
 }

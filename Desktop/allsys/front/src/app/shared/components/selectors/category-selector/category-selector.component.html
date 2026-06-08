@@ -14,10 +14,10 @@
   </div>
   
   <div class="category-item option-select-all" 
-       *ngIf="permitirSeleccionarTodo && rutaCategorias.length > 0" 
+       *ngIf="permitirSeleccionarTodo && getCategoriaNavegacion()" 
        (click)="confirmarSeleccionTodo()">
     <span class="category-name" style="color: var(--ap-color-success, #27ae60); font-weight: bold;">
-      ✓ Todo en {{ rutaCategorias[rutaCategorias.length - 1].nombre }}
+      ✓ Todo en {{ getCategoriaNavegacion()?.nombre }}
     </span>
   </div>
 

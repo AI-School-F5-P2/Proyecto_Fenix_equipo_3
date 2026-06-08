@@ -9,7 +9,7 @@ class Producto(Base):
     id = Column(Integer, primary_key=True)
     nombre = Column(String(255), nullable=False)
     descripcion = Column(String(500))
-    tipo = Column(String(50)) # ropa, calzado, etc.
+    tipo = Column(String(50))
     estado = Column(String(50), default="nuevo")
     activo = Column(Boolean, default=True)
     publico_objetivo = Column(String(50)) 
@@ -21,7 +21,6 @@ class Producto(Base):
     fecha_registro = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     fecha_actualizacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    # Relaciones
     variantes = relationship("Variante", back_populates="producto", cascade="all, delete-orphan")
     categoria = relationship("Categoria")
     marca = relationship("Marca")

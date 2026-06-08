@@ -1,13 +1,21 @@
 <div class="autocomplete-container">
   <div class="input-wrapper">
-    <span class="search-icon">🔍</span>
+    <!-- ✨ NUEVO: Selector de tipo de búsqueda -->
+    <select [(ngModel)]="searchType" (change)="onInputFocus()" class="search-type-select">
+      <option value="todos">Todos</option>
+      <option value="nombre">Nombre</option>
+      <option value="email">Email</option>
+      <option value="telefono">Teléfono</option>
+      <option value="usuario">Usuario</option>
+    </select>
+
     <input 
       type="text" 
       [(ngModel)]="searchTerm" 
       (ngModelChange)="onSearch($event)"
       (focus)="onInputFocus()"
       (blur)="onBlur()"
-      placeholder="Buscar por nombre, email, tlf o @usuario..."
+      placeholder="Escribe para buscar..."
       class="autocomplete-input"
       [ngClass]="{'has-value': clienteSeleccionadoId}"
     />
@@ -16,7 +24,7 @@
 
   <div class="dropdown-list" *ngIf="isOpen">
     <div class="dropdown-item default-item" (click)="seleccionar(null)">
-      Allsy
+      {{ defaultLabel }}
     </div>
 
     <div class="dropdown-divider" *ngIf="clientes.length > 0"></div>

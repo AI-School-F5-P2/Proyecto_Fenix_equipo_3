@@ -11,14 +11,14 @@ class Atributo(Base):
     # Relación con todos los valores que existen de este tipo
     valores = relationship("ValorAtributo", back_populates="atributo", cascade="all, delete-orphan")
 
-# 2. EL VALOR ESPECÍFICO (Ej: Stock #5 -> Atributo "Talla" -> Valor "XL")
+# 2. EL VALOR ESPECÍFICO (Ej: StockConfig #5 -> Atributo "Talla" -> Valor "XL")
 class ValorAtributo(Base):
     __tablename__ = "valores_atributo"
     
     id = Column(Integer, primary_key=True)
     
-    # Conexión al Stock (Lo que antes era ItemVenta)
-    stock_id = Column(Integer, ForeignKey("stocks.id", ondelete="CASCADE"), nullable=False)
+    # ✨ ACTUALIZADO: Apunta a stock_configs.id
+    stock_config_id = Column(Integer, ForeignKey("stock_configs.id", ondelete="CASCADE"), nullable=False)
     
     # Conexión al tipo de atributo
     atributo_id = Column(Integer, ForeignKey("atributos.id", ondelete="CASCADE"), nullable=False)
@@ -26,11 +26,11 @@ class ValorAtributo(Base):
     # El valor real (Ej: "XL", "Algodón", "100")
     valor = Column(String(100), nullable=False)
 
-    # Relaciones
-    stock = relationship("Stock", back_populates="valores")
+    # ✨ ACTUALIZADO: Relaciones apuntando a StockConfig
+    stock_config = relationship("StockConfig", back_populates="valores")
     atributo = relationship("Atributo", back_populates="valores")
 
-    # Regla: No permitir que un mismo Stock tenga dos veces el mismo Atributo (Ej: No dos tallas)
+    # ✨ ACTUALIZADO: Regla de unicidad
     __table_args__ = (
-        UniqueConstraint("stock_id", "atributo_id", name="uq_stock_atributo"),
+       UniqueConstraint('stock_config_id', 'atributo_id', name='_stock_config_atributo_uc'),
     )

@@ -14,6 +14,10 @@ export class ProductDetailComponent implements OnInit {
   producto: any = null;
   cargando = true;
 
+  afectadosIds: number[] = [];
+  tipoAccion: string | null = null;
+  contextoAfectados: any = null;
+
   constructor(
     private route: ActivatedRoute,
     private productsService: ProductsService,
@@ -21,14 +25,40 @@ export class ProductDetailComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    const state = history.state;
+    if (state && state.ids) {
+      this.afectadosIds = state.ids || [];
+      this.tipoAccion = state.accion || null;
+    }
+
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    console.log(id)
     if (id) {
-      this.productsService.obtenerProducto(id)
-        .subscribe({
-          next: (data) => {
-            this.producto = data;
-            console.log(this.producto)
+      this.productsService.obtenerProducto(id).subscribe({
+          next: (data: any) => {
+            // ✨ PROCESAMIENTO: Mapeamos StockConfigs a lotes_agrupados para el HTML
+            if (data && data.variantes) {
+              data.variantes.forEach((v: any) => {
+                v.lotes_agrupados = (v.stock_configs || []).map((sc: any) => {
+                  const unidades = sc.stock_units || [];
+                  const hayStock = unidades.some((u: any) => u.estado_gestion === 'en_stock');
+                  
+                  return {
+                    ...sc,
+                    cantidad_agrupada: unidades.length,
+                    ids_incluidos: unidades.map((u: any) => u.id),
+                    sku: unidades.length > 0 ? unidades[0].sku : 'N/A', // Usamos el primer SKU como referencia
+                    estado_gestion: hayStock ? 'en_stock' : (unidades.length > 0 ? unidades[0].estado_gestion : 'agotado'),
+                    // Canales: true si al menos una unidad lo tiene
+                    publicar_web: unidades.some((u: any) => u.publicar_web),
+                    publicar_vinted: unidades.some((u: any) => u.publicar_vinted),
+                    publicar_wallapop: unidades.some((u: any) => u.publicar_wallapop)
+                  };
+                });
+              });
+            }
+
+            this.producto = data; 
+            this.extraerContextoAfectados();
             this.cargando = false;
           },
           error: (err) => {
@@ -37,18 +67,38 @@ export class ProductDetailComponent implements OnInit {
           }
         });
     } else {
-      console.error('No se proporcionó ID de producto');
       this.cargando = false;
     }
   }
 
+  extraerContextoAfectados() {
+    if (!this.afectadosIds.length || !this.producto) return;
+
+    const primerId = this.afectadosIds[0];
+
+    for (const v of this.producto.variantes) {
+      if (!v.lotes_agrupados) continue;
+      for (const lote of v.lotes_agrupados) {
+        if (lote.ids_incluidos.includes(primerId)) {
+          this.contextoAfectados = {
+            color: v.identidad_variante,
+            talla: lote.etiqueta
+          };
+          return; 
+        }
+      }
+    }
+  }
 
   editarProducto(id: number) {
-  this.router.navigate(['/edit', id]);
-}
+    this.router.navigate(['/edit', id]);
+  }
   
+  loteTieneAfectados(idsDelLote: number[]): boolean {
+    if (!this.afectadosIds || this.afectadosIds.length === 0) return false;
+    return idsDelLote.some(idFisico => this.afectadosIds.includes(Number(idFisico)));
+  }
 
-  // Ejemplo: ver imagen grande
   verImagen(imagen: string) {
     window.open(imagen, '_blank');
   }

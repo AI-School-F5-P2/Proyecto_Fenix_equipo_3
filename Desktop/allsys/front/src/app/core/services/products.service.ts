@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Categoria, ProductoBackend } from '../../features/products/add-product/product-form.config';
 import { MisFiltros } from '../../features/products/products-list/products-list.component';
@@ -31,7 +31,8 @@ export class ProductsService {
   const llaves = [
     'search', 'tipo_busqueda', 'categoria_id', 'marca_id', 
     'estado', 'precio_min', 'precio_max', 'ordenar_por', 
-    'color', 'talla', 'fecha_inicio', 'fecha_fin'
+    'color', 'talla', 'fecha_inicio', 'fecha_fin',
+    'propietario_id', 'localizacion_id' // ✨ AÑADIDOS
   ];
 
   llaves.forEach(key => {
@@ -147,6 +148,14 @@ obtenerInventarioIndividual(pagina: number, limite: number, filtros: any) {
     return this.http.put(`${this.apiUrl}/productos/${productoId}`, formData);
   }
 
+  actualizarStockLoteMasivo(payload: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock/lote/masivo`, payload);
+  }
+
+//   agregarUnidades(stockId: number, cantidad: number): Observable<any> {
+//   // Envías un objeto, que coincide con el nuevo esquema de FastAPI
+//   return this.http.post(`${this.apiUrl}/productos/stock/${stockId}/agregar`, { cantidad });
+// }
 
   // ---------------- VARIANTES ----------------
   editarVariante(
@@ -167,14 +176,25 @@ obtenerInventarioIndividual(pagina: number, limite: number, filtros: any) {
 
 // En tu products.service.ts
 obtenerStock(id: number): Observable<any> {
-  return this.http.get<any>(`${this.apiUrl}/productos/stock/${id}`);
+  return this.http.get<any>(`${this.apiUrl}/productos/stock-config/${id}`);
 }
 
 
-// En tu products.service.ts
-  actualizarStockIndividual(id: number, payload: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/productos/stock/${id}`, payload);
+
+
+obtenerLoteStock(id: number): Observable<any> {
+    // ✨ CAMBIO: Apunta a /stock-config/ en lugar de /stock/lote/
+    return this.http.get<any>(`${this.apiUrl}/productos/stock-config/${id}`);
   }
+
+
+// // En tu products.service.ts
+//   actualizarStockIndividual(id: number, payload: any): Observable<any> {
+//   // Asegúrate de enviar un objeto limpio
+//   return this.http.put(`${this.apiUrl}/productos/stock/${id}`, payload, {
+//     headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+//   });
+// }
 
 
 
@@ -244,8 +264,12 @@ obtenerStock(id: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/productos/variante/${varianteId}/restaurar`, {});
   }
 
-  restaurarStock(stockId: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/productos/stock/${stockId}/restaurar`, {});
+  restaurarStockConfig(stockConfigId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock-config/${stockConfigId}/restaurar`, {});
+  }
+
+  restaurarStockUnit(stockUnitId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock-unit/${stockUnitId}/restaurar`, {});
   }
 
   // --- 4. DESTRUCCIÓN TOTAL (HARD DELETE) ---
@@ -257,8 +281,109 @@ obtenerStock(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/productos/papelera/variante/${varianteId}`);
   }
 
-  destruirStock(stockId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/productos/papelera/stock/${stockId}`);
+  destruirStockUnit(stockUnitId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/productos/papelera/stock-unit/${stockUnitId}`);
   }
+
+  
+
+
+
+
+  // En products.service.ts
+obtenerAtributosPorCategoria(categoriaId: number): Observable<any[]> {
+  return this.http.get<any[]>(`${this.apiUrl}/productos/categorias/${categoriaId}/atributos`);
+}
+
+
+
+
+// // ---------------- CREAR LOTE INDIVIDUAL ----------------
+//   crearStockIndividual(varianteId: number, payload: any): Observable<any> {
+//     return this.http.post(`${this.apiUrl}/productos/variante/${varianteId}/stock`, payload, {
+//       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+//     });
+//   }
+
+
+
+  actualizarVarianteIndividual(varianteId: number, formData: FormData): Observable<any> {
+    // ⚠️ Importante: Cuando enviamos FormData con archivos, NO debemos establecer 
+    // manualmente el encabezado 'Content-Type'. Angular lo detecta y añade 
+    // automáticamente 'multipart/form-data' con su "boundary" correspondiente.
+    return this.http.put(`${this.apiUrl}/productos/variante/individual/${varianteId}`, formData);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // ---------------- STOCK CONFIG (Antiguos Lotes) ----------------
+  crearStockIndividual(varianteId: number, payload: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/productos/variante/${varianteId}/stock-config`, payload, {
+      headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+    });
+  }
+
+  actualizarStockIndividual(id: number, payload: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock-config/${id}`, payload, {
+      headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+    });
+  }
+
+  agregarUnidades(stockConfigId: number, cantidad: number, fecha_compra?: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/productos/stock-config/${stockConfigId}/unidades`, { cantidad, fecha_compra });
+  }
+
+  // ---------------- STOCK UNIT (Unidades Físicas Individuales) ----------------
+  actualizarEstadoUnidadFisica(stockUnitId: number, estado_gestion: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock-unit/${stockUnitId}/estado`, { estado_gestion });
+  }
+
+  actualizarStockUnit(stockUnitId: number, payload: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock-unit/${stockUnitId}`, payload);
+  }
+
+  // ========================================================
+  // 🗑️ GESTIÓN DE PAPELERA (ACTUALIZADO A LA NUEVA ARQUITECTURA)
+  // ========================================================
+  moverStockConfigPapelera(stockConfigId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock-config/${stockConfigId}/papelera`, {});
+  }
+
+  moverStockUnitPapelera(stockUnitId: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/stock-unit/${stockUnitId}/papelera`, {});
+  }
+
+  // destruirStockUnit(stockUnitId: number): Observable<any> {
+  //   return this.http.delete(`${this.apiUrl}/productos/papelera/stock-unit/${stockUnitId}`);
+  // }
   // ========================================================
 }
+
+
+

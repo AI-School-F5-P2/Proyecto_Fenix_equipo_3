@@ -57,6 +57,9 @@ class ClienteUpdate(BaseModel):
     pais: Optional[str] = None
     notas_internas: Optional[str] = None
     es_vip: Optional[bool] = None
+    comision_personalizada: Optional[float] = None
+    exento_comision: Optional[bool] = None
+    exento_tarifa_fija: Optional[bool] = None
 
 # Campos comunes que comparten todos
 class ClienteBase(BaseModel):
@@ -74,6 +77,9 @@ class ClienteBase(BaseModel):
     pais: str = "España"
     notas_internas: Optional[str] = None
     es_vip: bool = False
+    # En ClienteBase y ClienteUpdate:
+    exento_comision: bool = False
+    exento_tarifa_fija: bool = False
 
     @field_validator('email', mode='before')
     @classmethod

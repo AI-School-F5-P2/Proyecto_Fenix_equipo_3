@@ -17,10 +17,14 @@ export interface ClienteData {
   provincia?: string;
   pais?: string;
   notas_internas?: string;
-  exento_gastos_gestion?: boolean; // ✨ CAMBIADO AQUÍ
+  // ✨ NUEVOS CAMPOS FINANCIEROS (Reemplazan a exento_gastos_gestion)
+  exento_comision?: boolean;
+  exento_tarifa_fija?: boolean;
   total_ventas?: number;
   fecha_registro?: string;
 }
+
+
 
 export interface ClienteBase {
   nombre: string;
@@ -37,6 +41,8 @@ export interface ClienteBase {
   pais: string;
   notas_internas?: string;
   exento_gastos_gestion: boolean; // ✨ CAMBIADO AQUÍ
+  exento_comision: boolean;
+  exento_tarifa_fija: boolean;
 }
 
 export interface ClienteCreate extends ClienteBase {}
@@ -55,11 +61,13 @@ export class ClientesService {
   constructor(private http: HttpClient) {}
 
   obtenerClientes(filtros: any): Observable<any> {
+    // ✨ CORRECCIÓN: Parseo explícito para evitar fallos de inferencia
     let params = new HttpParams()
-      .set('page', filtros.page || 1)
-      .set('limit', filtros.limit || 10);
+      .set('page', (filtros.page || 1).toString())
+      .set('limit', (filtros.limit || 10).toString());
 
     if (filtros.search) params = params.set('search', filtros.search);
+    if (filtros.search_type) params = params.set('search_type', filtros.search_type); // ✨ AÑADIDO
     if (filtros.pais) params = params.set('pais', filtros.pais);
     if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
     if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);

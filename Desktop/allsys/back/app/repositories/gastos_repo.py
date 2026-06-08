@@ -1,3 +1,4 @@
+# gastos_repo.py
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 from datetime import datetime
@@ -7,6 +8,7 @@ from sqlalchemy import desc, or_, and_
 
 # ✨ IMPORTANTE: Importar tu helper de proveedores
 from app.repositories.proveedores_repo import buscar_o_crear 
+from app.repositories.auditoria_repo import registrar_log 
 
 def registrar_gasto(db: Session, data: GastoCreate):
     # ✨ 1. LÓGICA DEL PROVEEDOR
@@ -33,6 +35,14 @@ def registrar_gasto(db: Session, data: GastoCreate):
     db.add(nuevo_gasto)
     db.commit()
     db.refresh(nuevo_gasto)
+
+    # ✨ AUDITORÍA: Registro de gasto
+    registrar_log(
+        db, accion="CREAR", entidad_tipo="GASTO", entidad_id=nuevo_gasto.id,
+        valor_nuevo={"concepto": nuevo_gasto.concepto, "monto": nuevo_gasto.monto},
+        notas=f"Gasto de {nuevo_gasto.monto}€ registrado."
+    )
+
     return nuevo_gasto
 
 
@@ -81,6 +91,14 @@ def editar_gasto(db: Session, gasto_id: int, data: GastoUpdate):
 
     db.commit()
     db.refresh(gasto)
+
+    # ✨ AUDITORÍA: Actualización de gasto
+    registrar_log(
+        db, accion="EDITAR", entidad_tipo="GASTO", entidad_id=gasto.id,
+        valor_nuevo={"concepto": gasto.concepto, "monto": gasto.monto},
+        notas=f"Gasto {gasto.id} actualizado."
+    )
+
     return gasto
 
 

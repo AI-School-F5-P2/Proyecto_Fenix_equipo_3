@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
+from typing import Optional
+
+from sqlalchemy import Column, Float, Integer, String, DateTime, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
@@ -14,6 +16,9 @@ class Cliente(Base):
     usuario_vinted = Column(String(100), unique=True, index=True, nullable=True)
     usuario_wallapop = Column(String(100), unique=True, index=True, nullable=True)
     exento_gastos_gestion = Column(Boolean, default=False)
+    exento_comision = Column(Boolean, default=False)
+    exento_tarifa_fija = Column(Boolean, default=False)    # Para perdonar los 1.50€
+  
     # --- DATOS PERSONALES Y FACTURACIÓN ---
     nombre = Column(String(100), nullable=True)
     apellidos = Column(String(150), nullable=True)

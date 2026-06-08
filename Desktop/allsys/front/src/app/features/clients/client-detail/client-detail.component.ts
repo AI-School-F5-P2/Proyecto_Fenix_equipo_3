@@ -50,8 +50,8 @@ export class ClientDetailComponent implements OnInit {
 
   editarCliente() {
     if (this.cliente?.id) {
-      // Ajusta esta ruta según cómo la tengas definida en tu app.routes.ts
-      this.router.navigate(['/edit-client', this.cliente.id]); 
+      // ✨ CORRECCIÓN: La ruta real es /clientes/editar/:id, NO /edit-client/:id
+      this.router.navigate(['/clientes/editar', this.cliente.id]); 
     }
   }
 

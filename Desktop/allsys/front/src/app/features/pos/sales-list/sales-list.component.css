@@ -118,8 +118,26 @@
 .filter-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-item label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #7f8c8d;
+  text-transform: uppercase;
+}
+
+.filter-item select {
+  height: 42px;
+  min-width: 180px;
 }
 
 /* --- Celda de Productos con Imagen --- */

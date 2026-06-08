@@ -1,223 +1,234 @@
-/* =======================================================
-   CONTENEDOR PRINCIPAL Y CABECERA
-======================================================= */
 .page-container {
-  max-width: 1000px; /* Un poco más contenido que la tabla completa */
+  padding: 24px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  background-color: var(--bg-body, #f4f6f8);
+  background-color: var(--ap-bg-main, #f8fafc);
   min-height: 100vh;
 }
 
+/* --- HEADER --- */
 .page-header {
+  margin-bottom: 24px;
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
 }
 
-.header-content {
-  flex: 1;
-}
-
-.breadcrumbs span {
-  font-size: 0.9rem;
-  color: var(--text-muted, #7f8c8d);
-  transition: color 0.2s ease;
-}
-
-.breadcrumbs span:hover {
-  color: var(--primary, #007782);
-  text-decoration: underline;
-}
-
-.title {
-  font-size: 1.8rem;
-  color: var(--text-main, #2c3e50);
+.title-group h1 {
   margin: 8px 0 4px;
+  font-size: 1.8rem;
+  color: #1e293b;
 }
 
 .subtitle {
-  font-size: 1rem;
-  color: var(--text-muted, #7f8c8d);
-  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 
-.header-actions {
+.btn-back {
+  border: none;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  transition: color 0.2s;
+}
+.btn-back:hover { color: var(--ap-color-primary); }
+
+.actions-group {
   display: flex;
   gap: 12px;
 }
 
-/* =======================================================
-   ESTRUCTURA Y TARJETAS
-======================================================= */
-.grid-2 {
+/* --- GRID LAYOUT --- */
+.main-grid {
   display: grid;
-  grid-template-columns: 1fr 1.2fr; /* Ligeramente asimétrico para dar peso a los datos */
+  grid-template-columns: 350px 1fr;
   gap: 24px;
   align-items: start;
 }
 
-.card-section {
-  background-color: var(--card-bg, #ffffff);
-  border: 1px solid var(--border-color, #e0e6ed);
-  border-radius: var(--ap-radius-lg, 12px);
-  padding: 24px;
-  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+/* --- CARDS --- */
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  padding: 20px;
   margin-bottom: 24px;
 }
 
-.section-title {
-  font-size: 1.1rem;
-  color: var(--text-main, #2c3e50);
-  margin-top: 0;
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #334155;
   margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color, #e0e6ed);
-}
-
-/* =======================================================
-   FOTOS DEL STOCK
-======================================================= */
-.stock-main-img {
-  max-width: 100%;
-  max-height: 400px;
-  object-fit: contain; /* Para que la foto no se recorte y mantenga proporción */
-  border-radius: var(--ap-radius-md, 8px);
-  border: 1px solid var(--border-color, #e0e6ed);
-  background-color: #fafbfc; /* Fondo sutil por si la imagen tiene fondo transparente */
-}
-
-/* =======================================================
-   GRID DE METADATOS (Atributos, Logística, Precios)
-======================================================= */
-.meta-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 16px 20px;
-}
-
-.meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.meta-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted, #7f8c8d);
-  font-weight: 600;
-}
-
-.meta-value {
-  font-size: 0.95rem;
-  color: var(--text-main, #2c3e50);
-  font-weight: 500;
   display: flex;
   align-items: center;
-}
-
-/* Utilidades de texto */
-.text-muted { color: var(--text-muted, #7f8c8d); }
-.text-danger { color: var(--ap-color-danger, #e74c3c); }
-.text-success { color: var(--ap-color-success, #27ae60); }
-
-/* =======================================================
-   BADGES Y ESTADOS
-======================================================= */
-.badge-neutral {
-  background-color: var(--bg-body, #f4f6f8);
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  border: 1px solid var(--border-color, #e0e6ed);
-}
-
-.badge-location {
-  background-color: #e6f2f3; /* Variante suave de tu primary */
-  color: var(--primary, #007782);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.stock-status {
-  color: var(--ap-color-success, #27ae60);
-}
-
-.stock-status.out-of-stock {
-  color: var(--ap-color-danger, #e74c3c);
-}
-
-/* Canales de Venta */
-.canales-badges {
-  display: flex;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
-.badge {
-  padding: 6px 10px;
-  border-radius: 6px;
+/* --- PREVIEW SECTION --- */
+.image-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.stat-item {
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+.stat-item .label { font-size: 0.75rem; display: block; margin-bottom: 4px; color: #64748b; }
+.stat-item .value { font-size: 1.2rem; font-weight: 800; }
+
+.bg-stock { background: #f0fdf4; color: #166534; }
+.bg-sold { background: #fef2f2; color: #991b1b; }
+.bg-total { background: #f8fafc; color: #475569; }
+
+/* --- INFO LIST --- */
+.info-list { list-style: none; padding: 0; margin: 0; }
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+}
+.info-item:last-child { border: none; }
+.info-label { color: #64748b; font-weight: 500; }
+.info-value { color: #1e293b; font-weight: 600; }
+
+.badge-location { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+
+/* --- ATTRS PILLS --- */
+.attr-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.attr-pill {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 20px;
   font-size: 0.8rem;
+  color: #475569;
+}
+
+/* --- UNITS SECTION --- */
+.search-filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.input-search {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+}
+.input-search:focus { border-color: var(--ap-color-primary); }
+
+.select-filter {
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+}
+
+/* --- TABLE --- */
+.table-container { overflow-x: auto; }
+.units-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.units-table th {
+  text-align: left;
+  padding: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.units-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.units-table tr:hover { background: #fafbfc; }
+
+.unit-id { font-weight: 700; color: #1e293b; }
+.unit-sku { font-family: monospace; font-size: 0.85rem; color: #64748b; }
+
+.status-select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
-.badge-inventory { background-color: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
-.badge-web { background-color: #e0e7ff; color: #4338ca; }
-.badge-vinted { background-color: #dcfce7; color: #166534; }
-.badge-wallapop { background-color: #ffedd5; color: #c2410c; }
+/* Color por estado */
+.st-en_stock { background-color: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.st-vendido { background-color: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.st-extraviado { background-color: #fffbeb; color: #92400e; border-color: #fde68a; }
 
-/* =======================================================
-   ESTADOS DE CARGA Y BOTONES EXTRA
-======================================================= */
-.loading-container {
+/* --- LOADING --- */
+.loading-state {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  min-height: 50vh;
-  color: var(--text-muted, #7f8c8d);
+  justify-content: center;
+  padding: 100px 0;
+  color: #64748b;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-color, #e0e6ed);
-  border-top: 4px solid var(--primary, #007782);
+  width: 40px; height: 40px;
+  border: 4px solid #f1f5f9;
+  border-top-color: var(--ap-color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* =======================================================
-   RESPONSIVO (Pantallas pequeñas y Móviles)
-======================================================= */
-@media (max-width: 768px) {
-  .grid-2 {
-    grid-template-columns: 1fr; /* Colapsa a una sola columna */
-  }
-  
-  .header-actions {
-    width: 100%;
-    flex-direction: column; /* Botones apilados en móvil */
-  }
+/* --- BUTTONS --- */
+.btn-primary { background: var(--ap-color-primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.btn-primary:hover { background: var(--ap-color-primary-hover); }
 
-  .header-actions button {
-    width: 100%;
-  }
+.btn-outline { background: white; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.btn-outline:hover { background: #f8fafc; border-color: #94a3b8; }
 
-  .meta-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columnas en lugar de flexibles para ahorrar espacio */
-  }
-}
+.btn-danger { background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; border-radius: 4px; }
+.btn-danger:hover { background: #fef2f2; }

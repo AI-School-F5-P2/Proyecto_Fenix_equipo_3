@@ -27,11 +27,11 @@
             type="text" 
             [(ngModel)]="filtros.search" 
             (input)="onSearchInput($event)" 
-            [placeholder]="vistaActual === 'catalogo' ? '🔍 Buscar ID de Producto Padre (#)...' : '📦 Buscar ID de Stock físico (#)...'" 
+            [placeholder]="vistaActual === 'catalogo' ? '🔍 Buscar ID de Producto Padre (#)...' : '🧵 Buscar ID de Prenda Física (#)...'" 
             class="input-search"
             style="border: none; flex-grow: 1; outline: none;"
           >
-          <span class="clear-input-icon" *ngIf="filtros.search" (click)="eliminarFiltro('search')" style="align-self: center; padding: 0 12px;">✕</span>
+          <span class="clear-input-icon" *ngIf="filtros.search" (click)="eliminarFiltro('search')" style="align-self: center; padding: 0 12px; cursor: pointer;">✕</span>
         </div>
         <button (click)="aplicarFiltros()" class="btn-search">Buscar</button>
       </div>
@@ -39,6 +39,7 @@
       <div class="pills-container">
         <app-category-selector 
           [value]="filtros.categoria_id"
+          [permitirSeleccionarTodo]="true"
           (categorySelected)="onCategorySelected($event)">
         </app-category-selector>
 
@@ -58,12 +59,28 @@
           (fechasCambiadas)="onFechasSelected($event)">
         </app-date-selector>
 
+        <div class="filter-pill" style="min-width: 250px;">
+          <app-client-selector 
+            [clienteInicialId]="filtros.propietario_id" 
+            (clientSelected)="onPropietarioSelected($event)">
+          </app-client-selector>
+        </div>
+
+        <div class="filter-pill" style="min-width: 250px;">
+          <app-location-selector 
+            [localizacionId]="filtros.localizacion_id" 
+            (localizacionChange)="filtros.localizacion_id = $event; aplicarFiltros()">
+          </app-location-selector>
+        </div>
+
         <div class="filter-pill">
           <select [(ngModel)]="filtros.ordenar_por" (change)="aplicarFiltros()">
-            <option value="fecha_desc">Más recientes</option>
-            <option value="stock_asc">Stock: Menor a mayor</option>
-            <option value="stock_desc">Stock: Mayor a menor</option>
-            <option value="precio_desc">Precio: Mayor a menor</option>
+            <option value="fecha_desc">Nuevos primero</option>
+            <option value="fecha_asc">Antiguos primero</option>
+            <option value="precio_venta_asc">P. Venta: Menor a mayor</option>
+            <option value="precio_venta_desc">P. Venta: Mayor a menor</option>
+            <option value="precio_compra_asc" *ngIf="vistaActual === 'inventario'">P. Compra: Menor a mayor</option>
+            <option value="precio_compra_desc" *ngIf="vistaActual === 'inventario'">P. Compra: Mayor a menor</option>
           </select>
         </div>
 
@@ -71,7 +88,7 @@
           <select [(ngModel)]="filtros.estado" (change)="aplicarFiltros()">
             <option value="">Estado</option>
             <option value="nuevo">Nuevo</option>
-            <option value="usado">Usado</option>
+            <option value="segunda_mano">Usado</option>
           </select>
         </div>
 
@@ -117,7 +134,7 @@
   <div *ngIf="vistaActual === 'inventario' && stocks.length === 0 && !cargando" class="empty-state">
     <div class="empty-icon">📦</div>
     <h3 class="empty-title">Sin resultados en Inventario</h3>
-    <p class="empty-text">No hay unidades de stock que coincidan con tu búsqueda.</p>
+    <p class="empty-text">No hay lotes de stock que coincidan con tu búsqueda.</p>
   </div>
 
   <div *ngIf="vistaActual === 'catalogo' && productosPadre.length === 0 && !cargando" class="empty-state">

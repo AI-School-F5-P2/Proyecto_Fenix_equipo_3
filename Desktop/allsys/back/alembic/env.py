@@ -9,6 +9,7 @@ from alembic import context
 sys.path.append(os.path.abspath(os.getcwd()))
 
 from app.db.database import Base  # tu Base con todos los modelos
+import app.models  # ✨ IMPORTANTE: Importa todos los modelos para Alembic
 from app.core.config import settings  # tu Settings con DATABASE_URL
 
 # Alembic Config

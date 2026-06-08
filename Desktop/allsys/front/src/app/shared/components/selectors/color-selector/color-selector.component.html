@@ -1,12 +1,14 @@
 <div class="color-selector-wrapper">
-  <div class="color-trigger" (click)="toggleDropdown()" [class.has-value]="colorSeleccionado">
+  <!-- Agregamos un overlay invisible para cerrar el dropdown al hacer click fuera -->
+  <div class="backdrop-overlay" *ngIf="dropdownOpen" (click)="toggleDropdown()"></div>
+
+  <div class="color-trigger" (click)="toggleDropdown()" [class.has-value]="coloresSeleccionados.length > 0">
     <div class="preview-dot" 
-         [style.backgroundColor]="colorSeleccionado ? colorSeleccionado.hex : '#f2f2f2'"
-         [class.is-white]="!colorSeleccionado || colorSeleccionado.hex === '#FFFFFF'">
+         [style.background]="getCombinedBackground()">
     </div>
     
     <span class="color-label">
-      {{ colorSeleccionado ? colorSeleccionado.nombre : 'Color' }}
+      {{ getCombinedLabel() }}
     </span>
 
     <span class="arrow-icon">▼</span>
@@ -17,8 +19,8 @@
       <div *ngFor="let color of listaColores" 
            class="color-option" 
            (click)="selectColor(color)"
-           [class.selected]="colorSeleccionado?.hex === color.hex">
-        <div class="option-dot" [style.backgroundColor]="color.hex"></div>
+           [class.selected]="isColorSelected(color.hex)">
+        <div class="option-dot" [style.background]="color.hex"></div>
         <span class="option-name">{{ color.nombre }}</span>
       </div>
     </div>

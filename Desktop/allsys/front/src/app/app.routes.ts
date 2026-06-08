@@ -13,16 +13,17 @@ import { PapeleraComponent } from './features/products/papelera/papelera.compone
 import { PosComponent } from './features/pos/pos-create/pos.component';
 import { EditSaleComponent } from './features/pos/edit-sale/edit-sale.component';
 import { SalesListComponent } from './features/pos/sales-list/sales-list.component';
+import { OrderFulfillmentComponent } from './features/pos/order-fulfillment/order-fulfillment.component';
 import { GastosListComponent } from './features/gastos/gastos-list/gastos-list.component';
 import { GastosCreateComponent } from './features/gastos/gastos-create/gastos-create.component';
 import { StatisticsComponent } from './features/statistics/statistics.component';
 
-// ✨ NUEVAS IMPORTACIONES DEL CRM DE CLIENTES ✨
-// (Ajusta estas rutas dependiendo de en qué carpeta generaste los componentes)
 import { ListClientsComponent } from './features/clients/list-clients/list-clients.component';
-// import { EditClientsComponent } from './features/clients/edit-clients/edit-clients.component';
 import { AddClientsComponent } from './features/clients/add-clients/add-clients.component';
 import { ClientDetailComponent } from './features/clients/client-detail/client-detail.component';
+import { AuditPageComponent } from './features/audit/audit-page.component';
+import { OnlineOrdersComponent } from './features/pos/online-orders/online-orders.component';
+import { LocationsComponent } from './features/settings/locations/locations.component';
 
 export const routes: Routes = [
   // Ruta pública (login)
@@ -32,7 +33,7 @@ export const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
-    canActivate: [authGuard], // 👈 proteger con el guard
+    canActivate: [authGuard], 
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
@@ -49,7 +50,9 @@ export const routes: Routes = [
       // --- VENTAS (POS) ---
       { path: 'pos', component: PosComponent },
       { path: 'sales-list', component: SalesListComponent },
+      { path: 'online-orders', component: OnlineOrdersComponent },
       { path: 'edit-sale/:id', component: EditSaleComponent },
+      { path: 'fulfillment', component: OrderFulfillmentComponent },
 
       // --- GASTOS ---
       { path: 'gastos', component: GastosListComponent },
@@ -59,11 +62,13 @@ export const routes: Routes = [
       // --- ESTADÍSTICAS ---
       { path: 'statistics', component: StatisticsComponent },
 
-      // ✨ --- CLIENTES CRM --- ✨
+      // --- CLIENTES CRM ---
       { path: 'clientes', component: ListClientsComponent },
       { path: 'clientes/nuevo', component: AddClientsComponent },
       { path: 'clientes/editar/:id', component: AddClientsComponent },
       { path: 'clientes/detalle/:id', component: ClientDetailComponent },
+      { path: 'audit', component: AuditPageComponent },
+      { path: 'locations', component: LocationsComponent },
     ],
   },
 

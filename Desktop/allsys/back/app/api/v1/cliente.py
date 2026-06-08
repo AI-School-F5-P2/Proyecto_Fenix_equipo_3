@@ -23,6 +23,7 @@ def listar_clientes(
     page: int = 1, 
     limit: int = 10,
     search: Optional[str] = None,
+    search_type: Optional[str] = "todos",
     pais: Optional[str] = None,
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
@@ -35,6 +36,7 @@ def listar_clientes(
             page=page, 
             limit=limit, 
             search=search, 
+            search_type=search_type,
             pais=pais, 
             fecha_inicio=fecha_inicio, 
             fecha_fin=fecha_fin

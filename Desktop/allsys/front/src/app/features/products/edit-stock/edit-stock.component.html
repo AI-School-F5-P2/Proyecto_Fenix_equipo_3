@@ -8,9 +8,9 @@
 
       <div class="title-group">
         <span class="text-muted" (click)="volver()" style="cursor: pointer;">← Volver al detalle</span>
-        <h2 class="title mt-1">Editar Inventario Rápido</h2>
+        <h2 class="title mt-1">Editar Configuración de Lote</h2>
         <p class="subtitle">
-          <strong>{{ contexto.producto_nombre }}</strong> | SKU: {{ contexto.sku }}
+          <strong>{{ contexto.producto_nombre }}</strong> | Lote Ref: #{{ contexto.sku }}
         </p>
       </div>
     </div>
@@ -75,157 +75,173 @@
       </div>
     </section>
 
-    <section class="card-section">
-      <div class="section-header">
-        <h3>Inventario y Precios</h3>
+    <section class="card-section info-card" style="border: 2px solid #e0e6ed; margin-bottom: 25px;">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>🚦 Prendas Físicas en este Lote ({{ unidadesLote.length }})</h3>
+        <button type="button" class="btn-outline-primary btn-sm" (click)="mostrarUnidades = !mostrarUnidades">
+          {{ mostrarUnidades ? '▲ Ocultar' : '▼ Gestionar Individualmente' }}
+        </button>
       </div>
-      <div class="grid-4">
-        
-        <div class="field">
-          <label>
-            Unidades en Stock 
-            <span class="required-web-asterisk" title="Requerido para publicar en web">*</span>
-          </label>
-          <input type="number" [(ngModel)]="stockData.cantidad" name="cantidad" />
-        </div>
 
-        <div class="field">
-          <label>
-            Precio Compra ($) 
-            <span class="required-asterisk" title="Requerido para inventario">*</span>
-          </label>
-          <input type="number" step="0.01" [(ngModel)]="stockData.precio_compra" name="precio_compra" />
-        </div>
-
-        <div class="field">
-          <label>
-            Precio Venta ($) 
-            <span class="required-asterisk" *ngIf="stockData.publicar_web" title="Requerido para inventario">*</span>
-          </label>
-          <input type="number" step="0.01" [(ngModel)]="stockData.precio_venta" name="precio_venta" />
-        </div>
-
-        <div class="field">
-          <label>
-            Descuento (%) 
-          </label>
-          <input type="number" step="1" [(ngModel)]="stockData.descuento" name="descuento" placeholder="Ej: 15" />
-        </div>
-
-        <div class="field">
-          <label>
-            Ubicación Almacén
-            <span class="required-asterisk" title="Requerido para inventario">*</span>
-          </label>
-          <input type="text" [(ngModel)]="stockData.ubicacion" name="ubicacion" placeholder="Ej: Pasillo A-12" />
-        </div>
-
-        <div class="field proveedor-autocomplete">
-          <label>
-            Proveedor
-            <span class="required-asterisk" title="Requerido para inventario">*</span>
-          </label>
-          <app-supplier-selector 
-            [proveedorInicialId]="stockData.proveedor_id" 
-            (supplierChanged)="onSupplierChanged($event)">
-          </app-supplier-selector>
-        </div>
-
-        <div class="field">
-          <label>
-            Fecha de Compra
-            <span class="required-asterisk" title="Requerido para inventario">*</span>
-          </label>
-          <input type="date" [(ngModel)]="stockData.fecha_compra" name="fecha_compra" />
-        </div>
-      </div>
-    </section>
-
-    <section class="card-section" *ngIf="stockData.atributos && stockData.atributos.length > 0">
-      <div class="section-header">
-        <h3>Medidas y Proporciones</h3>
-      </div>
-      <div class="grid-4">
-
-        <!-- <div class="field">
-          <label>Material</label>
-          <input 
-            type="text" 
-            [(ngModel)]="stockData.material" 
-            name="material" 
-            placeholder="Ej: Algodón, Cuero..." />
-        </div> -->
-        
-        <div class="field" *ngFor="let attr of stockData.atributos; let k=index">
-          <label>
-            {{ formatLabel(attr.nombre) }}
-            <span class="required-web-asterisk" *ngIf="attr.nombre === 'peso_kg' && stockData.publicar_web" title="Requerido para publicar en web">*</span>
-          </label>
-
-          <input 
-            *ngIf="attr.tipo !== 'select'"
-            [type]="attr.tipo || 'text'" 
-            [(ngModel)]="attr.valor" 
-            [name]="'attr_' + k" 
-            [placeholder]="getPlaceholder(attr.nombre)" />
-
-          <div class="custom-select" *ngIf="attr.tipo === 'select'">
-            <select [(ngModel)]="attr.valor" [name]="'attr_' + k">
-              <option [ngValue]="null">Selecciona...</option>
-              <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
-            </select>
+      <div class="units-table-container mt-3" *ngIf="mostrarUnidades" style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <span>Página {{ paginaInterna }} de {{ Math.ceil(unidadesLote.length / 10) || 1 }}</span>
+          <div style="display: flex; gap: 5px;">
+            <button type="button" class="btn-sm" [disabled]="paginaInterna === 1" (click)="paginaInterna = paginaInterna - 1">Ant</button>
+            <button type="button" class="btn-sm" [disabled]="paginaInterna * 10 >= unidadesLote.length" (click)="paginaInterna = paginaInterna + 1">Sig</button>
           </div>
         </div>
+        
+        <table class="ap-table" style="width: 100%; border-collapse: collapse; min-width: 600px;">
+          <thead>
+            <tr> 
+              <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">ID Físico (SKU)</th> 
+              <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">Fecha de Ingreso</th> 
+              <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1; text-align: center;">Venta Online</th>
+              <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">Estado Físico</th> 
+              <th style="padding-bottom: 8px; border-bottom: 2px solid #cbd5e1;">Acciones</th> 
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of unidadesLote | slice:(paginaInterna-1)*10 : paginaInterna*10; let idx = index" style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 10px 0;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong>#</strong>
+                  
+                  <!-- Modo Lectura -->
+                  <span *ngIf="!u.editandoId" style="font-weight: bold; font-size: 1.1em;">{{ u.id }}</span>
+                  <button type="button" *ngIf="!u.editandoId && u.estado_gestion !== 'vendido'" (click)="intentarEditarId(u)" 
+                          style="border: none; background: none; cursor: pointer; padding: 2px; font-size: 0.8rem; color: #64748b;" 
+                          title="Editar ID manual">✏️</button>
+
+                  <!-- Modo Edición -->
+                  <div *ngIf="u.editandoId" style="display: flex; align-items: center; gap: 4px;">
+                    <input type="number" [(ngModel)]="u.id" [name]="'id_u_' + u.id_original" 
+                           style="padding: 4px; font-weight: bold; font-size: 1em; width: 75px; border: 1px solid #007782; border-radius: 4px; background: #fff; outline: none;" />
+                    <button type="button" (click)="u.editandoId = false; u.id = u.id_original!" 
+                            style="border: none; background: none; cursor: pointer; color: #ef4444; font-size: 0.9rem; padding: 0;" 
+                            title="Cancelar">❌</button>
+                  </div>
+                </div>
+                
+                <small class="text-muted" style="font-size: 0.85em; display: block; margin-top: 2px;">{{ u.sku }}</small>
+              </td>
+              <td style="padding: 10px 5px;">
+                  <input type="date" [(ngModel)]="$any(u).fecha_compra" [name]="'fecha_u_' + u.id_original" style="padding: 4px; font-size: 0.9em; max-width: 140px;" />
+              </td>
+              <td style="padding: 10px 5px; text-align: center;">
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                  <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Visible en Web">
+                    <input type="checkbox" [(ngModel)]="$any(u).publicar_web" [name]="'w_u_' + u.id_original" />
+                    🌐
+                  </label>
+                  <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Anunciado en Vinted">
+                    <input type="checkbox" [(ngModel)]="$any(u).publicar_vinted" [name]="'v_u_' + u.id_original" />
+                    👗
+                  </label>
+                  <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Anunciado en Wallapop">
+                    <input type="checkbox" [(ngModel)]="$any(u).publicar_wallapop" [name]="'wa_u_' + u.id_original" />
+                    📦
+                  </label>
+                </div>
+              </td>
+              <td style="padding: 10px 5px;">
+                <div class="custom-select" style="max-width: 200px;">
+                  <select [(ngModel)]="u.estado_gestion" [name]="'estado_' + u.id" class="custom-select" [disabled]="u.estado_gestion === 'vendido'">
+                    <option value="en_stock">✅ En Almacén</option>
+                    <option value="devuelto_dueno">🔙 Devuelto al dueño</option>
+                    <option value="donado_a_ong">💖 Donado a ONG</option>
+                    <option value="extraviado">⚠️ Extraviado</option>
+                  </select>
+                </div>
+              </td>
+              <td style="padding: 10px 0; display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                <button type="button" class="btn-text-primary" (click)="guardarEstadoUnidad(((paginaInterna-1)*10) + idx)" style="font-weight: 600; color: #007782; cursor: pointer; border: none; background: none;">💾 Guardar</button>
+                <button type="button" class="btn-text-danger" *ngIf="u.estado_gestion !== 'vendido'" (click)="eliminarUnidadFisica(((paginaInterna-1)*10) + idx, u.id)" style="font-weight: 600;">🗑️ Borrar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div class="field mt-3" style="background: #fff8e1; padding: 15px; border-radius: 8px; border: 1px solid #f1c40f; display: flex; flex-direction: column; gap: 10px;">
+          <label style="font-weight: bold; color: #7f8c8d;">📥 Añadir prendas nuevas a esta configuración:</label>
+          
+          <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 150px;">
+              <label style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; display: block;">Cantidad</label>
+              <input type="number" [(ngModel)]="unidades_a_agregar" name="unidades_a_agregar" min="0" placeholder="Ej: 5" style="width: 100%; margin-bottom: 0;" />
+            </div>
+
+            <div style="flex: 1; min-width: 180px;">
+              <label style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; display: block;">Fecha de Ingreso</label>
+              <input type="date" [(ngModel)]="fecha_a_agregar" name="fecha_a_agregar" style="width: 100%; margin-bottom: 0;" />
+            </div>
+            
+            <button type="button" 
+                    class="btn-primary" 
+                    (click)="agregarUnidadesAlLote()" 
+                    [disabled]="isAddingUnits || unidades_a_agregar <= 0"
+                    style="padding: 10px 20px; height: 42px;">
+              {{ isAddingUnits ? '⏳ Generando...' : '➕ Generar y Añadir' }}
+            </button>
+          </div>
+          <small class="text-muted">El sistema creará identificadores (SKUs) únicos para cada prenda nueva.</small>
+        </div>
       </div>
     </section>
 
     <section class="card-section">
       <div class="section-header">
-        <h3>Canales de Publicación</h3>
+        <h3>Finanzas y Logística (Aplica a todas las prendas)</h3>
       </div>
-      <label class="toggle-switch">
-        <input type="checkbox" [(ngModel)]="stockData.publicar_web" name="publicar_web" />
-        <span class="slider"></span>
-        <span class="toggle-label">🌐 Publicar en Tienda Online</span>
-      </label>
+      <div class="grid-4">
+        <div class="field">
+          <label>Precio Compra (€) <span class="required-asterisk">*</span></label>
+          <input type="number" step="0.01" [(ngModel)]="stockData.precio_compra" name="precio_compra" />
+        </div>
+        <div class="field">
+          <label>Precio Venta (€)</label>
+          <input type="number" step="0.01" [(ngModel)]="stockData.precio_venta" name="precio_venta" />
+        </div>
+        <div class="field">
+          <label>Descuento (%)</label>
+          <input type="number" step="1" [(ngModel)]="stockData.descuento" name="descuento" />
+        </div>
+        <div class="field" style="grid-column: span 2;">
+          <label>📍 Lugar de almacenamiento <span class="required-asterisk" title="Requerido para facilitar la búsqueda">*</span></label>
+          <app-location-selector 
+            [localizacionId]="stockData.localizacion_id" 
+            (localizacionChange)="stockData.localizacion_id = $event">
+          </app-location-selector>
+        </div>
+        <div class="field" *ngIf="!stockData.propietario_id">
+          <label>Proveedor <span class="required-asterisk">*</span></label>
+          <app-supplier-selector [proveedorInicialId]="stockData.proveedor_id" (supplierChanged)="onSupplierChanged($event)"></app-supplier-selector>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-section" *ngIf="stockData.atributos.length > 0">
+      <div class="section-header"><h3>Medidas y Proporciones Extras</h3></div>
+      <div class="grid-4">
+        <div class="field" *ngFor="let attr of stockData.atributos; let k=index">
+          <label>{{ formatLabel(attr.nombre) }}</label>
+          <input *ngIf="attr.tipo !== 'select'" [type]="attr.tipo || 'text'" [(ngModel)]="attr.valor" [name]="'attr_' + k" />
+          <select *ngIf="attr.tipo === 'select'" [(ngModel)]="attr.valor" [name]="'attr_' + k" class="custom-select">
+            <option *ngFor="let opt of attr.opciones" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+      </div>
     </section>
 
     <div class="form-actions">
       <button type="button" class="btn-outline-primary" (click)="volver()">Cancelar</button>
       <button type="submit" class="btn-primary main-submit" [disabled]="isSubmitting">
-        {{ isSubmitting ? '⏳ Guardando...' : '💾 Guardar Cambios' }}
+        {{ isSubmitting ? '⏳ Guardando Configuración...' : '💾 Guardar Cambios del Lote' }}
       </button>
     </div>
   </form>
 </div>
-
-
-<section class="card-section info-card" style="border: 2px solid #e0e6ed; border-left: 4px solid #f1c40f;">
-        <div class="section-header">
-          <h3>🚦 Estado Físico y Resolución</h3>
-          <p class="text-muted" style="font-size: 0.85em; margin-top: -5px;">Cambiar esto afectará a la contabilidad del cliente.</p>
-        </div>
-        
-        <div class="field full-width mt-2">
-          <label>¿Dónde está esta prenda actualmente?</label>
-          <div class="custom-select">
-            <select [(ngModel)]="stockData.estado_gestion" name="estado_gestion" style="font-weight: bold;">
-              <option value="en_stock">✅ En Almacén / Activo</option>
-              <option value="devuelto">🔙 Devuelto al dueño (Cobra 1.50€)</option>
-              <option value="donado">💖 Donado a ONG (Saldo 0€)</option>
-              <option value="extraviado">⚠️ Extraviado / Perdido (Indemnizar al cliente)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="alert-box-info mt-2" *ngIf="stockData.estado_gestion === 'extraviado'" style="background: #fceceb; color: #e74c3c; padding: 10px; border-radius: 6px; font-size: 0.9em;">
-          <strong>¡Atención!</strong> Al guardar como extraviado, el sistema asumirá que es culpa de Allsys y se le abonará el dinero al cliente en su próximo pago.
-        </div>
-        
-        <div class="alert-box-info mt-2" *ngIf="stockData.estado_gestion === 'devuelto'" style="background: #eafaf1; color: #27ae60; padding: 10px; border-radius: 6px; font-size: 0.9em;">
-          Se le restará la tarifa de gestión (1.50€) al saldo del cliente por devolverle esta prenda (salvo que sea VIP).
-        </div>
-      </section>
 
 <ng-template #loadingTemplate>
   <div class="page-container loading-container">

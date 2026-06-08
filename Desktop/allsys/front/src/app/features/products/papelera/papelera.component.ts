@@ -47,7 +47,7 @@ export class PapeleraComponent implements OnInit {
   }
 
   // --- ACCIONES: RESTAURAR ---
-  restaurar(tipo: 'producto' | 'variante' | 'stock', id: number): void {
+  restaurar(tipo: 'producto' | 'variante' | 'stock-config' | 'stock-unit', id: number): void {
     const confirmacion = confirm(`¿Seguro que quieres restaurar este ${tipo}?`);
     if (!confirmacion) return;
 
@@ -56,7 +56,8 @@ export class PapeleraComponent implements OnInit {
 
     if (tipo === 'producto') request$ = this.productsService.restaurarProducto(id);
     else if (tipo === 'variante') request$ = this.productsService.restaurarVariante(id);
-    else request$ = this.productsService.restaurarStock(id);
+    else if (tipo === 'stock-config') request$ = this.productsService.restaurarStockConfig(id);
+    else request$ = this.productsService.restaurarStockUnit(id);
 
     request$.subscribe({
       next: (res) => {
@@ -71,7 +72,7 @@ export class PapeleraComponent implements OnInit {
   }
 
   // --- ACCIONES: DESTRUIR ---
-  destruir(tipo: 'producto' | 'variante' | 'stock', id: number): void {
+  destruir(tipo: 'producto' | 'variante' | 'stock-unit', id: number): void {
     const confirmacion = confirm(`⚠️ CUIDADO: Vas a eliminar permanentemente este ${tipo}. Esta acción NO se puede deshacer. ¿Continuar?`);
     if (!confirmacion) return;
 
@@ -80,7 +81,7 @@ export class PapeleraComponent implements OnInit {
 
     if (tipo === 'producto') request$ = this.productsService.destruirProducto(id);
     else if (tipo === 'variante') request$ = this.productsService.destruirVariante(id);
-    else request$ = this.productsService.destruirStock(id);
+    else request$ = this.productsService.destruirStockUnit(id);
 
     request$.subscribe({
       next: (res) => {

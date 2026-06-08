@@ -28,21 +28,26 @@
         <label>Categoría</label>
         <select [(ngModel)]="nuevoGasto.categoria">
           <option value="mercancia">🛍️ Compra de Ropa/Mercancía</option>
-          <option value="envios">📦 Sobres y Envíos</option>
+          <option value="envios">📦 Sobres, Empaques y Envíos</option>
+          <option value="regalos_clientes">🎁 Regalos y Detalles para Clientes</option>
           <option value="local">🏠 Local y Servicios</option>
+          <option value="sueldos">👔 Sueldos / Pagos a Staff</option>
           <option value="publicidad">📢 Publicidad (Ads)</option>
+          <option value="devoluciones_reembolsos">🔙 Devoluciones y Reembolsos</option>
+          <option value="oficina">📎 Suministros de Oficina</option>
           <option value="otros">⚙️ Otros Gastos</option>
         </select>
       </div>
-      
+
       <div class="form-group">
         <label>Proveedor / Beneficiario</label>
-        
+
         <app-supplier-selector 
             tipoProveedor="gasto"
+            [proveedorInicialId]="nuevoGasto.proveedor_id"
             (supplierChanged)="onSupplierChanged($event)">
         </app-supplier-selector>
-        
+
         </div>
 
       <div class="field">

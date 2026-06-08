@@ -47,10 +47,12 @@ def actualizar_cliente(db: Session, cliente_id: int, datos: dict):
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
 
     try:
+        # ✨ CORRECCIÓN: Iteramos sobre los datos entrantes y los asignamos incondicionalmente
+        # (Esto permite cambiar True -> False y viceversa)
         for key, value in datos.items():
             if hasattr(cliente, key):
                 setattr(cliente, key, value)
-        
+
         db.commit()
         db.refresh(cliente)
         return cliente
@@ -85,6 +87,7 @@ def obtener_clientes_paginados(
     page: int = 1, 
     limit: int = 10,
     search: str = None, 
+    search_type: str = "todos",
     pais: str = None, 
     fecha_inicio: str = None, 
     fecha_fin: str = None
@@ -105,17 +108,26 @@ def obtener_clientes_paginados(
         # Quitamos el @ por si el usuario lo escribe al buscar un nombre de Vinted
         term_clean = f"%{search.strip().replace('@', '')}%"
         
-        query = query.filter(
-            or_(
-                Cliente.email.ilike(term),
-                Cliente.telefono.ilike(term),
-                Cliente.usuario_vinted.ilike(term_clean),
-                Cliente.usuario_wallapop.ilike(term_clean),
-                Cliente.nombre.ilike(term),
-                Cliente.apellidos.ilike(term),
-                Cliente.dni_nie.ilike(term)
+        if search_type == "nombre":
+            query = query.filter(or_(Cliente.nombre.ilike(term), Cliente.apellidos.ilike(term)))
+        elif search_type == "email":
+            query = query.filter(Cliente.email.ilike(term))
+        elif search_type == "telefono":
+            query = query.filter(Cliente.telefono.ilike(term))
+        elif search_type == "usuario":
+            query = query.filter(or_(Cliente.usuario_vinted.ilike(term_clean), Cliente.usuario_wallapop.ilike(term_clean)))
+        else:
+            query = query.filter(
+                or_(
+                    Cliente.email.ilike(term),
+                    Cliente.telefono.ilike(term),
+                    Cliente.usuario_vinted.ilike(term_clean),
+                    Cliente.usuario_wallapop.ilike(term_clean),
+                    Cliente.nombre.ilike(term),
+                    Cliente.apellidos.ilike(term),
+                    Cliente.dni_nie.ilike(term)
+                )
             )
-        )
 
     # 2. Filtro por País
     if pais and pais.strip():

@@ -4,25 +4,28 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductsService } from '../../../core/services/products.service';
 import { SupplierSelectorComponent, Proveedor } from "../add-product/components/supplier-selector/supplier-selector.component";
-import { 
-  ATRIBUTOS_BASE, 
-  ATRIBUTOS_POR_TIPO,
-  MATERIALES_ROPA,      // ✨ Añade esto
-  MATERIALES_JOYERIA,   // ✨ Añade esto
-  PIEDRAS_JOYERIA,      // ✨ Añade esto
-  COLORES_PIEDRA        // ✨ Añade esto
-} from '../add-product/product-form.config'; 
+import { LocationSelectorComponent } from '../../../shared/components/selectors/location-selector/location-selector.component';
+import { map, switchMap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { formatLabel, getPlaceholder } from '../add-product/product-utils';
 
-
-import { 
-  formatLabel, 
-  getPlaceholder 
-} from '../add-product/product-utils';
+export interface UnidadLote {
+  id: number;
+  id_original?: number;
+  sku: string;
+  estado_gestion: string;
+  canales?: any;
+  editandoId?: boolean;
+  fecha_compra?: string; // ✨ NUEVO
+  publicar_web?: boolean; // ✨ NUEVO
+  publicar_vinted?: boolean; // ✨ NUEVO
+  publicar_wallapop?: boolean; // ✨ NUEVO
+}
 
 @Component({
   selector: 'app-edit-stock',
   standalone: true,
-  imports: [CommonModule, FormsModule, SupplierSelectorComponent],
+  imports: [CommonModule, FormsModule, SupplierSelectorComponent, LocationSelectorComponent],
   templateUrl: './edit-stock.component.html',
   styleUrls: ['./edit-stock.component.css']
 })
@@ -31,22 +34,27 @@ export class EditStockComponent implements OnInit {
   cargandoDatos = true;
   isSubmitting = false;
   tipoProducto: string = 'ropa_superior'; 
-
+  mostrarUnidades = true; // ✨ Lo ponemos en true por defecto para ver las prendas
+  unidadesLote: UnidadLote[] = [];
+  unidades_a_agregar: number = 0; 
+  fecha_a_agregar: string = new Date().toISOString().split('T')[0]; // ✨ DEFAULT TODAY
+  isAddingUnits: boolean = false;
+  
   stockData: any = {
-    cantidad: 0,
     precio_compra: 0,
     precio_venta: 0,
     descuento: 0,
-    ubicacion: '',
-    fecha_compra: '',
+    localizacion_id: null,
     proveedor_id: null,
-    publicar_web: false,
+    publicar_web_masivo: false, // Control visual para marcar todas las unidades
     atributos: [],
     donar_ganancias: false,
-    estado_gestion: 'en_stock',
+    propietario_id: null
   };
 
   contexto: any = {};
+  paginaInterna: number = 1; 
+  Math = Math; 
 
   constructor(
     private route: ActivatedRoute,
@@ -61,252 +69,315 @@ export class EditStockComponent implements OnInit {
     }
   }
 
-  // ================== GESTIÓN DE ATRIBUTOS DINÁMICOS ==================
-
-  getAtributosVacios(tipo: string): any[] {
-    const especificos = ATRIBUTOS_POR_TIPO[tipo] || [];
-    return [...especificos, ...ATRIBUTOS_BASE].map(attr => ({ 
-      ...attr, 
-      valor: null 
-    }));
-  }
-
-
-
-  hidratarAtributos(extrasBackend: any, tipo: string): any[] {
-    const molde = this.getAtributosVacios(tipo);
+  hidratarAtributosDinamicos(moldeBackend: any[], extrasGuardados: any): any[] {
+    const atributosAExcluir = ['talla', 'color', 'identidad_variante', 'numero', 'talla_anillo', 'capacidad_ml', 'talla_guantes'];
     
-    const atributosAExcluir = [
-      'talla', 'color', 'identidad_variante', 'numero', 
-      'talla_anillo', 'capacidad_ml', 'talla_guantes'
-    ];
+    // 1. ✨ COHERENCIA: Forzamos campos que siempre queremos ver (como en el formulario maestro)
+    const camposSiempreVisibles = ['material', 'peso_kg'];
+    let molde = [...moldeBackend];
+    
+    camposSiempreVisibles.forEach(campo => {
+      if (!molde.some(a => a.nombre.toLowerCase() === campo)) {
+        molde.push({ 
+          nombre: campo, 
+          tipo: campo === 'peso_kg' ? 'number' : 'text', 
+          opciones: [], 
+          valor: null 
+        });
+      }
+    });
 
-    return molde
+    // 2. Procesamos el molde y rescatamos valores de la base de datos
+    let finalAttrs = molde
       .filter(attr => !atributosAExcluir.includes(attr.nombre.toLowerCase()))
       .map(attr => {
-        const keyBackend = attr.nombre.toLowerCase(); 
-        
-        // 1. Recuperamos el valor que viene de la base de datos
-        if (extrasBackend && extrasBackend[keyBackend] !== undefined) {
-          attr.valor = extrasBackend[keyBackend];
-        }
-
-        // 2. Convertimos los inputs en selects dinámicos
-        if (keyBackend === 'material') {
-          attr.tipo = 'select';
-          attr.opciones = tipo.toLowerCase().includes('joyeria') ? MATERIALES_JOYERIA : MATERIALES_ROPA;
-        }
-
-        if (keyBackend === 'tipo_piedra' || keyBackend === 'piedras') {
-          attr.tipo = 'select';
-          attr.opciones = PIEDRAS_JOYERIA;
-        }
-
-        if (keyBackend === 'color_piedra') {
-          attr.tipo = 'select';
-          attr.opciones = COLORES_PIEDRA;
-        }
-
-        // =========================================================
-        // ✨ EL AUTO-CORRECTOR PARA ANGULAR (LA SOLUCIÓN)
-        // =========================================================
-        // Si es un select y tiene un valor guardado, buscamos la opción exacta 
-        // en tu lista ignorando mayúsculas y minúsculas.
-        if (attr.tipo === 'select' && attr.valor) {
-          const valorGuardado = String(attr.valor).toLowerCase().trim();
-          const opcionExacta = attr.opciones.find((opt: string) => opt.toLowerCase().trim() === valorGuardado);
-          
-          if (opcionExacta) {
-            attr.valor = opcionExacta; 
+        const keyBackend = attr.nombre.toLowerCase();
+        const attrLimpio = { ...attr, valor: attr.valor || null };
+        if (extrasGuardados) {
+          const claveExacta = Object.keys(extrasGuardados).find(k => k.toLowerCase() === keyBackend);
+          if (claveExacta !== undefined) {
+            let valorBackend = extrasGuardados[claveExacta];
+            
+            // ✨ CORRECCIÓN: Ajustamos el valor para que coincida exactamente (mayúsculas/minúsculas) con la opción del select
+            if (attr.tipo === 'select' && attr.opciones && attr.opciones.length > 0 && valorBackend) {
+               const valorStr = String(valorBackend).toLowerCase();
+               const optionMatch = attr.opciones.find((o: string) => String(o).toLowerCase() === valorStr);
+               if (optionMatch) {
+                 valorBackend = optionMatch;
+               }
+            }
+            
+            attrLimpio.valor = valorBackend;
           }
         }
-
-        return attr;
+        return attrLimpio;
       });
+
+    // 3. ✨ BLINDAJE EXTRA: Atributos que existen en BD pero no están en el molde (ej: campos antiguos)
+    if (extrasGuardados) {
+      Object.keys(extrasGuardados).forEach(key => {
+        const keyLower = key.toLowerCase();
+        const yaEsta = finalAttrs.some(fa => fa.nombre.toLowerCase() === keyLower);
+        if (!yaEsta && !atributosAExcluir.includes(keyLower)) {
+          finalAttrs.push({
+            nombre: key,
+            valor: extrasGuardados[key],
+            tipo: 'text',
+            opciones: []
+          });
+        }
+      });
+    }
+
+    return finalAttrs;
   }
 
   formatLabel(n: string): string { return formatLabel(n); }
   getPlaceholder(n: string): string { return getPlaceholder(n); }
 
-  // ================== CARGA DE DATOS ==================
-
   cargarStock(id: number) {
-    this.productsService.obtenerStock(id).subscribe({
-      next: (data) => {
-        this.tipoProducto = data.tipo_producto || 'ropa_superior';
-
-        // ✨ CORRECCIÓN 1: Extraemos el material de atributos_extra
-        const materialBackend = data.atributos_extra && data.atributos_extra['material'] 
-                                ? data.atributos_extra['material'] 
-                                : null;
+    // Asumimos que obtenerLoteStock ahora apunta a tu endpoint de detalle de StockConfig
+    this.productsService.obtenerLoteStock(id).subscribe({
+      next: (data: any) => {
+        console.log("🚨 DATOS DEL STOCK CONFIG RECIBIDOS:", data);
         
         this.contexto = {
-          producto_id: data.producto_id,
+          producto_id: data.producto_id || data.variante?.producto_id,
           variante_id: data.variante_id,
           producto_nombre: data.producto_nombre,
           identidad_variante: data.identidad_variante,
-          etiqueta: data.etiqueta,
-          talla: data.talla,
-          sku: data.stock_sku,
+          sku: data.stock_config_id,
           imagen_cover: data.imagen_cover,
           hex_identidad: data.hex_identidad,
-          material: materialBackend,
+          talla: data.talla,
+          nombre_talla: data.nombre_atributo_talla || 'talla', // ✨ GUARDAMOS EL NOMBRE ORIGINAL
+          categoria_id: data.categoria?.id
         };
 
         this.stockData = {
-          cantidad: data.stock_disponible,
           precio_compra: data.precio_compra,
           precio_venta: data.precio_venta,
-          descuento: data.descuento,
-          ubicacion: data.ubicacion_almacen,
-          fecha_compra: data.fecha_compra || '',
-          proveedor_id: data.proveedor_id || null,
-          publicar_web: data.canales?.web || false,
-          atributos: this.hidratarAtributos(data.atributos_extra, this.tipoProducto),
-          material: this.contexto.material,
-          donar_ganancias: data.donar_ganancias || false, // ✨ NUEVO
-          propietario_id: data.propietario_id || null, // ✨ Asegúrate de traerlo para el HTML
-          estado_gestion: data.estado_gestion || 'en_stock',
+          descuento: data.descuento || 0,
+          ubicacion: data.ubicacion_almacen || data.ubicacion || '',
+          localizacion_id: (data.localizacion_id || data.localizacion?.id) ? Number(data.localizacion_id || data.localizacion?.id) : null,
+          fecha_compra: data.fecha_compra ? data.fecha_compra.split('T')[0] : '', 
+          proveedor_id: data.proveedor_id || data.proveedor?.id || null, 
+          donar_ganancias: data.donar_ganancias || false,
+          propietario_id: data.propietario_id || null,
+          atributos: []
         };
-        console.log('Stock cargado:', this.stockData);
-        this.cargandoDatos = false;
-      },
-      error: (err) => {
-        console.error('Error al cargar', err);
-        this.volver();
+
+        // ✨ AHORA LEEMOS stock_units DESDE EL BACKEND
+        this.unidadesLote = (data.stock_units || data.unidadesLote || []).map((u: any) => ({
+          ...u,
+          id_original: u.id,
+          editandoId: false
+        }));
+
+        if (this.contexto.categoria_id) {
+          this.productsService.obtenerAtributosPorCategoria(this.contexto.categoria_id).subscribe({
+            next: (atributosMolde) => {
+              this.stockData.atributos = this.hidratarAtributosDinamicos(atributosMolde, data.atributos_extra);
+              this.cargandoDatos = false;
+            },
+            error: () => {
+              this.stockData.atributos = this.hidratarAtributosDinamicos([], data.atributos_extra);
+              this.cargandoDatos = false;
+            }
+          });
+        } else {
+          this.stockData.atributos = this.hidratarAtributosDinamicos([], data.atributos_extra);
+          this.cargandoDatos = false;
+        }
       }
     });
   }
 
-  onSupplierChanged(prov: Proveedor) {
-    this.stockData.proveedor_id = prov.id || null;
-  }
+  onSupplierChanged(prov: Proveedor) { this.stockData.proveedor_id = prov.id || null; }
 
   irAGestionarVariante() {
-    if (this.contexto?.producto_id && this.contexto?.variante_id) {
-      this.router.navigate(['/edit', this.contexto.producto_id], { 
-        fragment: `variante-${this.contexto.variante_id}`
-      });
-    }
+    this.router.navigate(['/edit', this.contexto.producto_id], { fragment: `variante-${this.contexto.variante_id}` });
   }
 
   verProductoPadre() {
-    if (this.contexto?.producto_id) {
-      this.router.navigate(['/detail-product', this.contexto.producto_id]);
-    }
+    this.router.navigate(['/detail-product', this.contexto.producto_id]);
   }
 
- private validarFormulario(): boolean {
-    // 1. FORZAMOS A QUE LOS NÚMEROS BASE SEAN AL MENOS 0 SI ESTÁN VACÍOS
-    this.stockData.cantidad = Number(this.stockData.cantidad) || 0;
-    this.stockData.precio_compra = Number(this.stockData.precio_compra) || 0;
-    this.stockData.precio_venta = Number(this.stockData.precio_venta) || 0;
-    this.stockData.descuento = Number(this.stockData.descuento) || 0;
+  // ✨ MODO EDICIÓN RESTRINGIDO
+  intentarEditarId(u: any) {
+    if (u.estado_gestion === 'vendido') {
+      alert(`⛔ No puedes editar el ID de la prenda #${u.id_original || u.id} porque ya ha sido vendida. El ID debe permanecer intacto para mantener la integridad del historial de ventas y finanzas.`);
+      return;
+    }
+    u.editandoId = true;
+  }
 
-    // =======================================================
-    // 2. VALIDACIONES ESTRICTAS (OBLIGATORIAS SIEMPRE)
-    // =======================================================
-    if (this.stockData.precio_compra <= 0) {
-      alert('⚠️ El precio de compra es obligatorio y debe ser mayor a 0.');
-      return false;
-    }
+  // ✨ AHORA LLAMA AL MÉTODO DEDICADO A LA UNIDAD FÍSICA
+  guardarEstadoUnidad(idxUnidad: number) {
+    const u = this.unidadesLote[idxUnidad];
     
-    if (!this.stockData.fecha_compra || String(this.stockData.fecha_compra).trim() === '') {
-      alert('⚠️ La fecha de compra es obligatoria.');
-      return false;
-    }
-    
-    if (!this.stockData.ubicacion || String(this.stockData.ubicacion).trim() === '') {
-      alert('⚠️ La ubicación en el almacén es obligatoria.');
-      return false;
-    }
-    
-    if (!this.stockData.proveedor_id) {
-      alert('⚠️ Debes seleccionar un proveedor válido.');
-      return false;
+    if (!u.id || u.id <= 0) {
+      alert('⚠️ El ID debe ser un número positivo.');
+      return;
     }
 
-    // =======================================================
-    // 3. VALIDACIONES WEB (SOLO SI SE PUBLICA EN TIENDA)
-    // =======================================================
-    const vaAWeb = this.stockData.publicar_web === true || String(this.stockData.publicar_web) === 'true';
-    
-    if (vaAWeb) {
-      if (this.stockData.cantidad <= 0) {
-        alert('🌐 Para publicar en la web, debes tener al menos 1 unidad en stock.');
-        return false;
-      }
-      
-      // Buscamos el peso para forzar que lo llenen
-      const pesoAttr = this.stockData.atributos.find((a: any) => a.nombre === 'peso_kg');
-      const pesoValor = pesoAttr && pesoAttr.valor ? Number(pesoAttr.valor) : 0;
-      
-      if (pesoValor <= 0) {
-        alert('🌐 Para publicar en la web, el peso (kg) es obligatorio para los envíos.');
-        return false;
+    // ✨ RESTRICCIÓN: Confirmación si el ID ha cambiado
+    if (u.id_original && u.id !== u.id_original) {
+      const confirmar = confirm(`¿Estás seguro de que quieres cambiar el ID de ${u.id_original} a ${u.id}? Esta es una operación sensible.`);
+      if (!confirmar) {
+        u.id = u.id_original; // Revertimos
+        u.editandoId = false;
+        return;
       }
     }
 
-    return true; // Si pasa todos los filtros, está listo para enviarse
+    const payload = {
+      id: u.id,
+      sku: u.sku,
+      estado_gestion: u.estado_gestion,
+      publicar_web: (u as any).publicar_web || false,
+      publicar_vinted: (u as any).publicar_vinted || false,
+      publicar_wallapop: (u as any).publicar_wallapop || false,
+      fecha_compra: (u as any).fecha_compra ? (u as any).fecha_compra.split('T')[0] : null
+    };
+
+    // Usamos u.id_original para localizar el registro
+    this.productsService.actualizarStockUnit(u.id_original || u.id, payload).subscribe({
+      next: (res: any) => {
+        u.editandoId = false;
+        u.id_original = res.id;
+        u.id = res.id;
+        alert(`✅ Datos de la prenda #${u.id} actualizados.`);
+      },
+      error: (err) => {
+        console.error(err);
+        alert('❌ Error: ' + (err.error?.detail || 'No se pudo guardar los cambios.'));
+      }
+    });
+  }
+
+  // ✨ ELIMINAR PRENDA FÍSICA
+  eliminarUnidadFisica(idxUnidad: number, stockUnitId: number) {
+    if(!confirm("¿Seguro que quieres borrar esta prenda física?")) return;
+    this.productsService.moverStockUnitPapelera(stockUnitId).subscribe({
+      next: () => {
+        this.unidadesLote.splice(idxUnidad, 1);
+        alert('🗑️ Prenda eliminada.');
+      }
+    });
+  }
+
+  private validarFormulario(): boolean {
+    if (this.stockData.precio_compra < 0) { alert('⚠️ Precio compra inválido'); return false; }
+    if (!this.stockData.localizacion_id) { alert('⚠️ Ubicación obligatoria'); return false; }
+    return true;
   }
 
   onSubmit(): void {
-    // Primero pasamos por la aduana (Validación)
-    if (!this.validarFormulario()) {
-      return; 
+    if (!this.validarFormulario()) return;
+
+    // ✨ RESTRICCIÓN GLOBAL: Verificar si hay IDs manuales modificados en la tabla
+    let idsModificados: { original: number, nuevo: number }[] = [];
+    this.unidadesLote.forEach(u => {
+      if (u.id_original && u.id && u.id !== u.id_original) {
+        idsModificados.push({ original: u.id_original, nuevo: u.id });
+      }
+    });
+
+    if (idsModificados.length > 0) {
+      const listaStr = idsModificados.map(m => `#${m.original} -> #${m.nuevo}`).join(', ');
+      const confirmar = confirm(`Has modificado los siguientes IDs de prendas: ${listaStr}. \n\n¿Estás seguro de que quieres aplicar estos cambios de forma global? Esta acción es irreversible.`);
+      if (!confirmar) return;
     }
 
     this.isSubmitting = true;
 
-    // ✨ EL RELLENADOR AUTOMÁTICO DE ATRIBUTOS
-    const atributosCompletos = this.stockData.atributos.map((attr: any) => {
-      let valorCrudo = attr.valor;
-      let valorFinal = String(valorCrudo).trim();
+    const atributosCompletos = this.stockData.atributos.map((attr: any) => ({
+      nombre: attr.nombre,
+      valor: attr.valor || ''
+    }));
 
-      // Detectamos si el campo está vacío, es null, o el usuario dejó "Selecciona..."
-      const estaVacio = valorCrudo === null || 
-                        valorCrudo === undefined || 
-                        valorFinal === '' || 
-                        valorFinal === 'null' || 
-                        valorFinal === 'Selecciona...';
+    // ✨ ASEGURAMOS QUE LA TALLA NO SE PIERDA (Ya que el back reemplaza todo el array EAV)
+    if (this.contexto.nombre_talla && this.contexto.talla) {
+      atributosCompletos.push({
+        nombre: this.contexto.nombre_talla,
+        valor: this.contexto.talla
+      });
+    }
 
-      if (estaVacio) {
-        // Si el campo es de tipo numérico (medidas, capacidad, etc.), forzamos un 0
-        if (attr.tipo === 'number') {
-          valorFinal = '0';
-        } else {
-          // Si es un texto o un select (material, piedra), forzamos "No especificado"
-          valorFinal = 'No especificado';
-        }
-      }
+    // ✨ PREPARAMOS LAS UNIDADES PARA EL BACKEND
+    const unitsPayload = this.unidadesLote.map(u => ({
+      id: u.id,
+      id_original: u.id_original || u.id,
+      sku: u.sku,
+      estado_gestion: u.estado_gestion,
+      fecha_compra: (u as any).fecha_compra ? (u as any).fecha_compra.split('T')[0] : null,
+      publicar_web: (u as any).publicar_web || false,
+      publicar_vinted: (u as any).publicar_vinted || false,
+      publicar_wallapop: (u as any).publicar_wallapop || false
+    }));
 
-      return {
-        nombre: attr.nombre,
-        valor: valorFinal
-      };
-    });
-
-    const dataParaEnviar = {
-      ...this.stockData,
-      atributos: atributosCompletos
+    // ✨ EL PAYLOAD EXACTO QUE ESPERA FASTAPI EN StockConfigEditPayload
+    const payload = {
+      precio_compra: this.stockData.precio_compra,
+      precio_venta: this.stockData.precio_venta,
+      descuento: this.stockData.descuento,
+      localizacion_id: this.stockData.localizacion_id,
+      proveedor_id: this.stockData.proveedor_id,
+      donar_ganancias: this.stockData.donar_ganancias,
+      atributos: atributosCompletos,
+      stock_units: unitsPayload // ✨ AHORA ENVIAMOS LAS UNIDADES TAMBIÉN
     };
 
-    console.log("🚀 ENVIANDO AL BACKEND (100% Lleno):", dataParaEnviar.atributos);
+    let operacion$: Observable<any> = this.productsService.actualizarStockIndividual(this.stockId!, payload);
 
-    this.productsService.actualizarStockIndividual(this.stockId!, dataParaEnviar).subscribe({
+    // Si además escribieron un número para agregar unidades, lo encadenamos
+    if (this.unidades_a_agregar > 0) {
+      operacion$ = operacion$.pipe(
+        switchMap(() => this.productsService.agregarUnidades(this.stockId!, this.unidades_a_agregar))
+      );
+    }
+
+    operacion$.subscribe({
       next: () => {
-        alert('✅ Inventario actualizado correctamente.');
-        this.volver();
+        this.isSubmitting = false;
+        this.router.navigate(['/detail-product', this.contexto.producto_id], { 
+          state: { ids: [this.stockId], accion: 'editado' } 
+        });
       },
       error: (err) => {
         this.isSubmitting = false;
         console.error(err);
-        alert('❌ Error al guardar. Revisa tu conexión o contacta a soporte.');
+        alert('❌ Error al guardar la configuración del lote.');
+      }
+    });
+  }
+
+  agregarUnidadesAlLote() {
+    if (this.unidades_a_agregar <= 0) return;
+    
+    this.isAddingUnits = true;
+    this.productsService.agregarUnidades(this.stockId!, this.unidades_a_agregar, this.fecha_a_agregar).subscribe({
+      next: (res: any) => {
+        const nuevas = res.unidades || []; // <-- Declarado como 'nuevas'
+        nuevas.forEach((u: any) => this.unidadesLote.push(u));
+        this.unidades_a_agregar = 0; 
+        this.isAddingUnits = false;
+        
+        // ✨ CORREGIDO: Usamos 'nuevas.length'
+        alert(`✅ Se han añadido ${nuevas.length} nuevas prendas al inventario.`);
+      },
+      error: (err) => {
+        this.isAddingUnits = false;
+        console.error(err);
+        alert('❌ Error al agregar unidades.');
       }
     });
   }
 
   volver() {
-    this.router.navigate(['/stock-detail', this.stockId]);
+    this.router.navigate(['/detail-product', this.contexto.producto_id], { 
+      queryParams: { highlight: this.stockId } 
+    });
   }
 }

@@ -18,13 +18,12 @@ export class StatisticsComponent implements OnInit {
   fechaInicio: string = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
   fechaFin: string = new Date().toISOString().split('T')[0];
   
-  // Control de las 3 pestañas
-  activeTab: 'financiero' | 'inversion' | 'proveedores' = 'financiero';
+  // ✨ NUEVAS PESTAÑAS SEPARADAS
+  activeTab: 'propias' | 'consignacion' | 'inversion' | 'proveedores' = 'propias';
 
-  // Variables para guardar los datos de cada endpoint de forma independiente
-  stats: any = null;             // Datos pestaña 1 (Flujo de Caja)
-  statsInversion: any = null;    // Datos pestaña 2 (Compras Globales)
-  statsProveedores: any = null;  // Datos pestaña 3 (Ranking Proveedores)
+  stats: any = null;             
+  statsInversion: any = null;    
+  statsProveedores: any = null;  
   
   cargando = true;
   private charts: any[] = [];
@@ -37,16 +36,23 @@ export class StatisticsComponent implements OnInit {
     this.cargarDatos(); 
   }
 
-  cambiarPestana(tab: 'financiero' | 'inversion' | 'proveedores') {
+  cambiarPestana(tab: 'propias' | 'consignacion' | 'inversion' | 'proveedores') {
     this.activeTab = tab;
+    
+    // Si saltamos entre Propias y Consignación, no recargamos el backend, solo redibujamos las gráficas
+    if ((tab === 'propias' || tab === 'consignacion') && this.stats) {
+      this.inicializarGraficas();
+      return;
+    }
+    
     this.cargarDatos();
   }
 
   cargarDatos() {
     this.cargando = true;
     
-    // --- PESTAÑA 1: Flujo de Caja ---
-    if (this.activeTab === 'financiero') {
+    // --- PESTAÑAS 1 y 2: Inteligencia de Ventas ---
+    if (this.activeTab === 'propias' || this.activeTab === 'consignacion') {
       this.statsInversion = null; 
       this.statsProveedores = null; 
       
@@ -63,7 +69,7 @@ export class StatisticsComponent implements OnInit {
       });
     } 
     
-    // --- PESTAÑA 2: Rendimiento de Compras ---
+    // --- PESTAÑA 3: Rendimiento de Compras ---
     else if (this.activeTab === 'inversion') {
       this.stats = null; 
       this.statsProveedores = null; 
@@ -80,14 +86,13 @@ export class StatisticsComponent implements OnInit {
       });
     }
 
-    // --- PESTAÑA 3: Análisis de Proveedores ---
+    // --- PESTAÑA 4: Análisis de Proveedores ---
     else if (this.activeTab === 'proveedores') {
       this.stats = null; 
       this.statsInversion = null; 
       
       this.statsService.obtenerRendimientoProveedores(this.fechaInicio, this.fechaFin).subscribe({
         next: (data) => {
-          // Guardamos el array del ranking que nos devuelve el backend
           this.statsProveedores = data.ranking_proveedores;
           this.cargando = false;
         },
@@ -100,8 +105,9 @@ export class StatisticsComponent implements OnInit {
   }
 
   inicializarGraficas() {
-    // Solo dibujamos gráficas si estamos en la pestaña financiera y hay datos
-    if (this.activeTab !== 'financiero' || !this.stats) return;
+    if ((this.activeTab !== 'propias' && this.activeTab !== 'consignacion') || !this.stats) return;
+
+    const dataTab = this.stats[this.activeTab];
 
     setTimeout(() => {
       this.charts.forEach(c => c.destroy());
@@ -112,11 +118,11 @@ export class StatisticsComponent implements OnInit {
       const vChart = new Chart(this.vCanvas.nativeElement, {
         type: 'bar',
         data: {
-          labels: this.stats.vendedores.map((v: any) => v.nombre),
+          labels: dataTab.vendedores.map((v: any) => v.nombre),
           datasets: [{
             label: 'Ventas €',
-            data: this.stats.vendedores.map((v: any) => v.total),
-            backgroundColor: 'var(--primary)' // Usamos tu variable CSS
+            data: dataTab.vendedores.map((v: any) => v.total),
+            backgroundColor: '#007782'
           }]
         },
         options: { responsive: true, maintainAspectRatio: false }
@@ -125,10 +131,10 @@ export class StatisticsComponent implements OnInit {
       const cChart = new Chart(this.cCanvas.nativeElement, {
         type: 'doughnut',
         data: {
-          labels: this.stats.canales.map((c: any) => c.nombre),
+          labels: dataTab.canales.map((c: any) => c.nombre),
           datasets: [{
-            data: this.stats.canales.map((c: any) => c.total),
-            backgroundColor: ['var(--primary)', '#27ae60', '#e74c3c', '#f1c40f']
+            data: dataTab.canales.map((c: any) => c.total),
+            backgroundColor: ['#007782', '#27ae60', '#e74c3c', '#f1c40f']
           }]
         },
         options: { responsive: true, maintainAspectRatio: false }

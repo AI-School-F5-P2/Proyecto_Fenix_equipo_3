@@ -1,31 +1,49 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // ✨ Necesario para los filtros [(ngModel)]
+import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { Chart, registerables } from 'chart.js';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule], // ✨ Importamos FormsModule aquí
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
-  // ✨ Acceso seguro al canvas
   @ViewChild('canvasGrafica') canvasRef!: ElementRef<HTMLCanvasElement>;
   
-  // ✨ Estado de Filtros (Inicia con el mes actual)
   filtros = {
     fecha_inicio: this.getPrimerDiaMes(),
     fecha_fin: this.getFechaHoy()
   };
 
+  // ✨ AÑADIDAS LAS NUEVAS VARIABLES DE CONSIGNACIÓN
+  // ✨ AÑADIDAS LAS NUEVAS VARIABLES DE DESGLOSE
   resumen: any = {
     ingresos_totales: 0,
-    inversion_en_stock: 0,
+    ingresos_propios: 0,
+    ingresos_consignacion: 0,
     gastos_operativos: 0,
     ganancia_real: 0,
+    
+    // ✨ VARIABLES NUEVAS
+    margen_propio: 0,
+    margen_consignacion: 0,
+    pagos_clientes_periodo: 0,
+    
+    deuda_generada_periodo: 0,
+    deuda_absoluta: 0,
+    
+    // ✨ DINERO EN TRÁNSITO
+    ingresos_retenidos: 0,
+    beneficio_retenido: 0,
+    deuda_retenida_total: 0,
+    
+    inversion_en_stock: 0,
+    unidades_propias: 0,
+    unidades_consignacion: 0,
     saldo_teorico_banco: 0
   };
   
@@ -33,7 +51,6 @@ export class DashboardComponent implements OnInit {
   chart: any;
 
   constructor(private dashboardService: DashboardService) {
-    // Registramos los componentes de Chart.js
     Chart.register(...registerables);
   }
 
@@ -53,7 +70,6 @@ export class DashboardComponent implements OnInit {
     return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
   }
 
-  // ✨ Lógica para botones de acceso rápido
   setFiltroRapido(periodo: string) {
     const hoy = new Date();
     this.filtros.fecha_fin = this.getFechaHoy();
@@ -75,7 +91,6 @@ export class DashboardComponent implements OnInit {
   cargarTodo() {
     this.cargando = true;
     
-    // 1. Obtener KPIs enviando los filtros actuales
     this.dashboardService.getResumen(this.filtros).subscribe({
       next: (data) => {
         this.resumen = data;
@@ -87,7 +102,6 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // 2. Obtener datos para la Gráfica (Tendencia mensual)
     this.dashboardService.getDatosGrafica().subscribe({
       next: (datos) => {
         this.inicializarGrafica(datos);
@@ -99,10 +113,18 @@ export class DashboardComponent implements OnInit {
   // ==========================================
   // LÓGICA DE LA GRÁFICA
   // ==========================================
+  // ==========================================
+  // LÓGICA DE LA GRÁFICA
+  // ==========================================
   inicializarGrafica(datos: any[]) {
-    if (!datos || datos.length === 0) return;
+    if (!datos || datos.length === 0) {
+      console.warn("⚠️ No hay datos para mostrar en la gráfica");
+      return;
+    }
 
-    // ✨ Un solo timeout de seguridad para asegurar que el DOM y el CSS están listos
+    // Un pequeño log para asegurarnos de que el backend está enviando los datos
+    console.log("📊 Datos recibidos para la gráfica:", datos);
+
     setTimeout(() => {
       if (!this.canvasRef) return;
 
@@ -111,7 +133,6 @@ export class DashboardComponent implements OnInit {
 
       if (!ctx) return;
 
-      // Destruir instancia previa si existe para evitar solapamientos
       if (this.chart) {
         this.chart.destroy();
       }
@@ -122,25 +143,23 @@ export class DashboardComponent implements OnInit {
           labels: datos.map(d => d.mes),
           datasets: [
             {
-              label: 'Ventas (€)',
+              label: 'Ventas Brutas (€)',
               data: datos.map(d => d.ventas),
-              backgroundColor: '#007782', // Teal Vinted
+              backgroundColor: '#007782', // ✨ CORREGIDO: Hexadecimal directo (Tu Teal Vinted)
               borderRadius: 5
             },
             {
-              label: 'Gastos (€)',
+              label: 'Gastos Operativos (€)',
               data: datos.map(d => d.gastos),
-              backgroundColor: '#e74c3c', // Danger Red
+              backgroundColor: '#e74c3c', // ✨ CORREGIDO: Hexadecimal directo (Rojo)
               borderRadius: 5
             }
           ]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false, // 👈 Vital para respetar el alto del CSS
-          animation: {
-            duration: 500
-          },
+          maintainAspectRatio: false,
+          animation: { duration: 500 },
           plugins: {
             legend: {
               position: 'top',
@@ -162,7 +181,6 @@ export class DashboardComponent implements OnInit {
         }
       });
       
-      // ✨ Forzamos ajuste al contenedor
       this.chart.resize();
     }, 200); 
   }

@@ -94,10 +94,11 @@ def procesar_cliente_omnicanal(db: Session, data) -> int:
             doc_norm = _normalizar_documento(identificador)
             tipo_doc = getattr(data, 'tipo_documento', 'Documento')
             
-            cliente_db = db.query(Cliente).filter(Cliente.documento_identidad == doc_norm).first()
+            # ✨ CAMBIADO documento_identidad POR dni_nie
+            cliente_db = db.query(Cliente).filter(Cliente.dni_nie == doc_norm).first()
             if not cliente_db:
                 cliente_db = Cliente(
-                    documento_identidad=doc_norm, 
+                    dni_nie=doc_norm, # ✨ AQUÍ TAMBIÉN
                     nombre=data.nombre_cliente, 
                     notas_internas=f"Creado auto (Tienda - {tipo_doc})"
                 )
